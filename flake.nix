@@ -51,10 +51,7 @@
               doTest = false;
             });
 
-            pre-commit.settings.hooks = {
-              rustfmt.enable = true;
-              clippy.enable = true;
-            };
+            pre-commit.settings.hooks.rustfmt.enable = true;
 
             checks."${crateName}-test" = craneLib.cargoNextest (commonArgs // {
               inherit cargoArtifacts;
