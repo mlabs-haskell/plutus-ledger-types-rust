@@ -55,6 +55,7 @@
 
             checks."${crateName}-test" = craneLib.cargoNextest (commonArgs // {
               inherit cargoArtifacts;
+              cargoExtraArgs = "--features lbf";
             });
 
             checks."${crateName}-clippy" = craneLib.cargoClippy (commonArgs // {
