@@ -1,3 +1,4 @@
+use crate::plutus_data::{FromPlutusData, PlutusData, PlutusDataError, PlutusType, ToPlutusData};
 #[cfg(feature = "lbf")]
 use data_encoding::HEXLOWER;
 #[cfg(feature = "lbf")]
@@ -13,11 +14,49 @@ use serde::{Deserialize, Serialize};
 #[cfg_attr(feature = "lbf", derive(Json))]
 pub struct Ed25519PubKeyHash(pub LedgerBytes);
 
+impl ToPlutusData for Ed25519PubKeyHash {
+    fn to_plutus_data(&self) -> PlutusData {
+        let Ed25519PubKeyHash(LedgerBytes(bytes)) = self;
+        PlutusData::Bytes(bytes.clone())
+    }
+}
+
+impl FromPlutusData for Ed25519PubKeyHash {
+    fn from_plutus_data(data: PlutusData) -> Result<Self, PlutusDataError> {
+        match data {
+            PlutusData::Bytes(bytes) => Ok(Self(LedgerBytes(bytes))),
+            _ => Err(PlutusDataError::UnexpectedPlutusType {
+                wanted: PlutusType::Bytes,
+                got: PlutusType::from(&data),
+            }),
+        }
+    }
+}
+
 /// Standard public key hash used to verify a transaction witness
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "lbf", derive(Json))]
 pub struct PaymentPubKeyHash(pub Ed25519PubKeyHash);
+
+impl ToPlutusData for PaymentPubKeyHash {
+    fn to_plutus_data(&self) -> PlutusData {
+        let PaymentPubKeyHash(Ed25519PubKeyHash(LedgerBytes(bytes))) = self;
+        PlutusData::Bytes(bytes.clone())
+    }
+}
+
+impl FromPlutusData for PaymentPubKeyHash {
+    fn from_plutus_data(data: PlutusData) -> Result<Self, PlutusDataError> {
+        match data {
+            PlutusData::Bytes(bytes) => Ok(Self(Ed25519PubKeyHash(LedgerBytes(bytes)))),
+            _ => Err(PlutusDataError::UnexpectedPlutusType {
+                wanted: PlutusType::Bytes,
+                got: PlutusType::from(&data),
+            }),
+        }
+    }
+}
 
 /// Standard public key hash used to verify a staking
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
@@ -25,10 +64,47 @@ pub struct PaymentPubKeyHash(pub Ed25519PubKeyHash);
 #[cfg_attr(feature = "lbf", derive(Json))]
 pub struct StakePubKeyHash(pub Ed25519PubKeyHash);
 
+impl ToPlutusData for StakePubKeyHash {
+    fn to_plutus_data(&self) -> PlutusData {
+        let StakePubKeyHash(Ed25519PubKeyHash(LedgerBytes(bytes))) = self;
+        PlutusData::Bytes(bytes.clone())
+    }
+}
+
+impl FromPlutusData for StakePubKeyHash {
+    fn from_plutus_data(data: PlutusData) -> Result<Self, PlutusDataError> {
+        match data {
+            PlutusData::Bytes(bytes) => Ok(Self(Ed25519PubKeyHash(LedgerBytes(bytes)))),
+            _ => Err(PlutusDataError::UnexpectedPlutusType {
+                wanted: PlutusType::Bytes,
+                got: PlutusType::from(&data),
+            }),
+        }
+    }
+}
+
 /// A bytestring in the Cardano ledger context
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct LedgerBytes(pub Vec<u8>);
+
+impl ToPlutusData for LedgerBytes {
+    fn to_plutus_data(&self) -> PlutusData {
+        PlutusData::Bytes(self.0.clone())
+    }
+}
+
+impl FromPlutusData for LedgerBytes {
+    fn from_plutus_data(data: PlutusData) -> Result<Self, PlutusDataError> {
+        match data {
+            PlutusData::Bytes(bytes) => Ok(Self(bytes)),
+            _ => Err(PlutusDataError::UnexpectedPlutusType {
+                wanted: PlutusType::Bytes,
+                got: PlutusType::from(&data),
+            }),
+        }
+    }
+}
 
 #[cfg(feature = "lbf")]
 impl Json for LedgerBytes {

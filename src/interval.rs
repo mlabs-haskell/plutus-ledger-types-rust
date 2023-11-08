@@ -1,6 +1,10 @@
 use crate::feature_traits::FeatureTraits;
+use crate::plutus_data::{
+    verify_constr_fields, FromPlutusData, PlutusData, PlutusDataError, PlutusType, ToPlutusData,
+};
 #[cfg(feature = "lbf")]
 use lbr_prelude::json::Json;
+use num_bigint::BigInt;
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
@@ -102,6 +106,46 @@ where
     pub to: UpperBound<T>,
 }
 
+impl<T> ToPlutusData for PlutusInterval<T>
+where
+    T: ToPlutusData,
+{
+    fn to_plutus_data(&self) -> PlutusData {
+        PlutusData::Constr(
+            BigInt::from(0),
+            vec![self.from.to_plutus_data(), self.to.to_plutus_data()],
+        )
+    }
+}
+
+impl<T> FromPlutusData for PlutusInterval<T>
+where
+    T: FromPlutusData,
+{
+    fn from_plutus_data(data: PlutusData) -> Result<Self, PlutusDataError> {
+        match data {
+            PlutusData::Constr(flag, fields) => match u32::try_from(&flag) {
+                Ok(0) => {
+                    verify_constr_fields(&fields, 2)?;
+                    Ok(PlutusInterval {
+                        from: <LowerBound<T>>::from_plutus_data(fields[0].clone())?,
+                        to: <UpperBound<T>>::from_plutus_data(fields[1].clone())?,
+                    })
+                }
+                _ => Err(PlutusDataError::UnexpectedPlutusInvariant {
+                    wanted: "Constr field to be 0".to_owned(),
+                    got: flag.to_string(),
+                }),
+            },
+
+            _ => Err(PlutusDataError::UnexpectedPlutusType {
+                wanted: PlutusType::Constr,
+                got: PlutusType::from(&data),
+            }),
+        }
+    }
+}
+
 #[derive(Clone, Debug, PartialEq, Eq)]
 #[cfg_attr(feature = "lbf", derive(Json))]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
@@ -111,6 +155,46 @@ where
 {
     pub bound: Extended<T>,
     pub closed: bool,
+}
+
+impl<T> ToPlutusData for UpperBound<T>
+where
+    T: ToPlutusData,
+{
+    fn to_plutus_data(&self) -> PlutusData {
+        PlutusData::Constr(
+            BigInt::from(0),
+            vec![self.bound.to_plutus_data(), self.closed.to_plutus_data()],
+        )
+    }
+}
+
+impl<T> FromPlutusData for UpperBound<T>
+where
+    T: FromPlutusData,
+{
+    fn from_plutus_data(data: PlutusData) -> Result<Self, PlutusDataError> {
+        match data {
+            PlutusData::Constr(flag, fields) => match u32::try_from(&flag) {
+                Ok(0) => {
+                    verify_constr_fields(&fields, 2)?;
+                    Ok(UpperBound {
+                        bound: <Extended<T>>::from_plutus_data(fields[0].clone())?,
+                        closed: bool::from_plutus_data(fields[1].clone())?,
+                    })
+                }
+                _ => Err(PlutusDataError::UnexpectedPlutusInvariant {
+                    wanted: "Constr field to be 0".to_owned(),
+                    got: flag.to_string(),
+                }),
+            },
+
+            _ => Err(PlutusDataError::UnexpectedPlutusType {
+                wanted: PlutusType::Constr,
+                got: PlutusType::from(&data),
+            }),
+        }
+    }
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -124,6 +208,46 @@ where
     pub closed: bool,
 }
 
+impl<T> ToPlutusData for LowerBound<T>
+where
+    T: ToPlutusData,
+{
+    fn to_plutus_data(&self) -> PlutusData {
+        PlutusData::Constr(
+            BigInt::from(0),
+            vec![self.bound.to_plutus_data(), self.closed.to_plutus_data()],
+        )
+    }
+}
+
+impl<T> FromPlutusData for LowerBound<T>
+where
+    T: FromPlutusData,
+{
+    fn from_plutus_data(data: PlutusData) -> Result<Self, PlutusDataError> {
+        match data {
+            PlutusData::Constr(flag, fields) => match u32::try_from(&flag) {
+                Ok(0) => {
+                    verify_constr_fields(&fields, 2)?;
+                    Ok(LowerBound {
+                        bound: <Extended<T>>::from_plutus_data(fields[0].clone())?,
+                        closed: bool::from_plutus_data(fields[1].clone())?,
+                    })
+                }
+                _ => Err(PlutusDataError::UnexpectedPlutusInvariant {
+                    wanted: "Constr field to be 0".to_owned(),
+                    got: flag.to_string(),
+                }),
+            },
+
+            _ => Err(PlutusDataError::UnexpectedPlutusType {
+                wanted: PlutusType::Constr,
+                got: PlutusType::from(&data),
+            }),
+        }
+    }
+}
+
 /// A set extended with a positive and negative infinity.
 #[derive(Clone, Debug, PartialEq, Eq)]
 #[cfg_attr(feature = "lbf", derive(Json))]
@@ -135,4 +259,54 @@ where
     NegInf,
     Finite(T),
     PosInf,
+}
+
+impl<T> ToPlutusData for Extended<T>
+where
+    T: ToPlutusData,
+{
+    fn to_plutus_data(&self) -> PlutusData {
+        match self {
+            Extended::NegInf => PlutusData::Constr(BigInt::from(0), Vec::with_capacity(0)),
+            Extended::Finite(value) => {
+                PlutusData::Constr(BigInt::from(1), vec![value.to_plutus_data()])
+            }
+            Extended::PosInf => PlutusData::Constr(BigInt::from(2), Vec::with_capacity(0)),
+        }
+    }
+}
+
+impl<T> FromPlutusData for Extended<T>
+where
+    T: FromPlutusData,
+{
+    fn from_plutus_data(data: PlutusData) -> Result<Self, PlutusDataError> {
+        match data {
+            PlutusData::Constr(flag, fields) => match u32::try_from(&flag) {
+                Ok(0) => {
+                    verify_constr_fields(&fields, 0)?;
+                    Ok(Extended::NegInf)
+                }
+                Ok(1) => {
+                    verify_constr_fields(&fields, 1)?;
+                    Ok(Extended::Finite(FromPlutusData::from_plutus_data(
+                        fields[0].clone(),
+                    )?))
+                }
+                Ok(2) => {
+                    verify_constr_fields(&fields, 0)?;
+                    Ok(Extended::PosInf)
+                }
+                _ => Err(PlutusDataError::UnexpectedPlutusInvariant {
+                    wanted: "Constr field between 0 and 1".to_owned(),
+                    got: flag.to_string(),
+                }),
+            },
+
+            _ => Err(PlutusDataError::UnexpectedPlutusType {
+                wanted: PlutusType::Constr,
+                got: PlutusType::from(&data),
+            }),
+        }
+    }
 }

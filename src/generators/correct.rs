@@ -12,7 +12,7 @@ use crate::script::{MintingPolicyHash, ScriptHash, ValidatorHash};
 use crate::transaction::{
     POSIXTime, TransactionHash, TransactionInput, TransactionOutput, TxInInfo,
 };
-use crate::value::{ada_token_name, AssetClass, CurrencySymbol, TokenName, Value};
+use crate::value::{AssetClass, CurrencySymbol, TokenName, Value};
 use num_bigint::{BigInt, Sign};
 use proptest::arbitrary::{any, StrategyFor};
 use proptest::char::CharStrategy;
@@ -85,7 +85,7 @@ pub fn arb_complicated(
 pub fn arb_asset_class() -> impl Strategy<Value = AssetClass> {
     (arb_currency_symbol(), arb_token_name()).prop_map(|(currency_symbol, token_name)| {
         let token_name = match currency_symbol {
-            CurrencySymbol::Ada => ada_token_name(),
+            CurrencySymbol::Ada => TokenName::ada(),
             CurrencySymbol::NativeToken(_) => token_name,
         };
         AssetClass {
@@ -135,7 +135,7 @@ pub fn arb_value() -> impl Strategy<Value = Value> {
         arb_native_tokens(),
         (arb_native_tokens(), arb_integer()).prop_map(|(Value(outer_dict), amount)| {
             let mut outer_dict = outer_dict.clone();
-            let inner_dict = BTreeMap::from([(ada_token_name(), amount)]);
+            let inner_dict = BTreeMap::from([(TokenName::ada(), amount)]);
             outer_dict.insert(CurrencySymbol::Ada, inner_dict);
             Value(outer_dict)
         })

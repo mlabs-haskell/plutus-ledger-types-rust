@@ -94,11 +94,11 @@ impl FromPlutusData for bool {
         match plutus_data {
             PlutusData::Constr(flag, fields) => match u32::try_from(&flag) {
                 Ok(0) => {
-                    verify_fields_len(&fields, 0)?;
+                    verify_constr_fields(&fields, 0)?;
                     Ok(false)
                 }
                 Ok(1) => {
-                    verify_fields_len(&fields, 0)?;
+                    verify_constr_fields(&fields, 0)?;
                     Ok(true)
                 }
                 _ => Err(PlutusDataError::UnexpectedPlutusInvariant {
@@ -199,11 +199,11 @@ where
         match plutus_data {
             PlutusData::Constr(flag, fields) => match u32::try_from(&flag) {
                 Ok(0) => {
-                    verify_fields_len(&fields, 1)?;
+                    verify_constr_fields(&fields, 1)?;
                     Ok(Some(T::from_plutus_data(fields[0].clone())?))
                 }
                 Ok(1) => {
-                    verify_fields_len(&fields, 0)?;
+                    verify_constr_fields(&fields, 0)?;
                     Ok(None)
                 }
                 _ => Err(PlutusDataError::UnexpectedPlutusInvariant {
@@ -242,11 +242,11 @@ where
         match plutus_data {
             PlutusData::Constr(flag, fields) => match u32::try_from(&flag) {
                 Ok(0) => {
-                    verify_fields_len(&fields, 1)?;
+                    verify_constr_fields(&fields, 1)?;
                     Ok(Err(E::from_plutus_data(fields[0].clone())?))
                 }
                 Ok(1) => {
-                    verify_fields_len(&fields, 1)?;
+                    verify_constr_fields(&fields, 1)?;
                     Ok(Ok(T::from_plutus_data(fields[0].clone())?))
                 }
                 _ => Err(PlutusDataError::UnexpectedPlutusInvariant {
@@ -372,7 +372,7 @@ impl FromPlutusData for () {
         match plutus_data {
             PlutusData::Constr(flag, fields) => match u32::try_from(&flag) {
                 Ok(0) => {
-                    verify_fields_len(&fields, 0)?;
+                    verify_constr_fields(&fields, 0)?;
                     Ok(())
                 }
                 _ => Err(PlutusDataError::UnexpectedPlutusInvariant {
@@ -423,7 +423,7 @@ where
         match plutus_data {
             PlutusData::Constr(flag, fields) => match u32::try_from(&flag) {
                 Ok(0) => {
-                    verify_fields_len(&fields, 2)?;
+                    verify_constr_fields(&fields, 2)?;
                     Ok((
                         A::from_plutus_data(fields[0].clone())?,
                         B::from_plutus_data(fields[1].clone())?,
@@ -443,7 +443,11 @@ where
     }
 }
 
-fn verify_fields_len(fields: &Vec<PlutusData>, expected: usize) -> Result<(), PlutusDataError> {
+/// Verify the number of fields contained in a PlutusData::Constr
+pub fn verify_constr_fields(
+    fields: &Vec<PlutusData>,
+    expected: usize,
+) -> Result<(), PlutusDataError> {
     if fields.len() != expected {
         Err(PlutusDataError::UnexpectedPlutusInvariant {
             wanted: format!("Constr with {} fields", expected),

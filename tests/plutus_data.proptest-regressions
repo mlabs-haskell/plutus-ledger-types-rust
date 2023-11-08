@@ -1,0 +1,8 @@
+# Seeds for failure cases proptest has generated in the past. It is
+# automatically read and these particular cases re-run before any
+# novel cases are generated.
+#
+# It is recommended to check this file in to source control so that
+# everyone who runs the test benefits from these saved cases.
+cc c6dc10748156124b7cc8bf465ee9b9f27f1b0bd454e4ede142e1d81d3bf59998 # shrinks to val = Finite(POSIXTime(0))
+cc 434640cc502ffca6d14836213911cc851784b2cd216a3381b67e21906aef8298 # shrinks to val = PlutusInterval { from: LowerBound { bound: NegInf, closed: false }, to: UpperBound { bound: Finite(POSIXTime(0)), closed: false } }

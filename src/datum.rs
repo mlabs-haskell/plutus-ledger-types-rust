@@ -1,7 +1,10 @@
 use crate::crypto::LedgerBytes;
-use crate::plutus_data::PlutusData;
+use crate::plutus_data::{
+    verify_constr_fields, FromPlutusData, PlutusData, PlutusDataError, PlutusType, ToPlutusData,
+};
 #[cfg(feature = "lbf")]
 use lbr_prelude::json::{self, Error, Json};
+use num_bigint::BigInt;
 
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
@@ -17,6 +20,54 @@ pub enum OutputDatum {
     None,
     DatumHash(DatumHash),
     InlineDatum(Datum),
+}
+
+impl ToPlutusData for OutputDatum {
+    fn to_plutus_data(&self) -> PlutusData {
+        match self {
+            OutputDatum::None => PlutusData::Constr(BigInt::from(0), vec![]),
+            OutputDatum::DatumHash(dat_hash) => {
+                PlutusData::Constr(BigInt::from(1), vec![dat_hash.to_plutus_data()])
+            }
+            OutputDatum::InlineDatum(datum) => {
+                PlutusData::Constr(BigInt::from(2), vec![datum.to_plutus_data()])
+            }
+        }
+    }
+}
+
+impl FromPlutusData for OutputDatum {
+    fn from_plutus_data(data: PlutusData) -> Result<Self, PlutusDataError> {
+        match data {
+            PlutusData::Constr(flag, fields) => match u32::try_from(&flag) {
+                Ok(0) => {
+                    verify_constr_fields(&fields, 0)?;
+                    Ok(OutputDatum::None)
+                }
+                Ok(1) => {
+                    verify_constr_fields(&fields, 1)?;
+                    Ok(OutputDatum::DatumHash(DatumHash::from_plutus_data(
+                        fields[0].clone(),
+                    )?))
+                }
+                Ok(2) => {
+                    verify_constr_fields(&fields, 1)?;
+                    Ok(OutputDatum::InlineDatum(Datum::from_plutus_data(
+                        fields[0].clone(),
+                    )?))
+                }
+                _ => Err(PlutusDataError::UnexpectedPlutusInvariant {
+                    wanted: "Constr field to be between 0..2".to_owned(),
+                    got: flag.to_string(),
+                }),
+            },
+
+            _ => Err(PlutusDataError::UnexpectedPlutusType {
+                wanted: PlutusType::Constr,
+                got: PlutusType::from(&data),
+            }),
+        }
+    }
 }
 
 #[cfg(feature = "lbf")]
@@ -75,8 +126,32 @@ impl Json for OutputDatum {
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct DatumHash(pub LedgerBytes);
 
+impl ToPlutusData for DatumHash {
+    fn to_plutus_data(&self) -> PlutusData {
+        self.0.to_plutus_data()
+    }
+}
+
+impl FromPlutusData for DatumHash {
+    fn from_plutus_data(data: PlutusData) -> Result<Self, PlutusDataError> {
+        FromPlutusData::from_plutus_data(data).map(Self)
+    }
+}
+
 /// Piece of information associated with a UTxO encoded into a PlutusData type.
 #[derive(Clone, Debug, PartialEq, Eq)]
 #[cfg_attr(feature = "lbf", derive(Json))]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct Datum(pub PlutusData);
+
+impl ToPlutusData for Datum {
+    fn to_plutus_data(&self) -> PlutusData {
+        self.0.clone()
+    }
+}
+
+impl FromPlutusData for Datum {
+    fn from_plutus_data(data: PlutusData) -> Result<Self, PlutusDataError> {
+        FromPlutusData::from_plutus_data(data).map(Self)
+    }
+}

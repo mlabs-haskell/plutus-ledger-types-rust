@@ -1,5 +1,8 @@
 use crate::crypto::LedgerBytes;
-use crate::script::MintingPolicyHash;
+use crate::plutus_data::{
+    verify_constr_fields, FromPlutusData, PlutusData, PlutusDataError, PlutusType, ToPlutusData,
+};
+use crate::script::{MintingPolicyHash, ScriptHash};
 #[cfg(feature = "lbf")]
 use lbr_prelude::json::{Error, Json, JsonType};
 use num_bigint::BigInt;
@@ -16,6 +19,29 @@ use std::collections::BTreeMap;
 pub enum CurrencySymbol {
     Ada,
     NativeToken(MintingPolicyHash),
+}
+
+impl ToPlutusData for CurrencySymbol {
+    fn to_plutus_data(&self) -> PlutusData {
+        match self {
+            CurrencySymbol::Ada => String::from("").to_plutus_data(),
+            CurrencySymbol::NativeToken(policy_hash) => policy_hash.to_plutus_data(),
+        }
+    }
+}
+
+impl FromPlutusData for CurrencySymbol {
+    fn from_plutus_data(data: PlutusData) -> Result<Self, PlutusDataError> {
+        FromPlutusData::from_plutus_data(data).and_then(|bytes: LedgerBytes| {
+            if bytes.0.is_empty() {
+                Ok(CurrencySymbol::Ada)
+            } else {
+                Ok(CurrencySymbol::NativeToken(MintingPolicyHash(ScriptHash(
+                    bytes,
+                ))))
+            }
+        })
+    }
 }
 
 #[cfg(feature = "lbf")]
@@ -50,14 +76,40 @@ impl Json for CurrencySymbol {
 #[cfg_attr(feature = "lbf", derive(Json))]
 pub struct Value(pub BTreeMap<CurrencySymbol, BTreeMap<TokenName, BigInt>>);
 
+impl ToPlutusData for Value {
+    fn to_plutus_data(&self) -> PlutusData {
+        self.0.to_plutus_data()
+    }
+}
+
+impl FromPlutusData for Value {
+    fn from_plutus_data(data: PlutusData) -> Result<Self, PlutusDataError> {
+        FromPlutusData::from_plutus_data(data).map(Self)
+    }
+}
+
 /// Name of a token. This can be any arbitrary bytearray
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "lbf", derive(Json))]
 pub struct TokenName(pub LedgerBytes);
 
-pub fn ada_token_name() -> TokenName {
-    TokenName(LedgerBytes(Vec::with_capacity(0)))
+impl TokenName {
+    pub fn ada() -> TokenName {
+        TokenName(LedgerBytes(Vec::with_capacity(0)))
+    }
+}
+
+impl ToPlutusData for TokenName {
+    fn to_plutus_data(&self) -> PlutusData {
+        self.0.to_plutus_data()
+    }
+}
+
+impl FromPlutusData for TokenName {
+    fn from_plutus_data(data: PlutusData) -> Result<Self, PlutusDataError> {
+        FromPlutusData::from_plutus_data(data).map(Self)
+    }
 }
 
 /// AssetClass is uniquely identifying a specific asset
@@ -67,4 +119,41 @@ pub fn ada_token_name() -> TokenName {
 pub struct AssetClass {
     pub currency_symbol: CurrencySymbol,
     pub token_name: TokenName,
+}
+
+impl ToPlutusData for AssetClass {
+    fn to_plutus_data(&self) -> PlutusData {
+        PlutusData::Constr(
+            BigInt::from(0),
+            vec![
+                self.currency_symbol.to_plutus_data(),
+                self.token_name.to_plutus_data(),
+            ],
+        )
+    }
+}
+
+impl FromPlutusData for AssetClass {
+    fn from_plutus_data(data: PlutusData) -> Result<Self, PlutusDataError> {
+        match data {
+            PlutusData::Constr(flag, fields) => match u32::try_from(&flag) {
+                Ok(0) => {
+                    verify_constr_fields(&fields, 2)?;
+                    Ok(AssetClass {
+                        currency_symbol: CurrencySymbol::from_plutus_data(fields[0].clone())?,
+                        token_name: TokenName::from_plutus_data(fields[1].clone())?,
+                    })
+                }
+                _ => Err(PlutusDataError::UnexpectedPlutusInvariant {
+                    wanted: "Constr field between 0 and 1".to_owned(),
+                    got: flag.to_string(),
+                }),
+            },
+
+            _ => Err(PlutusDataError::UnexpectedPlutusType {
+                wanted: PlutusType::Constr,
+                got: PlutusType::from(&data),
+            }),
+        }
+    }
 }
