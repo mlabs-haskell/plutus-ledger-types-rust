@@ -1,3 +1,4 @@
+//! Types for cryptograhic primitives, and other lower level building blocks
 use crate::plutus_data::{FromPlutusData, PlutusData, PlutusDataError, PlutusType, ToPlutusData};
 #[cfg(feature = "lbf")]
 use data_encoding::HEXLOWER;

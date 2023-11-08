@@ -1,3 +1,4 @@
+//! Types related to Plutus scripts
 use crate::crypto::LedgerBytes;
 use crate::plutus_data::{FromPlutusData, PlutusData, PlutusDataError, ToPlutusData};
 #[cfg(feature = "lbf")]

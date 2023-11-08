@@ -1,3 +1,4 @@
+//! Types related to Cardano transactions.
 use crate::address::Address;
 use crate::crypto::LedgerBytes;
 use crate::datum::OutputDatum;

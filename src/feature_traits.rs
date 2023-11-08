@@ -1,3 +1,4 @@
+//! Traits that are only implemented when a feature flag is enabled.
 #[cfg(feature = "lbf")]
 use lbr_prelude::json::Json;
 

@@ -1,3 +1,6 @@
+//! Proptest strategies for most common types
+//!
+//! These strategies always return valid values.
 use crate::address::{
     Address, CertificateIndex, ChainPointer, Credential, StakingCredential, TransactionIndex,
 };

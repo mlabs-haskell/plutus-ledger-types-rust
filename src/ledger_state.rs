@@ -1,3 +1,4 @@
+//! Types related to the ledger state, such as Slot number or Epoch number
 use crate::plutus_data::{FromPlutusData, PlutusData, PlutusDataError, ToPlutusData};
 #[cfg(feature = "lbf")]
 use lbr_prelude::json::Json;

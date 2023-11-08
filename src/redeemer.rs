@@ -1,3 +1,4 @@
+//! Types related to Plutus Redeemers
 use crate::plutus_data::{FromPlutusData, PlutusData, PlutusDataError, ToPlutusData};
 #[cfg(feature = "lbf")]
 use lbr_prelude::json::Json;

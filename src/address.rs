@@ -1,3 +1,4 @@
+//! Types related to Cardano addresses
 use crate::crypto::Ed25519PubKeyHash;
 use crate::ledger_state::Slot;
 use crate::plutus_data::{

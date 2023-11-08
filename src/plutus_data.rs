@@ -1,3 +1,4 @@
+//! Plutus Data related types and traits
 #[cfg(feature = "lbf")]
 use lbr_prelude::json::Json;
 use num_bigint::BigInt;

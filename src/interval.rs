@@ -1,3 +1,4 @@
+//! Types related to PlutusInterval
 use crate::feature_traits::FeatureTraits;
 use crate::plutus_data::{
     verify_constr_fields, FromPlutusData, PlutusData, PlutusDataError, PlutusType, ToPlutusData,

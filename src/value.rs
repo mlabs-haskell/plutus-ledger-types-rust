@@ -1,3 +1,4 @@
+//! Types related to Cardano values, such as Ada and native tokens.
 use crate::crypto::LedgerBytes;
 use crate::plutus_data::{
     verify_constr_fields, FromPlutusData, PlutusData, PlutusDataError, PlutusType, ToPlutusData,
