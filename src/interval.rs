@@ -108,7 +108,7 @@ where
 
 impl<T> ToPlutusData for PlutusInterval<T>
 where
-    T: ToPlutusData,
+    T: FeatureTraits + ToPlutusData,
 {
     fn to_plutus_data(&self) -> PlutusData {
         PlutusData::Constr(
@@ -120,7 +120,7 @@ where
 
 impl<T> FromPlutusData for PlutusInterval<T>
 where
-    T: FromPlutusData,
+    T: FeatureTraits + FromPlutusData,
 {
     fn from_plutus_data(data: PlutusData) -> Result<Self, PlutusDataError> {
         match data {
@@ -159,7 +159,7 @@ where
 
 impl<T> ToPlutusData for UpperBound<T>
 where
-    T: ToPlutusData,
+    T: FeatureTraits + ToPlutusData,
 {
     fn to_plutus_data(&self) -> PlutusData {
         PlutusData::Constr(
@@ -171,7 +171,7 @@ where
 
 impl<T> FromPlutusData for UpperBound<T>
 where
-    T: FromPlutusData,
+    T: FeatureTraits + FromPlutusData,
 {
     fn from_plutus_data(data: PlutusData) -> Result<Self, PlutusDataError> {
         match data {
@@ -210,7 +210,7 @@ where
 
 impl<T> ToPlutusData for LowerBound<T>
 where
-    T: ToPlutusData,
+    T: FeatureTraits + ToPlutusData,
 {
     fn to_plutus_data(&self) -> PlutusData {
         PlutusData::Constr(
@@ -222,7 +222,7 @@ where
 
 impl<T> FromPlutusData for LowerBound<T>
 where
-    T: FromPlutusData,
+    T: FeatureTraits + FromPlutusData,
 {
     fn from_plutus_data(data: PlutusData) -> Result<Self, PlutusDataError> {
         match data {
@@ -263,7 +263,7 @@ where
 
 impl<T> ToPlutusData for Extended<T>
 where
-    T: ToPlutusData,
+    T: FeatureTraits + ToPlutusData,
 {
     fn to_plutus_data(&self) -> PlutusData {
         match self {
@@ -278,7 +278,7 @@ where
 
 impl<T> FromPlutusData for Extended<T>
 where
-    T: FromPlutusData,
+    T: FeatureTraits + FromPlutusData,
 {
     fn from_plutus_data(data: PlutusData) -> Result<Self, PlutusDataError> {
         match data {
