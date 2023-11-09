@@ -1,8 +1,8 @@
 //! Types related to Plutus Datums
-use crate::crypto::LedgerBytes;
 use crate::plutus_data::{
-    verify_constr_fields, PlutusData, PlutusDataError, PlutusType, IsPlutusData,
+    verify_constr_fields, IsPlutusData, PlutusData, PlutusDataError, PlutusType,
 };
+pub use crate::v1::datum::{Datum, DatumHash};
 #[cfg(feature = "lbf")]
 use lbr_prelude::json::{self, Error, Json};
 use num_bigint::BigInt;
@@ -116,37 +116,5 @@ impl Json for OutputDatum {
                 got: "unknown constructor name".to_owned(),
             }),
         })
-    }
-}
-
-/// blake2b-256 hash of a datum
-#[derive(Clone, Debug, PartialEq, Eq)]
-#[cfg_attr(feature = "lbf", derive(Json))]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-pub struct DatumHash(pub LedgerBytes);
-
-impl IsPlutusData for DatumHash {
-    fn to_plutus_data(&self) -> PlutusData {
-        self.0.to_plutus_data()
-    }
-
-    fn from_plutus_data(data: PlutusData) -> Result<Self, PlutusDataError> {
-        IsPlutusData::from_plutus_data(data).map(Self)
-    }
-}
-
-/// Piece of information associated with a UTxO encoded into a PlutusData type.
-#[derive(Clone, Debug, PartialEq, Eq)]
-#[cfg_attr(feature = "lbf", derive(Json))]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-pub struct Datum(pub PlutusData);
-
-impl IsPlutusData for Datum {
-    fn to_plutus_data(&self) -> PlutusData {
-        self.0.clone()
-    }
-
-    fn from_plutus_data(data: PlutusData) -> Result<Self, PlutusDataError> {
-        IsPlutusData::from_plutus_data(data).map(Self)
     }
 }

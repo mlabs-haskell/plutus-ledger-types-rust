@@ -1,6 +1,6 @@
 //! Types related to Plutus scripts
-use crate::crypto::LedgerBytes;
-use crate::plutus_data::{PlutusData, PlutusDataError, IsPlutusData};
+use crate::plutus_data::{IsPlutusData, PlutusData, PlutusDataError};
+use crate::v1::crypto::LedgerBytes;
 #[cfg(feature = "lbf")]
 use lbr_prelude::json::Json;
 #[cfg(feature = "serde")]

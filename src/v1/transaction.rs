@@ -1,13 +1,12 @@
 //! Types related to Cardano transactions.
-use crate::address::Address;
-use crate::crypto::LedgerBytes;
-use crate::datum::OutputDatum;
-use crate::interval::PlutusInterval;
 use crate::plutus_data::{
-    verify_constr_fields, PlutusData, PlutusDataError, PlutusType, IsPlutusData,
+    verify_constr_fields, IsPlutusData, PlutusData, PlutusDataError, PlutusType,
 };
-use crate::script::ScriptHash;
-use crate::value::Value;
+use crate::v1::address::Address;
+use crate::v1::crypto::LedgerBytes;
+use crate::v1::datum::DatumHash;
+use crate::v1::interval::PlutusInterval;
+use crate::v1::value::Value;
 #[cfg(feature = "lbf")]
 use lbr_prelude::json::Json;
 use num_bigint::BigInt;
@@ -90,8 +89,7 @@ impl IsPlutusData for TransactionHash {
 #[cfg_attr(feature = "lbf", derive(Json))]
 pub struct TransactionOutput {
     pub address: Address,
-    pub datum: OutputDatum,
-    pub reference_script: Option<ScriptHash>,
+    pub datum_hash: DatumHash,
     pub value: Value,
 }
 
@@ -101,8 +99,7 @@ impl IsPlutusData for TransactionOutput {
             BigInt::from(0),
             vec![
                 self.address.to_plutus_data(),
-                self.datum.to_plutus_data(),
-                self.reference_script.to_plutus_data(),
+                self.datum_hash.to_plutus_data(),
                 self.value.to_plutus_data(),
             ],
         )
@@ -112,14 +109,11 @@ impl IsPlutusData for TransactionOutput {
         match data {
             PlutusData::Constr(flag, fields) => match u32::try_from(&flag) {
                 Ok(0) => {
-                    verify_constr_fields(&fields, 4)?;
+                    verify_constr_fields(&fields, 3)?;
                     Ok(TransactionOutput {
                         address: Address::from_plutus_data(fields[0].clone())?,
-                        datum: OutputDatum::from_plutus_data(fields[1].clone())?,
-                        reference_script: <Option<ScriptHash>>::from_plutus_data(
-                            fields[2].clone(),
-                        )?,
-                        value: Value::from_plutus_data(fields[3].clone())?,
+                        datum_hash: DatumHash::from_plutus_data(fields[1].clone())?,
+                        value: Value::from_plutus_data(fields[2].clone())?,
                     })
                 }
                 _ => Err(PlutusDataError::UnexpectedPlutusInvariant {

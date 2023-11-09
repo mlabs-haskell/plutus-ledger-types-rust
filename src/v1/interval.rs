@@ -1,7 +1,7 @@
 //! Types related to PlutusInterval
 use crate::feature_traits::FeatureTraits;
 use crate::plutus_data::{
-    verify_constr_fields, PlutusData, PlutusDataError, PlutusType, IsPlutusData,
+    verify_constr_fields, IsPlutusData, PlutusData, PlutusDataError, PlutusType,
 };
 #[cfg(feature = "lbf")]
 use lbr_prelude::json::Json;

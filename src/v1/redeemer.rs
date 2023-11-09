@@ -1,5 +1,5 @@
 //! Types related to Plutus Redeemers
-use crate::plutus_data::{PlutusData, PlutusDataError, IsPlutusData};
+use crate::plutus_data::{IsPlutusData, PlutusData, PlutusDataError};
 #[cfg(feature = "lbf")]
 use lbr_prelude::json::Json;
 #[cfg(feature = "serde")]

@@ -1,84 +1,32 @@
-//! Proptest strategies for most common types
+//! Proptest strategies for Plutus V1 types
 //!
 //! These strategies always return valid values.
-use crate::address::{
-    Address, CertificateIndex, ChainPointer, Credential, StakingCredential, TransactionIndex, Slot
-};
-use crate::crypto::{Ed25519PubKeyHash, LedgerBytes};
-use crate::datum::{Datum, DatumHash, OutputDatum};
 use crate::feature_traits::FeatureTraits;
-use crate::interval::{Extended, LowerBound, PlutusInterval, UpperBound};
+use crate::generators::correct::primitive::{arb_bool, arb_bytes, arb_integer};
 use crate::plutus_data::PlutusData;
-use crate::redeemer::Redeemer;
-use crate::script::{MintingPolicyHash, ScriptHash, ValidatorHash};
-use crate::transaction::{
+use crate::v1::address::{
+    Address, CertificateIndex, ChainPointer, Credential, Slot, StakingCredential, TransactionIndex,
+};
+use crate::v1::crypto::{Ed25519PubKeyHash, LedgerBytes};
+use crate::v1::datum::{Datum, DatumHash};
+use crate::v1::interval::{Extended, LowerBound, PlutusInterval, UpperBound};
+use crate::v1::redeemer::Redeemer;
+use crate::v1::script::{MintingPolicyHash, ScriptHash, ValidatorHash};
+use crate::v1::transaction::{
     POSIXTime, TransactionHash, TransactionInput, TransactionOutput, TxInInfo,
 };
-use crate::value::{AssetClass, CurrencySymbol, TokenName, Value};
-use num_bigint::{BigInt, Sign};
-use proptest::arbitrary::{any, StrategyFor};
-use proptest::char::CharStrategy;
+use crate::v2::value::{AssetClass, CurrencySymbol, TokenName, Value};
+use num_bigint::BigInt;
+use proptest::collection::btree_map;
 use proptest::collection::vec;
-use proptest::collection::{btree_map, btree_set};
 use proptest::option;
-use proptest::prelude::{prop_oneof, Just};
-use proptest::result::maybe_err;
+use proptest::prelude::{any, prop_oneof, Just};
 use proptest::strategy::Strategy;
-use std::collections::{BTreeMap, BTreeSet};
-
-/// Strategy to generate an arbitrary boolean
-pub fn arb_bool() -> StrategyFor<bool> {
-    any::<bool>()
-}
-
-/// Strategy to generate an arbitrary `Sign`
-/// Only used internally, to generate `BigInt`s
-fn arb_sign() -> impl Strategy<Value = Sign> {
-    // NoSign is only used for 0 values so we're not generating it here
-    prop_oneof![Just(Sign::Minus), Just(Sign::Plus)]
-}
-
-/// Strategy to generate an arbitrary BigInt
-pub fn arb_integer() -> impl Strategy<Value = BigInt> {
-    // Generating 5 vectors of with random u32 values, which gives a max bound of u32::MAX ^ 5
-    (arb_sign(), vec(any::<u32>(), 5)).prop_map(|(sign, value)| {
-        // As NoSign is only used for 0 values, we switch to NoSign when an empty vector is generated
-        BigInt::new(if value.is_empty() { Sign::NoSign } else { sign }, value)
-    })
-}
-
-/// Strategy to generate an arbitrary character
-pub fn arb_char<'a>() -> CharStrategy<'a> {
-    any::<char>()
-}
-
-/// Strategy to generate an arbitrary bytestring
-pub fn arb_bytes() -> StrategyFor<Vec<u8>> {
-    any::<Vec<u8>>()
-}
+use std::collections::BTreeMap;
 
 /// Strategy to generate an arbitrary bytestring with a fixed length
 pub fn arb_ledger_bytes(length: usize) -> impl Strategy<Value = LedgerBytes> {
     (vec(any::<u8>(), length)).prop_map(LedgerBytes)
-}
-
-/// Strategy to generate an arbitrary string
-pub fn arb_text() -> StrategyFor<String> {
-    any::<String>()
-}
-
-/// Strategy to generate a complicated data structure
-pub fn arb_complicated(
-) -> impl Strategy<Value = BTreeMap<String, Result<BTreeSet<char>, Option<Result<Vec<u8>, bool>>>>>
-{
-    btree_map(
-        arb_text(),
-        maybe_err(
-            btree_set(arb_char(), 20),
-            option::of(maybe_err(arb_bytes(), arb_bool())),
-        ),
-        20,
-    )
 }
 
 /// Strategy to generate an asset class
@@ -326,29 +274,13 @@ pub fn arb_transaction_input() -> impl Strategy<Value = TransactionInput> {
 
 /// Strategy to generate transaction output
 pub fn arb_transaction_output() -> impl Strategy<Value = TransactionOutput> {
-    (
-        arb_address(),
-        arb_value(),
-        arb_output_datum(),
-        option::of(arb_script_hash()),
-    )
-        .prop_map(
-            |(address, value, datum, reference_script)| TransactionOutput {
-                address,
-                value,
-                datum,
-                reference_script,
-            },
-        )
-}
-
-/// Strategy to generate an output datum
-pub fn arb_output_datum() -> impl Strategy<Value = OutputDatum> {
-    prop_oneof![
-        Just(OutputDatum::None),
-        arb_datum_hash().prop_map(OutputDatum::DatumHash),
-        arb_datum().prop_map(OutputDatum::InlineDatum)
-    ]
+    (arb_address(), arb_value(), arb_datum_hash()).prop_map(|(address, value, datum_hash)| {
+        TransactionOutput {
+            address,
+            value,
+            datum_hash,
+        }
+    })
 }
 
 /// Strategy to generate a TxInInfo

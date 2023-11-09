@@ -1,9 +1,9 @@
 //! Types related to Cardano addresses
-use crate::crypto::Ed25519PubKeyHash;
 use crate::plutus_data::{
-    verify_constr_fields, PlutusData, PlutusDataError, PlutusType, IsPlutusData,
+    verify_constr_fields, IsPlutusData, PlutusData, PlutusDataError, PlutusType,
 };
-use crate::script::ValidatorHash;
+use crate::v1::crypto::Ed25519PubKeyHash;
+use crate::v1::script::ValidatorHash;
 #[cfg(feature = "lbf")]
 use lbr_prelude::json::{self, Error, Json};
 use num_bigint::BigInt;
