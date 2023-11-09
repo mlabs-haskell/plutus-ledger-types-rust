@@ -16,8 +16,8 @@ use serde::{Deserialize, Serialize};
 
 /// An output of a transaction
 ///
-/// This must include a target address, an amount, an optional datum and an optional reference
-/// script
+/// This must include the target address, an optional datum, an optional reference script, and the
+/// amount of output tokens
 #[derive(Clone, Debug, PartialEq, Eq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "lbf", derive(Json))]

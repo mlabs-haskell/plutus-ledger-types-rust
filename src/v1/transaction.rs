@@ -82,8 +82,8 @@ impl IsPlutusData for TransactionHash {
 
 /// An output of a transaction
 ///
-/// This must include a target address, an amount, an optional datum and an optional reference
-/// script
+/// This must include the target address, the hash of the datum attached, and the amount of output
+/// tokens
 #[derive(Clone, Debug, PartialEq, Eq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "lbf", derive(Json))]
