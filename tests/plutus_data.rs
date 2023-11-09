@@ -1,7 +1,7 @@
 #[cfg(test)]
 mod plutusdata_roundtrip_tests {
     use plutus_ledger_api::generators::correct::*;
-    use plutus_ledger_api::plutus_data::{FromPlutusData, PlutusDataError, ToPlutusData};
+    use plutus_ledger_api::plutus_data::{PlutusDataError, IsPlutusData};
     use proptest::collection::{btree_map, btree_set, vec};
     use proptest::option;
     use proptest::prelude::*;
@@ -9,7 +9,7 @@ mod plutusdata_roundtrip_tests {
 
     fn from_to_plutus_data<T>(val: &T) -> Result<T, PlutusDataError>
     where
-        T: ToPlutusData + FromPlutusData + PartialEq,
+        T: IsPlutusData + PartialEq,
     {
         T::from_plutus_data(val.to_plutus_data())
     }

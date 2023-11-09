@@ -4,7 +4,7 @@ use crate::crypto::LedgerBytes;
 use crate::datum::OutputDatum;
 use crate::interval::PlutusInterval;
 use crate::plutus_data::{
-    verify_constr_fields, FromPlutusData, PlutusData, PlutusDataError, PlutusType, ToPlutusData,
+    verify_constr_fields, PlutusData, PlutusDataError, PlutusType, IsPlutusData,
 };
 use crate::script::ScriptHash;
 use crate::value::Value;
@@ -27,7 +27,7 @@ pub struct TransactionInput {
     pub index: BigInt,
 }
 
-impl ToPlutusData for TransactionInput {
+impl IsPlutusData for TransactionInput {
     fn to_plutus_data(&self) -> PlutusData {
         PlutusData::Constr(
             BigInt::from(0),
@@ -37,9 +37,7 @@ impl ToPlutusData for TransactionInput {
             ],
         )
     }
-}
 
-impl FromPlutusData for TransactionInput {
     fn from_plutus_data(data: PlutusData) -> Result<Self, PlutusDataError> {
         match data {
             PlutusData::Constr(flag, fields) => match u32::try_from(&flag) {
@@ -73,15 +71,13 @@ impl FromPlutusData for TransactionInput {
 #[cfg_attr(feature = "lbf", derive(Json))]
 pub struct TransactionHash(pub LedgerBytes);
 
-impl ToPlutusData for TransactionHash {
+impl IsPlutusData for TransactionHash {
     fn to_plutus_data(&self) -> PlutusData {
         self.0.to_plutus_data()
     }
-}
 
-impl FromPlutusData for TransactionHash {
     fn from_plutus_data(data: PlutusData) -> Result<Self, PlutusDataError> {
-        FromPlutusData::from_plutus_data(data).map(Self)
+        IsPlutusData::from_plutus_data(data).map(Self)
     }
 }
 
@@ -99,7 +95,7 @@ pub struct TransactionOutput {
     pub value: Value,
 }
 
-impl ToPlutusData for TransactionOutput {
+impl IsPlutusData for TransactionOutput {
     fn to_plutus_data(&self) -> PlutusData {
         PlutusData::Constr(
             BigInt::from(0),
@@ -111,9 +107,7 @@ impl ToPlutusData for TransactionOutput {
             ],
         )
     }
-}
 
-impl FromPlutusData for TransactionOutput {
     fn from_plutus_data(data: PlutusData) -> Result<Self, PlutusDataError> {
         match data {
             PlutusData::Constr(flag, fields) => match u32::try_from(&flag) {
@@ -148,15 +142,13 @@ impl FromPlutusData for TransactionOutput {
 #[cfg_attr(feature = "lbf", derive(Json))]
 pub struct POSIXTime(pub BigInt);
 
-impl ToPlutusData for POSIXTime {
+impl IsPlutusData for POSIXTime {
     fn to_plutus_data(&self) -> PlutusData {
         self.0.to_plutus_data()
     }
-}
 
-impl FromPlutusData for POSIXTime {
     fn from_plutus_data(data: PlutusData) -> Result<Self, PlutusDataError> {
-        FromPlutusData::from_plutus_data(data).map(Self)
+        IsPlutusData::from_plutus_data(data).map(Self)
     }
 }
 
@@ -171,7 +163,7 @@ pub struct TxInInfo {
     pub resolved: TransactionOutput,
 }
 
-impl ToPlutusData for TxInInfo {
+impl IsPlutusData for TxInInfo {
     fn to_plutus_data(&self) -> PlutusData {
         PlutusData::Constr(
             BigInt::from(0),
@@ -181,9 +173,7 @@ impl ToPlutusData for TxInInfo {
             ],
         )
     }
-}
 
-impl FromPlutusData for TxInInfo {
     fn from_plutus_data(data: PlutusData) -> Result<Self, PlutusDataError> {
         match data {
             PlutusData::Constr(flag, fields) => match u32::try_from(&flag) {

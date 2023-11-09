@@ -1,5 +1,5 @@
 //! Types for cryptograhic primitives, and other lower level building blocks
-use crate::plutus_data::{FromPlutusData, PlutusData, PlutusDataError, PlutusType, ToPlutusData};
+use crate::plutus_data::{PlutusData, PlutusDataError, PlutusType, IsPlutusData};
 #[cfg(feature = "lbf")]
 use data_encoding::HEXLOWER;
 #[cfg(feature = "lbf")]
@@ -15,14 +15,12 @@ use serde::{Deserialize, Serialize};
 #[cfg_attr(feature = "lbf", derive(Json))]
 pub struct Ed25519PubKeyHash(pub LedgerBytes);
 
-impl ToPlutusData for Ed25519PubKeyHash {
+impl IsPlutusData for Ed25519PubKeyHash {
     fn to_plutus_data(&self) -> PlutusData {
         let Ed25519PubKeyHash(LedgerBytes(bytes)) = self;
         PlutusData::Bytes(bytes.clone())
     }
-}
 
-impl FromPlutusData for Ed25519PubKeyHash {
     fn from_plutus_data(data: PlutusData) -> Result<Self, PlutusDataError> {
         match data {
             PlutusData::Bytes(bytes) => Ok(Self(LedgerBytes(bytes))),
@@ -40,14 +38,12 @@ impl FromPlutusData for Ed25519PubKeyHash {
 #[cfg_attr(feature = "lbf", derive(Json))]
 pub struct PaymentPubKeyHash(pub Ed25519PubKeyHash);
 
-impl ToPlutusData for PaymentPubKeyHash {
+impl IsPlutusData for PaymentPubKeyHash {
     fn to_plutus_data(&self) -> PlutusData {
         let PaymentPubKeyHash(Ed25519PubKeyHash(LedgerBytes(bytes))) = self;
         PlutusData::Bytes(bytes.clone())
     }
-}
 
-impl FromPlutusData for PaymentPubKeyHash {
     fn from_plutus_data(data: PlutusData) -> Result<Self, PlutusDataError> {
         match data {
             PlutusData::Bytes(bytes) => Ok(Self(Ed25519PubKeyHash(LedgerBytes(bytes)))),
@@ -65,14 +61,12 @@ impl FromPlutusData for PaymentPubKeyHash {
 #[cfg_attr(feature = "lbf", derive(Json))]
 pub struct StakePubKeyHash(pub Ed25519PubKeyHash);
 
-impl ToPlutusData for StakePubKeyHash {
+impl IsPlutusData for StakePubKeyHash {
     fn to_plutus_data(&self) -> PlutusData {
         let StakePubKeyHash(Ed25519PubKeyHash(LedgerBytes(bytes))) = self;
         PlutusData::Bytes(bytes.clone())
     }
-}
 
-impl FromPlutusData for StakePubKeyHash {
     fn from_plutus_data(data: PlutusData) -> Result<Self, PlutusDataError> {
         match data {
             PlutusData::Bytes(bytes) => Ok(Self(Ed25519PubKeyHash(LedgerBytes(bytes)))),
@@ -89,13 +83,11 @@ impl FromPlutusData for StakePubKeyHash {
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct LedgerBytes(pub Vec<u8>);
 
-impl ToPlutusData for LedgerBytes {
+impl IsPlutusData for LedgerBytes {
     fn to_plutus_data(&self) -> PlutusData {
         PlutusData::Bytes(self.0.clone())
     }
-}
 
-impl FromPlutusData for LedgerBytes {
     fn from_plutus_data(data: PlutusData) -> Result<Self, PlutusDataError> {
         match data {
             PlutusData::Bytes(bytes) => Ok(Self(bytes)),

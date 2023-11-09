@@ -19,11 +19,9 @@ pub enum PlutusData {
     Bytes(Vec<u8>),
 }
 
-pub trait ToPlutusData {
+pub trait IsPlutusData {
     fn to_plutus_data(&self) -> PlutusData;
-}
 
-pub trait FromPlutusData {
     fn from_plutus_data(plutus_data: PlutusData) -> Result<Self, PlutusDataError>
     where
         Self: Sized;
@@ -62,13 +60,11 @@ pub enum PlutusDataError {
     InternalError(String),
 }
 
-impl ToPlutusData for BigInt {
+impl IsPlutusData for BigInt {
     fn to_plutus_data(&self) -> PlutusData {
         PlutusData::Integer(self.clone())
     }
-}
 
-impl FromPlutusData for BigInt {
     fn from_plutus_data(plutus_data: PlutusData) -> Result<Self, PlutusDataError> {
         match plutus_data {
             PlutusData::Integer(int) => Ok(int),
@@ -80,7 +76,7 @@ impl FromPlutusData for BigInt {
     }
 }
 
-impl ToPlutusData for bool {
+impl IsPlutusData for bool {
     fn to_plutus_data(&self) -> PlutusData {
         if *self {
             PlutusData::Constr(BigInt::from(1), Vec::with_capacity(0))
@@ -88,9 +84,7 @@ impl ToPlutusData for bool {
             PlutusData::Constr(BigInt::from(0), Vec::with_capacity(0))
         }
     }
-}
 
-impl FromPlutusData for bool {
     fn from_plutus_data(plutus_data: PlutusData) -> Result<Self, PlutusDataError> {
         match plutus_data {
             PlutusData::Constr(flag, fields) => match u32::try_from(&flag) {
@@ -116,13 +110,11 @@ impl FromPlutusData for bool {
     }
 }
 
-impl ToPlutusData for char {
+impl IsPlutusData for char {
     fn to_plutus_data(&self) -> PlutusData {
         String::from(*self).to_plutus_data()
     }
-}
 
-impl FromPlutusData for char {
     fn from_plutus_data(plutus_data: PlutusData) -> Result<Self, PlutusDataError> {
         String::from_plutus_data(plutus_data).and_then(|str| {
             let mut chars = str.chars();
@@ -139,13 +131,11 @@ impl FromPlutusData for char {
     }
 }
 
-impl ToPlutusData for Vec<u8> {
+impl IsPlutusData for Vec<u8> {
     fn to_plutus_data(&self) -> PlutusData {
         PlutusData::Bytes(self.clone())
     }
-}
 
-impl FromPlutusData for Vec<u8> {
     fn from_plutus_data(plutus_data: PlutusData) -> Result<Self, PlutusDataError> {
         match plutus_data {
             PlutusData::Bytes(bytes) => Ok(bytes),
@@ -157,13 +147,11 @@ impl FromPlutusData for Vec<u8> {
     }
 }
 
-impl ToPlutusData for String {
+impl IsPlutusData for String {
     fn to_plutus_data(&self) -> PlutusData {
         PlutusData::Bytes(self.as_bytes().into())
     }
-}
 
-impl FromPlutusData for String {
     fn from_plutus_data(plutus_data: PlutusData) -> Result<Self, PlutusDataError> {
         match plutus_data {
             PlutusData::Bytes(bytes) => String::from_utf8(bytes).map_err(|err| {
@@ -180,9 +168,9 @@ impl FromPlutusData for String {
     }
 }
 
-impl<T> ToPlutusData for Option<T>
+impl<T> IsPlutusData for Option<T>
 where
-    T: ToPlutusData,
+    T: IsPlutusData,
 {
     fn to_plutus_data(&self) -> PlutusData {
         match self {
@@ -190,12 +178,7 @@ where
             None => PlutusData::Constr(BigInt::from(1), Vec::with_capacity(0)),
         }
     }
-}
 
-impl<T> FromPlutusData for Option<T>
-where
-    T: FromPlutusData,
-{
     fn from_plutus_data(plutus_data: PlutusData) -> Result<Self, PlutusDataError> {
         match plutus_data {
             PlutusData::Constr(flag, fields) => match u32::try_from(&flag) {
@@ -221,10 +204,10 @@ where
     }
 }
 
-impl<T, E> ToPlutusData for Result<T, E>
+impl<T, E> IsPlutusData for Result<T, E>
 where
-    T: ToPlutusData,
-    E: ToPlutusData,
+    T: IsPlutusData,
+    E: IsPlutusData,
 {
     fn to_plutus_data(&self) -> PlutusData {
         match self {
@@ -232,13 +215,7 @@ where
             Ok(val) => PlutusData::Constr(BigInt::from(1), vec![val.to_plutus_data()]),
         }
     }
-}
 
-impl<T, E> FromPlutusData for Result<T, E>
-where
-    T: FromPlutusData,
-    E: FromPlutusData,
-{
     fn from_plutus_data(plutus_data: PlutusData) -> Result<Self, PlutusDataError> {
         match plutus_data {
             PlutusData::Constr(flag, fields) => match u32::try_from(&flag) {
@@ -264,9 +241,9 @@ where
     }
 }
 
-impl<T> ToPlutusData for Vec<T>
+impl<T> IsPlutusData for Vec<T>
 where
-    T: ToPlutusData,
+    T: IsPlutusData,
 {
     fn to_plutus_data(&self) -> PlutusData {
         let values = self
@@ -276,12 +253,7 @@ where
 
         PlutusData::List(values)
     }
-}
 
-impl<T> FromPlutusData for Vec<T>
-where
-    T: FromPlutusData,
-{
     fn from_plutus_data(plutus_data: PlutusData) -> Result<Self, PlutusDataError> {
         match plutus_data {
             PlutusData::List(vec) => vec
@@ -296,9 +268,9 @@ where
     }
 }
 
-impl<T> ToPlutusData for BTreeSet<T>
+impl<T> IsPlutusData for BTreeSet<T>
 where
-    T: ToPlutusData + Eq + Ord,
+    T: IsPlutusData + Eq + Ord,
 {
     fn to_plutus_data(&self) -> PlutusData {
         let set = self
@@ -308,12 +280,7 @@ where
 
         PlutusData::List(set)
     }
-}
 
-impl<T> FromPlutusData for BTreeSet<T>
-where
-    T: FromPlutusData + Eq + Ord,
-{
     fn from_plutus_data(plutus_data: PlutusData) -> Result<Self, PlutusDataError> {
         match plutus_data {
             PlutusData::List(vec) => vec
@@ -328,10 +295,10 @@ where
     }
 }
 
-impl<K, V> ToPlutusData for BTreeMap<K, V>
+impl<K, V> IsPlutusData for BTreeMap<K, V>
 where
-    K: ToPlutusData + Eq + Ord,
-    V: ToPlutusData,
+    K: IsPlutusData + Eq + Ord,
+    V: IsPlutusData,
 {
     fn to_plutus_data(&self) -> PlutusData {
         let assoc_map = self
@@ -341,13 +308,7 @@ where
 
         PlutusData::Map(assoc_map)
     }
-}
 
-impl<K, V> FromPlutusData for BTreeMap<K, V>
-where
-    K: FromPlutusData + Eq + Ord,
-    V: FromPlutusData,
-{
     fn from_plutus_data(plutus_data: PlutusData) -> Result<Self, PlutusDataError> {
         match plutus_data {
             PlutusData::Map(dict) => dict
@@ -362,13 +323,11 @@ where
     }
 }
 
-impl ToPlutusData for () {
+impl IsPlutusData for () {
     fn to_plutus_data(&self) -> PlutusData {
         PlutusData::Constr(BigInt::from(0), Vec::with_capacity(0))
     }
-}
 
-impl FromPlutusData for () {
     fn from_plutus_data(plutus_data: PlutusData) -> Result<Self, PlutusDataError> {
         match plutus_data {
             PlutusData::Constr(flag, fields) => match u32::try_from(&flag) {
@@ -390,22 +349,20 @@ impl FromPlutusData for () {
     }
 }
 
-impl ToPlutusData for PlutusData {
+impl IsPlutusData for PlutusData {
     fn to_plutus_data(&self) -> PlutusData {
         self.clone()
     }
-}
 
-impl FromPlutusData for PlutusData {
     fn from_plutus_data(plutus_data: PlutusData) -> Result<Self, PlutusDataError> {
         Ok(plutus_data)
     }
 }
 
-impl<A, B> ToPlutusData for (A, B)
+impl<A, B> IsPlutusData for (A, B)
 where
-    A: ToPlutusData,
-    B: ToPlutusData,
+    A: IsPlutusData,
+    B: IsPlutusData,
 {
     fn to_plutus_data(&self) -> PlutusData {
         PlutusData::Constr(
@@ -413,13 +370,7 @@ where
             vec![self.0.to_plutus_data(), self.1.to_plutus_data()],
         )
     }
-}
 
-impl<A, B> FromPlutusData for (A, B)
-where
-    A: FromPlutusData,
-    B: FromPlutusData,
-{
     fn from_plutus_data(plutus_data: PlutusData) -> Result<Self, PlutusDataError> {
         match plutus_data {
             PlutusData::Constr(flag, fields) => match u32::try_from(&flag) {

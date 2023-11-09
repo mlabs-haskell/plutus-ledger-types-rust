@@ -1,5 +1,5 @@
 //! Types related to Plutus Redeemers
-use crate::plutus_data::{FromPlutusData, PlutusData, PlutusDataError, ToPlutusData};
+use crate::plutus_data::{PlutusData, PlutusDataError, IsPlutusData};
 #[cfg(feature = "lbf")]
 use lbr_prelude::json::Json;
 #[cfg(feature = "serde")]
@@ -12,14 +12,12 @@ use serde::{Deserialize, Serialize};
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct Redeemer(pub PlutusData);
 
-impl ToPlutusData for Redeemer {
+impl IsPlutusData for Redeemer {
     fn to_plutus_data(&self) -> PlutusData {
         self.0.clone()
     }
-}
 
-impl FromPlutusData for Redeemer {
     fn from_plutus_data(data: PlutusData) -> Result<Self, PlutusDataError> {
-        FromPlutusData::from_plutus_data(data).map(Self)
+        IsPlutusData::from_plutus_data(data).map(Self)
     }
 }

@@ -1,7 +1,7 @@
 //! Types related to PlutusInterval
 use crate::feature_traits::FeatureTraits;
 use crate::plutus_data::{
-    verify_constr_fields, FromPlutusData, PlutusData, PlutusDataError, PlutusType, ToPlutusData,
+    verify_constr_fields, PlutusData, PlutusDataError, PlutusType, IsPlutusData,
 };
 #[cfg(feature = "lbf")]
 use lbr_prelude::json::Json;
@@ -107,9 +107,9 @@ where
     pub to: UpperBound<T>,
 }
 
-impl<T> ToPlutusData for PlutusInterval<T>
+impl<T> IsPlutusData for PlutusInterval<T>
 where
-    T: FeatureTraits + ToPlutusData,
+    T: FeatureTraits + IsPlutusData,
 {
     fn to_plutus_data(&self) -> PlutusData {
         PlutusData::Constr(
@@ -117,12 +117,7 @@ where
             vec![self.from.to_plutus_data(), self.to.to_plutus_data()],
         )
     }
-}
 
-impl<T> FromPlutusData for PlutusInterval<T>
-where
-    T: FeatureTraits + FromPlutusData,
-{
     fn from_plutus_data(data: PlutusData) -> Result<Self, PlutusDataError> {
         match data {
             PlutusData::Constr(flag, fields) => match u32::try_from(&flag) {
@@ -158,9 +153,9 @@ where
     pub closed: bool,
 }
 
-impl<T> ToPlutusData for UpperBound<T>
+impl<T> IsPlutusData for UpperBound<T>
 where
-    T: FeatureTraits + ToPlutusData,
+    T: FeatureTraits + IsPlutusData,
 {
     fn to_plutus_data(&self) -> PlutusData {
         PlutusData::Constr(
@@ -168,12 +163,7 @@ where
             vec![self.bound.to_plutus_data(), self.closed.to_plutus_data()],
         )
     }
-}
 
-impl<T> FromPlutusData for UpperBound<T>
-where
-    T: FeatureTraits + FromPlutusData,
-{
     fn from_plutus_data(data: PlutusData) -> Result<Self, PlutusDataError> {
         match data {
             PlutusData::Constr(flag, fields) => match u32::try_from(&flag) {
@@ -209,9 +199,9 @@ where
     pub closed: bool,
 }
 
-impl<T> ToPlutusData for LowerBound<T>
+impl<T> IsPlutusData for LowerBound<T>
 where
-    T: FeatureTraits + ToPlutusData,
+    T: FeatureTraits + IsPlutusData,
 {
     fn to_plutus_data(&self) -> PlutusData {
         PlutusData::Constr(
@@ -219,12 +209,7 @@ where
             vec![self.bound.to_plutus_data(), self.closed.to_plutus_data()],
         )
     }
-}
 
-impl<T> FromPlutusData for LowerBound<T>
-where
-    T: FeatureTraits + FromPlutusData,
-{
     fn from_plutus_data(data: PlutusData) -> Result<Self, PlutusDataError> {
         match data {
             PlutusData::Constr(flag, fields) => match u32::try_from(&flag) {
@@ -262,9 +247,9 @@ where
     PosInf,
 }
 
-impl<T> ToPlutusData for Extended<T>
+impl<T> IsPlutusData for Extended<T>
 where
-    T: FeatureTraits + ToPlutusData,
+    T: FeatureTraits + IsPlutusData,
 {
     fn to_plutus_data(&self) -> PlutusData {
         match self {
@@ -275,12 +260,7 @@ where
             Extended::PosInf => PlutusData::Constr(BigInt::from(2), Vec::with_capacity(0)),
         }
     }
-}
 
-impl<T> FromPlutusData for Extended<T>
-where
-    T: FeatureTraits + FromPlutusData,
-{
     fn from_plutus_data(data: PlutusData) -> Result<Self, PlutusDataError> {
         match data {
             PlutusData::Constr(flag, fields) => match u32::try_from(&flag) {
@@ -290,7 +270,7 @@ where
                 }
                 Ok(1) => {
                     verify_constr_fields(&fields, 1)?;
-                    Ok(Extended::Finite(FromPlutusData::from_plutus_data(
+                    Ok(Extended::Finite(IsPlutusData::from_plutus_data(
                         fields[0].clone(),
                     )?))
                 }

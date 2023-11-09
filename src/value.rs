@@ -1,7 +1,7 @@
 //! Types related to Cardano values, such as Ada and native tokens.
 use crate::crypto::LedgerBytes;
 use crate::plutus_data::{
-    verify_constr_fields, FromPlutusData, PlutusData, PlutusDataError, PlutusType, ToPlutusData,
+    verify_constr_fields, PlutusData, PlutusDataError, PlutusType, IsPlutusData,
 };
 use crate::script::{MintingPolicyHash, ScriptHash};
 #[cfg(feature = "lbf")]
@@ -22,18 +22,16 @@ pub enum CurrencySymbol {
     NativeToken(MintingPolicyHash),
 }
 
-impl ToPlutusData for CurrencySymbol {
+impl IsPlutusData for CurrencySymbol {
     fn to_plutus_data(&self) -> PlutusData {
         match self {
             CurrencySymbol::Ada => String::from("").to_plutus_data(),
             CurrencySymbol::NativeToken(policy_hash) => policy_hash.to_plutus_data(),
         }
     }
-}
 
-impl FromPlutusData for CurrencySymbol {
     fn from_plutus_data(data: PlutusData) -> Result<Self, PlutusDataError> {
-        FromPlutusData::from_plutus_data(data).and_then(|bytes: LedgerBytes| {
+        IsPlutusData::from_plutus_data(data).and_then(|bytes: LedgerBytes| {
             if bytes.0.is_empty() {
                 Ok(CurrencySymbol::Ada)
             } else {
@@ -77,15 +75,13 @@ impl Json for CurrencySymbol {
 #[cfg_attr(feature = "lbf", derive(Json))]
 pub struct Value(pub BTreeMap<CurrencySymbol, BTreeMap<TokenName, BigInt>>);
 
-impl ToPlutusData for Value {
+impl IsPlutusData for Value {
     fn to_plutus_data(&self) -> PlutusData {
         self.0.to_plutus_data()
     }
-}
 
-impl FromPlutusData for Value {
     fn from_plutus_data(data: PlutusData) -> Result<Self, PlutusDataError> {
-        FromPlutusData::from_plutus_data(data).map(Self)
+        IsPlutusData::from_plutus_data(data).map(Self)
     }
 }
 
@@ -101,15 +97,13 @@ impl TokenName {
     }
 }
 
-impl ToPlutusData for TokenName {
+impl IsPlutusData for TokenName {
     fn to_plutus_data(&self) -> PlutusData {
         self.0.to_plutus_data()
     }
-}
 
-impl FromPlutusData for TokenName {
     fn from_plutus_data(data: PlutusData) -> Result<Self, PlutusDataError> {
-        FromPlutusData::from_plutus_data(data).map(Self)
+        IsPlutusData::from_plutus_data(data).map(Self)
     }
 }
 
@@ -122,7 +116,7 @@ pub struct AssetClass {
     pub token_name: TokenName,
 }
 
-impl ToPlutusData for AssetClass {
+impl IsPlutusData for AssetClass {
     fn to_plutus_data(&self) -> PlutusData {
         PlutusData::Constr(
             BigInt::from(0),
@@ -132,9 +126,7 @@ impl ToPlutusData for AssetClass {
             ],
         )
     }
-}
 
-impl FromPlutusData for AssetClass {
     fn from_plutus_data(data: PlutusData) -> Result<Self, PlutusDataError> {
         match data {
             PlutusData::Constr(flag, fields) => match u32::try_from(&flag) {

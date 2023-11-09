@@ -1,7 +1,7 @@
 //! Types related to Plutus Datums
 use crate::crypto::LedgerBytes;
 use crate::plutus_data::{
-    verify_constr_fields, FromPlutusData, PlutusData, PlutusDataError, PlutusType, ToPlutusData,
+    verify_constr_fields, PlutusData, PlutusDataError, PlutusType, IsPlutusData,
 };
 #[cfg(feature = "lbf")]
 use lbr_prelude::json::{self, Error, Json};
@@ -23,7 +23,7 @@ pub enum OutputDatum {
     InlineDatum(Datum),
 }
 
-impl ToPlutusData for OutputDatum {
+impl IsPlutusData for OutputDatum {
     fn to_plutus_data(&self) -> PlutusData {
         match self {
             OutputDatum::None => PlutusData::Constr(BigInt::from(0), vec![]),
@@ -35,9 +35,7 @@ impl ToPlutusData for OutputDatum {
             }
         }
     }
-}
 
-impl FromPlutusData for OutputDatum {
     fn from_plutus_data(data: PlutusData) -> Result<Self, PlutusDataError> {
         match data {
             PlutusData::Constr(flag, fields) => match u32::try_from(&flag) {
@@ -127,15 +125,13 @@ impl Json for OutputDatum {
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct DatumHash(pub LedgerBytes);
 
-impl ToPlutusData for DatumHash {
+impl IsPlutusData for DatumHash {
     fn to_plutus_data(&self) -> PlutusData {
         self.0.to_plutus_data()
     }
-}
 
-impl FromPlutusData for DatumHash {
     fn from_plutus_data(data: PlutusData) -> Result<Self, PlutusDataError> {
-        FromPlutusData::from_plutus_data(data).map(Self)
+        IsPlutusData::from_plutus_data(data).map(Self)
     }
 }
 
@@ -145,14 +141,12 @@ impl FromPlutusData for DatumHash {
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct Datum(pub PlutusData);
 
-impl ToPlutusData for Datum {
+impl IsPlutusData for Datum {
     fn to_plutus_data(&self) -> PlutusData {
         self.0.clone()
     }
-}
 
-impl FromPlutusData for Datum {
     fn from_plutus_data(data: PlutusData) -> Result<Self, PlutusDataError> {
-        FromPlutusData::from_plutus_data(data).map(Self)
+        IsPlutusData::from_plutus_data(data).map(Self)
     }
 }

@@ -1,7 +1,7 @@
 //! Types related to Cardano addresses
 use crate::crypto::Ed25519PubKeyHash;
 use crate::plutus_data::{
-    verify_constr_fields, FromPlutusData, PlutusData, PlutusDataError, PlutusType, ToPlutusData,
+    verify_constr_fields, PlutusData, PlutusDataError, PlutusType, IsPlutusData,
 };
 use crate::script::ValidatorHash;
 #[cfg(feature = "lbf")]
@@ -24,7 +24,7 @@ pub struct Address {
     pub staking_credential: Option<StakingCredential>,
 }
 
-impl ToPlutusData for Address {
+impl IsPlutusData for Address {
     fn to_plutus_data(&self) -> PlutusData {
         PlutusData::Constr(
             BigInt::from(0),
@@ -34,9 +34,7 @@ impl ToPlutusData for Address {
             ],
         )
     }
-}
 
-impl FromPlutusData for Address {
     fn from_plutus_data(data: PlutusData) -> Result<Self, PlutusDataError> {
         match data {
             PlutusData::Constr(flag, fields) => match u32::try_from(&flag) {
@@ -71,7 +69,7 @@ pub enum Credential {
     Script(ValidatorHash),
 }
 
-impl ToPlutusData for Credential {
+impl IsPlutusData for Credential {
     fn to_plutus_data(&self) -> PlutusData {
         match self {
             Credential::PubKey(pkh) => {
@@ -82,9 +80,7 @@ impl ToPlutusData for Credential {
             }
         }
     }
-}
 
-impl FromPlutusData for Credential {
     fn from_plutus_data(data: PlutusData) -> Result<Self, PlutusDataError> {
         match data {
             PlutusData::Constr(flag, fields) => match u32::try_from(&flag) {
@@ -161,7 +157,7 @@ pub enum StakingCredential {
     Pointer(ChainPointer),
 }
 
-impl ToPlutusData for StakingCredential {
+impl IsPlutusData for StakingCredential {
     fn to_plutus_data(&self) -> PlutusData {
         match self {
             StakingCredential::Hash(credential) => {
@@ -181,9 +177,7 @@ impl ToPlutusData for StakingCredential {
             ),
         }
     }
-}
 
-impl FromPlutusData for StakingCredential {
     fn from_plutus_data(data: PlutusData) -> Result<Self, PlutusDataError> {
         match data {
             PlutusData::Constr(flag, fields) => match u32::try_from(&flag) {
@@ -275,15 +269,13 @@ pub struct ChainPointer {
 #[cfg_attr(feature = "lbf", derive(Json))]
 pub struct Slot(pub BigInt);
 
-impl ToPlutusData for Slot {
+impl IsPlutusData for Slot {
     fn to_plutus_data(&self) -> PlutusData {
         self.0.to_plutus_data()
     }
-}
 
-impl FromPlutusData for Slot {
     fn from_plutus_data(data: PlutusData) -> Result<Self, PlutusDataError> {
-        FromPlutusData::from_plutus_data(data).map(Self)
+        IsPlutusData::from_plutus_data(data).map(Self)
     }
 }
 
@@ -293,15 +285,13 @@ impl FromPlutusData for Slot {
 #[cfg_attr(feature = "lbf", derive(Json))]
 pub struct CertificateIndex(pub BigInt);
 
-impl ToPlutusData for CertificateIndex {
+impl IsPlutusData for CertificateIndex {
     fn to_plutus_data(&self) -> PlutusData {
         self.0.to_plutus_data()
     }
-}
 
-impl FromPlutusData for CertificateIndex {
     fn from_plutus_data(data: PlutusData) -> Result<Self, PlutusDataError> {
-        FromPlutusData::from_plutus_data(data).map(Self)
+        IsPlutusData::from_plutus_data(data).map(Self)
     }
 }
 
@@ -312,14 +302,12 @@ impl FromPlutusData for CertificateIndex {
 #[cfg_attr(feature = "lbf", derive(Json))]
 pub struct TransactionIndex(pub BigInt);
 
-impl ToPlutusData for TransactionIndex {
+impl IsPlutusData for TransactionIndex {
     fn to_plutus_data(&self) -> PlutusData {
         self.0.to_plutus_data()
     }
-}
 
-impl FromPlutusData for TransactionIndex {
     fn from_plutus_data(data: PlutusData) -> Result<Self, PlutusDataError> {
-        FromPlutusData::from_plutus_data(data).map(Self)
+        IsPlutusData::from_plutus_data(data).map(Self)
     }
 }
