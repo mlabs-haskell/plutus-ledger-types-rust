@@ -2,13 +2,12 @@
 //!
 //! These strategies always return valid values.
 use crate::address::{
-    Address, CertificateIndex, ChainPointer, Credential, StakingCredential, TransactionIndex,
+    Address, CertificateIndex, ChainPointer, Credential, StakingCredential, TransactionIndex, Slot
 };
 use crate::crypto::{Ed25519PubKeyHash, LedgerBytes};
 use crate::datum::{Datum, DatumHash, OutputDatum};
 use crate::feature_traits::FeatureTraits;
 use crate::interval::{Extended, LowerBound, PlutusInterval, UpperBound};
-use crate::ledger_state::Slot;
 use crate::plutus_data::PlutusData;
 use crate::redeemer::Redeemer;
 use crate::script::{MintingPolicyHash, ScriptHash, ValidatorHash};

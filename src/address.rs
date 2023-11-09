@@ -1,6 +1,5 @@
 //! Types related to Cardano addresses
 use crate::crypto::Ed25519PubKeyHash;
-use crate::ledger_state::Slot;
 use crate::plutus_data::{
     verify_constr_fields, FromPlutusData, PlutusData, PlutusDataError, PlutusType, ToPlutusData,
 };
@@ -268,6 +267,24 @@ pub struct ChainPointer {
     pub slot_number: Slot,
     pub transaction_index: TransactionIndex,
     pub certificate_index: CertificateIndex,
+}
+
+/// Number of slots elapsed since genesis
+#[derive(Clone, Debug, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "lbf", derive(Json))]
+pub struct Slot(pub BigInt);
+
+impl ToPlutusData for Slot {
+    fn to_plutus_data(&self) -> PlutusData {
+        self.0.to_plutus_data()
+    }
+}
+
+impl FromPlutusData for Slot {
+    fn from_plutus_data(data: PlutusData) -> Result<Self, PlutusDataError> {
+        FromPlutusData::from_plutus_data(data).map(Self)
+    }
 }
 
 /// Position of the certificate in a certain transaction

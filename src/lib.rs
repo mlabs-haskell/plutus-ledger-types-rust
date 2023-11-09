@@ -4,7 +4,6 @@ pub mod datum;
 pub(crate) mod feature_traits;
 pub mod generators;
 pub mod interval;
-pub mod ledger_state;
 pub mod plutus_data;
 pub mod redeemer;
 pub mod script;
