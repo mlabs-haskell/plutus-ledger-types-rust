@@ -27,7 +27,7 @@
         perSystem = { self', pkgs, system, ... }:
           let
             overlays = [ (import rust-overlay) ];
-            crateName = "plutus-ledger-types-rust";
+            crateName = "plutus-ledger-api";
             rustWithTools = pkgs.rust-bin.stable.latest.default.override {
               extensions = [ "rustfmt" "rust-analyzer" "clippy" ];
             };

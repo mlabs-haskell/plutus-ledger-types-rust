@@ -1,7 +1,7 @@
 #[cfg(test)]
 mod plutusdata_roundtrip_tests {
-    use plutus_ledger_types::generators::correct::*;
-    use plutus_ledger_types::plutus_data::{FromPlutusData, PlutusDataError, ToPlutusData};
+    use plutus_ledger_api::generators::correct::*;
+    use plutus_ledger_api::plutus_data::{FromPlutusData, PlutusDataError, ToPlutusData};
     use proptest::collection::{btree_map, btree_set, vec};
     use proptest::option;
     use proptest::prelude::*;

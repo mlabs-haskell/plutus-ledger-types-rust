@@ -1,5 +1,5 @@
 [package]
-name = "plutus-ledger-types"
+name = "plutus-ledger-api"
 version = "0.1.0"
 edition = "2021"
 
