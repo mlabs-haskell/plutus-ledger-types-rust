@@ -24,7 +24,7 @@
           inputs.pre-commit-hooks-nix.flakeModule
           inputs.hercules-ci-effects.flakeModule
         ];
-        perSystem = { self', pkgs, system, ... }:
+        perSystem = { self', pkgs, system, config, ... }:
           let
             overlays = [ (import rust-overlay) ];
             crateName = "plutus-ledger-api";
@@ -40,18 +40,30 @@
             cargoArtifacts = craneLib.buildDepsOnly commonArgs;
           in
           {
+            debug = true;
             _module.args.pkgs = import nixpkgs {
               inherit system overlays;
             };
 
-            devShells.default = craneLib.devShell { checks = self'.checks; };
+            pre-commit.settings.hooks = {
+              rustfmt.enable = true;
+              taplo.enable = true;
+              nixpkgs-fmt.enable = true;
+              deadnix.enable = true;
+              markdownlint.enable = true;
+            };
+
+            devShells.default = craneLib.devShell {
+              checks = self'.checks;
+              packages = [ config.pre-commit.settings.package ];
+              shellHook = config.pre-commit.installationScript;
+            };
 
             packages.default = craneLib.buildPackage (commonArgs // {
               inherit cargoArtifacts;
               doTest = false;
             });
 
-            pre-commit.settings.hooks.rustfmt.enable = true;
 
             checks."${crateName}-test" = craneLib.cargoNextest (commonArgs // {
               inherit cargoArtifacts;
