@@ -114,11 +114,11 @@ impl IsPlutusData for Credential {
 impl Json for Credential {
     fn to_json(&self) -> Result<serde_json::Value, Error> {
         match self {
-            Credential::PubKey(pkh) => Ok(json::sum_constructor(
+            Credential::PubKey(pkh) => Ok(json::json_constructor(
                 "PubKeyCredential",
                 vec![pkh.to_json()?],
             )),
-            Credential::Script(val_hash) => Ok(json::sum_constructor(
+            Credential::Script(val_hash) => Ok(json::json_constructor(
                 "ScriptCredential",
                 vec![val_hash.to_json()?],
             )),
@@ -126,26 +126,34 @@ impl Json for Credential {
     }
 
     fn from_json(value: serde_json::Value) -> Result<Self, Error> {
-        json::sum_parser(&value).and_then(|obj| match obj {
-            ("PubKeyCredential", ctor_fields) => match &ctor_fields[..] {
-                [pkh] => Ok(Credential::PubKey(Json::from_json(pkh.clone())?)),
-                _ => Err(Error::UnexpectedArrayLength {
-                    wanted: 1,
-                    got: ctor_fields.len(),
-                }),
-            },
-            ("ScriptCredential", ctor_fields) => match &ctor_fields[..] {
-                [val_hash] => Ok(Credential::Script(Json::from_json(val_hash.clone())?)),
-                _ => Err(Error::UnexpectedArrayLength {
-                    wanted: 1,
-                    got: ctor_fields.len(),
-                }),
-            },
-            _ => Err(Error::UnexpectedJsonInvariant {
-                wanted: "constructor names (Nothing, Just)".to_owned(),
-                got: "unknown constructor name".to_owned(),
-            }),
-        })
+        json::case_json_constructor(
+            "Plutus.V1.Credential",
+            vec![
+                (
+                    "PubKeyCredential",
+                    Box::new(|ctor_fields| match &ctor_fields[..] {
+                        [pkh] => Ok(Credential::PubKey(Json::from_json(pkh.clone())?)),
+                        _ => Err(Error::UnexpectedArrayLength {
+                            wanted: 1,
+                            got: ctor_fields.len(),
+                            parser: "Plutus.V1.Credential".to_owned(),
+                        }),
+                    }),
+                ),
+                (
+                    "ScriptCredential",
+                    Box::new(|ctor_fields| match &ctor_fields[..] {
+                        [val_hash] => Ok(Credential::Script(Json::from_json(val_hash.clone())?)),
+                        _ => Err(Error::UnexpectedArrayLength {
+                            wanted: 1,
+                            got: ctor_fields.len(),
+                            parser: "Plutus.V1.Credential".to_owned(),
+                        }),
+                    }),
+                ),
+            ],
+            value,
+        )
     }
 }
 
@@ -214,9 +222,9 @@ impl Json for StakingCredential {
     fn to_json(&self) -> Result<serde_json::Value, Error> {
         match self {
             StakingCredential::Hash(pkh) => {
-                Ok(json::sum_constructor("StakingHash", vec![pkh.to_json()?]))
+                Ok(json::json_constructor("StakingHash", vec![pkh.to_json()?]))
             }
-            StakingCredential::Pointer(val_hash) => Ok(json::sum_constructor(
+            StakingCredential::Pointer(val_hash) => Ok(json::json_constructor(
                 "StakingPtr",
                 vec![val_hash.to_json()?],
             )),
@@ -224,28 +232,36 @@ impl Json for StakingCredential {
     }
 
     fn from_json(value: serde_json::Value) -> Result<Self, Error> {
-        json::sum_parser(&value).and_then(|obj| match obj {
-            ("StakingHash", ctor_fields) => match &ctor_fields[..] {
-                [pkh] => Ok(StakingCredential::Hash(Json::from_json(pkh.clone())?)),
-                _ => Err(Error::UnexpectedArrayLength {
-                    wanted: 1,
-                    got: ctor_fields.len(),
-                }),
-            },
-            ("StakingPtr", ctor_fields) => match &ctor_fields[..] {
-                [val_hash] => Ok(StakingCredential::Pointer(Json::from_json(
-                    val_hash.clone(),
-                )?)),
-                _ => Err(Error::UnexpectedArrayLength {
-                    wanted: 1,
-                    got: ctor_fields.len(),
-                }),
-            },
-            _ => Err(Error::UnexpectedJsonInvariant {
-                wanted: "constructor names (Nothing, Just)".to_owned(),
-                got: "unknown constructor name".to_owned(),
-            }),
-        })
+        json::case_json_constructor(
+            "Plutus.V1.StakingCredential",
+            vec![
+                (
+                    "StakingHash",
+                    Box::new(|ctor_fields| match &ctor_fields[..] {
+                        [pkh] => Ok(StakingCredential::Hash(Json::from_json(pkh.clone())?)),
+                        _ => Err(Error::UnexpectedArrayLength {
+                            wanted: 1,
+                            got: ctor_fields.len(),
+                            parser: "Plutus.V1.StakingCredential".to_owned(),
+                        }),
+                    }),
+                ),
+                (
+                    "StakingPtr",
+                    Box::new(|ctor_fields| match &ctor_fields[..] {
+                        [val_hash] => Ok(StakingCredential::Pointer(Json::from_json(
+                            val_hash.clone(),
+                        )?)),
+                        _ => Err(Error::UnexpectedArrayLength {
+                            wanted: 1,
+                            got: ctor_fields.len(),
+                            parser: "Plutus.V1.StakingCredential".to_owned(),
+                        }),
+                    }),
+                ),
+            ],
+            value,
+        )
     }
 }
 

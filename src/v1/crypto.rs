@@ -112,6 +112,7 @@ impl Json for LedgerBytes {
                 .map_err(|_| Error::UnexpectedJsonInvariant {
                     wanted: "base16 string".to_owned(),
                     got: "unexpected string".to_owned(),
+                    parser: "Plutus.V1.Bytes".to_owned(),
                 })
         })?;
 
