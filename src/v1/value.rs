@@ -64,6 +64,7 @@ impl Json for CurrencySymbol {
             _ => Err(Error::UnexpectedJsonType {
                 wanted: JsonType::String,
                 got: JsonType::from(&value),
+                parser: "Plutus.V1.CurrencySymbol".to_owned(),
             }),
         }
     }
