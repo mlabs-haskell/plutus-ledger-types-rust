@@ -16,7 +16,7 @@ use serde::{Deserialize, Serialize};
 /// An address consists of a payment part (credential) and a delegation part (staking_credential).
 /// In order to serialize an address to `bech32`, the network kind must be known.
 /// For a better understanding of all the Cardano address types, read [CIP 19](https://cips.cardano.org/cips/cip19/)
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "lbf", derive(Json))]
 pub struct Address {
@@ -62,7 +62,7 @@ impl IsPlutusData for Address {
 }
 
 /// A public key hash or validator hash credential (used as a payment or a staking credential)
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub enum Credential {
     PubKey(Ed25519PubKeyHash),
@@ -150,7 +150,7 @@ impl Json for Credential {
 }
 
 /// Credential (public key hash or pointer) used for staking
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub enum StakingCredential {
     Hash(Credential),
@@ -254,7 +254,7 @@ impl Json for StakingCredential {
 /// - An absolute slot number
 /// - A transaction inder (within that slot)
 /// - A (delegation) certificate index (within that transacton)
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "lbf", derive(Json))]
 pub struct ChainPointer {
@@ -264,7 +264,7 @@ pub struct ChainPointer {
 }
 
 /// Number of slots elapsed since genesis
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "lbf", derive(Json))]
 pub struct Slot(pub BigInt);
@@ -280,7 +280,7 @@ impl IsPlutusData for Slot {
 }
 
 /// Position of the certificate in a certain transaction
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "lbf", derive(Json))]
 pub struct CertificateIndex(pub BigInt);
@@ -297,7 +297,7 @@ impl IsPlutusData for CertificateIndex {
 
 /// Position of a transaction in a given slot
 /// This is not identical to the index of a `TransactionInput`
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "lbf", derive(Json))]
 pub struct TransactionIndex(pub BigInt);

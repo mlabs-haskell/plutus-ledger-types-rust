@@ -8,10 +8,16 @@ use lbr_prelude::json::Json;
 use serde::{Deserialize, Serialize};
 
 /// blake2b-256 hash of a datum
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
 #[cfg_attr(feature = "lbf", derive(Json))]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct DatumHash(pub LedgerBytes);
+
+impl std::hash::Hash for DatumHash {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        state.write(&self.0 .0)
+    }
+}
 
 impl IsPlutusData for DatumHash {
     fn to_plutus_data(&self) -> PlutusData {
@@ -24,7 +30,7 @@ impl IsPlutusData for DatumHash {
 }
 
 /// Piece of information associated with a UTxO encoded into a PlutusData type.
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[cfg_attr(feature = "lbf", derive(Json))]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct Datum(pub PlutusData);

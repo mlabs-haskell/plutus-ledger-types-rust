@@ -7,7 +7,7 @@ use lbr_prelude::json::Json;
 use serde::{Deserialize, Serialize};
 
 /// Identifier of a validator script
-#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "lbf", derive(Json))]
 pub struct ValidatorHash(pub ScriptHash);
@@ -23,7 +23,7 @@ impl IsPlutusData for ValidatorHash {
 }
 
 /// Hash of a minting policy script
-#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "lbf", derive(Json))]
 pub struct MintingPolicyHash(pub ScriptHash);
@@ -43,6 +43,12 @@ impl IsPlutusData for MintingPolicyHash {
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "lbf", derive(Json))]
 pub struct ScriptHash(pub LedgerBytes);
+
+impl std::hash::Hash for ScriptHash {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        state.write(&self.0 .0)
+    }
+}
 
 impl IsPlutusData for ScriptHash {
     fn to_plutus_data(&self) -> PlutusData {

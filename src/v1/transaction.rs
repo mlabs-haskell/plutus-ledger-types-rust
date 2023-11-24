@@ -18,7 +18,7 @@ use serde::{Deserialize, Serialize};
 ///
 /// Also know as `TxOutRef` from Plutus, this identifies a UTxO by its transacton hash and index
 /// inside the transaction
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "lbf", derive(Json))]
 pub struct TransactionInput {
@@ -65,10 +65,16 @@ impl IsPlutusData for TransactionInput {
 ///
 /// Also known as Transaction ID or `TxID`.
 /// Note: Plutus docs might incorrectly state that it uses SHA256.
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "lbf", derive(Json))]
 pub struct TransactionHash(pub LedgerBytes);
+
+impl std::hash::Hash for TransactionHash {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        state.write(&self.0 .0)
+    }
+}
 
 impl IsPlutusData for TransactionHash {
     fn to_plutus_data(&self) -> PlutusData {
@@ -131,7 +137,7 @@ impl IsPlutusData for TransactionOutput {
 }
 
 /// POSIX time is measured as the number of milliseconds since 1970-01-01T00:00:00Z
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "lbf", derive(Json))]
 pub struct POSIXTime(pub BigInt);
