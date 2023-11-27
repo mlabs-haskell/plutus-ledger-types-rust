@@ -5,7 +5,7 @@ mod plutusdata_roundtrip_tests {
     where
         T: IsPlutusData + PartialEq,
     {
-        T::from_plutus_data(val.to_plutus_data())
+        T::from_plutus_data(&val.to_plutus_data())
     }
 
     mod primitive {
