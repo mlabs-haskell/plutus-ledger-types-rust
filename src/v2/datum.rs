@@ -36,9 +36,9 @@ impl IsPlutusData for OutputDatum {
         }
     }
 
-    fn from_plutus_data(data: PlutusData) -> Result<Self, PlutusDataError> {
+    fn from_plutus_data(data: &PlutusData) -> Result<Self, PlutusDataError> {
         match data {
-            PlutusData::Constr(flag, fields) => match u32::try_from(&flag) {
+            PlutusData::Constr(flag, fields) => match u32::try_from(flag) {
                 Ok(0) => {
                     verify_constr_fields(&fields, 0)?;
                     Ok(OutputDatum::None)
@@ -46,13 +46,13 @@ impl IsPlutusData for OutputDatum {
                 Ok(1) => {
                     verify_constr_fields(&fields, 1)?;
                     Ok(OutputDatum::DatumHash(DatumHash::from_plutus_data(
-                        fields[0].clone(),
+                        &fields[0],
                     )?))
                 }
                 Ok(2) => {
                     verify_constr_fields(&fields, 1)?;
                     Ok(OutputDatum::InlineDatum(Datum::from_plutus_data(
-                        fields[0].clone(),
+                        &fields[0],
                     )?))
                 }
                 _ => Err(PlutusDataError::UnexpectedPlutusInvariant {
@@ -63,7 +63,7 @@ impl IsPlutusData for OutputDatum {
 
             _ => Err(PlutusDataError::UnexpectedPlutusType {
                 wanted: PlutusType::Constr,
-                got: PlutusType::from(&data),
+                got: PlutusType::from(data),
             }),
         }
     }

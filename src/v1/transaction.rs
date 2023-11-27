@@ -37,14 +37,14 @@ impl IsPlutusData for TransactionInput {
         )
     }
 
-    fn from_plutus_data(data: PlutusData) -> Result<Self, PlutusDataError> {
+    fn from_plutus_data(data: &PlutusData) -> Result<Self, PlutusDataError> {
         match data {
-            PlutusData::Constr(flag, fields) => match u32::try_from(&flag) {
+            PlutusData::Constr(flag, fields) => match u32::try_from(flag) {
                 Ok(0) => {
                     verify_constr_fields(&fields, 2)?;
                     Ok(TransactionInput {
-                        transaction_id: TransactionHash::from_plutus_data(fields[0].clone())?,
-                        index: BigInt::from_plutus_data(fields[1].clone())?,
+                        transaction_id: TransactionHash::from_plutus_data(&fields[0])?,
+                        index: BigInt::from_plutus_data(&fields[1])?,
                     })
                 }
                 _ => Err(PlutusDataError::UnexpectedPlutusInvariant {
@@ -55,7 +55,7 @@ impl IsPlutusData for TransactionInput {
 
             _ => Err(PlutusDataError::UnexpectedPlutusType {
                 wanted: PlutusType::Constr,
-                got: PlutusType::from(&data),
+                got: PlutusType::from(data),
             }),
         }
     }
@@ -75,7 +75,7 @@ impl IsPlutusData for TransactionHash {
         self.0.to_plutus_data()
     }
 
-    fn from_plutus_data(data: PlutusData) -> Result<Self, PlutusDataError> {
+    fn from_plutus_data(data: &PlutusData) -> Result<Self, PlutusDataError> {
         IsPlutusData::from_plutus_data(data).map(Self)
     }
 }
@@ -105,15 +105,15 @@ impl IsPlutusData for TransactionOutput {
         )
     }
 
-    fn from_plutus_data(data: PlutusData) -> Result<Self, PlutusDataError> {
+    fn from_plutus_data(data: &PlutusData) -> Result<Self, PlutusDataError> {
         match data {
-            PlutusData::Constr(flag, fields) => match u32::try_from(&flag) {
+            PlutusData::Constr(flag, fields) => match u32::try_from(flag) {
                 Ok(0) => {
                     verify_constr_fields(&fields, 3)?;
                     Ok(TransactionOutput {
-                        address: Address::from_plutus_data(fields[0].clone())?,
-                        datum_hash: DatumHash::from_plutus_data(fields[1].clone())?,
-                        value: Value::from_plutus_data(fields[2].clone())?,
+                        address: Address::from_plutus_data(&fields[0])?,
+                        datum_hash: DatumHash::from_plutus_data(&fields[1])?,
+                        value: Value::from_plutus_data(&fields[2])?,
                     })
                 }
                 _ => Err(PlutusDataError::UnexpectedPlutusInvariant {
@@ -124,7 +124,7 @@ impl IsPlutusData for TransactionOutput {
 
             _ => Err(PlutusDataError::UnexpectedPlutusType {
                 wanted: PlutusType::Constr,
-                got: PlutusType::from(&data),
+                got: PlutusType::from(data),
             }),
         }
     }
@@ -141,7 +141,7 @@ impl IsPlutusData for POSIXTime {
         self.0.to_plutus_data()
     }
 
-    fn from_plutus_data(data: PlutusData) -> Result<Self, PlutusDataError> {
+    fn from_plutus_data(data: &PlutusData) -> Result<Self, PlutusDataError> {
         IsPlutusData::from_plutus_data(data).map(Self)
     }
 }
@@ -168,14 +168,14 @@ impl IsPlutusData for TxInInfo {
         )
     }
 
-    fn from_plutus_data(data: PlutusData) -> Result<Self, PlutusDataError> {
+    fn from_plutus_data(data: &PlutusData) -> Result<Self, PlutusDataError> {
         match data {
-            PlutusData::Constr(flag, fields) => match u32::try_from(&flag) {
+            PlutusData::Constr(flag, fields) => match u32::try_from(flag) {
                 Ok(0) => {
                     verify_constr_fields(&fields, 2)?;
                     Ok(TxInInfo {
-                        transaction_input: TransactionInput::from_plutus_data(fields[0].clone())?,
-                        resolved: TransactionOutput::from_plutus_data(fields[1].clone())?,
+                        transaction_input: TransactionInput::from_plutus_data(&fields[0])?,
+                        resolved: TransactionOutput::from_plutus_data(&fields[1])?,
                     })
                 }
                 _ => Err(PlutusDataError::UnexpectedPlutusInvariant {
@@ -186,7 +186,7 @@ impl IsPlutusData for TxInInfo {
 
             _ => Err(PlutusDataError::UnexpectedPlutusType {
                 wanted: PlutusType::Constr,
-                got: PlutusType::from(&data),
+                got: PlutusType::from(data),
             }),
         }
     }

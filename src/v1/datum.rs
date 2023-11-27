@@ -18,7 +18,7 @@ impl IsPlutusData for DatumHash {
         self.0.to_plutus_data()
     }
 
-    fn from_plutus_data(data: PlutusData) -> Result<Self, PlutusDataError> {
+    fn from_plutus_data(data: &PlutusData) -> Result<Self, PlutusDataError> {
         IsPlutusData::from_plutus_data(data).map(Self)
     }
 }
@@ -34,7 +34,7 @@ impl IsPlutusData for Datum {
         self.0.clone()
     }
 
-    fn from_plutus_data(data: PlutusData) -> Result<Self, PlutusDataError> {
+    fn from_plutus_data(data: &PlutusData) -> Result<Self, PlutusDataError> {
         IsPlutusData::from_plutus_data(data).map(Self)
     }
 }

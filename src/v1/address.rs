@@ -35,15 +35,15 @@ impl IsPlutusData for Address {
         )
     }
 
-    fn from_plutus_data(data: PlutusData) -> Result<Self, PlutusDataError> {
+    fn from_plutus_data(data: &PlutusData) -> Result<Self, PlutusDataError> {
         match data {
-            PlutusData::Constr(flag, fields) => match u32::try_from(&flag) {
+            PlutusData::Constr(flag, fields) => match u32::try_from(flag) {
                 Ok(0) => {
                     verify_constr_fields(&fields, 2)?;
                     Ok(Address {
-                        credential: Credential::from_plutus_data(fields[0].clone())?,
+                        credential: Credential::from_plutus_data(&fields[0])?,
                         staking_credential: <Option<StakingCredential>>::from_plutus_data(
-                            fields[1].clone(),
+                            &fields[1],
                         )?,
                     })
                 }
@@ -55,7 +55,7 @@ impl IsPlutusData for Address {
 
             _ => Err(PlutusDataError::UnexpectedPlutusType {
                 wanted: PlutusType::Constr,
-                got: PlutusType::from(&data),
+                got: PlutusType::from(data),
             }),
         }
     }
@@ -81,19 +81,19 @@ impl IsPlutusData for Credential {
         }
     }
 
-    fn from_plutus_data(data: PlutusData) -> Result<Self, PlutusDataError> {
+    fn from_plutus_data(data: &PlutusData) -> Result<Self, PlutusDataError> {
         match data {
-            PlutusData::Constr(flag, fields) => match u32::try_from(&flag) {
+            PlutusData::Constr(flag, fields) => match u32::try_from(flag) {
                 Ok(0) => {
                     verify_constr_fields(&fields, 1)?;
                     Ok(Credential::PubKey(Ed25519PubKeyHash::from_plutus_data(
-                        fields[0].clone(),
+                        &fields[0],
                     )?))
                 }
                 Ok(1) => {
                     verify_constr_fields(&fields, 1)?;
                     Ok(Credential::Script(ValidatorHash::from_plutus_data(
-                        fields[0].clone(),
+                        &fields[0],
                     )?))
                 }
                 _ => Err(PlutusDataError::UnexpectedPlutusInvariant {
@@ -104,7 +104,7 @@ impl IsPlutusData for Credential {
 
             _ => Err(PlutusDataError::UnexpectedPlutusType {
                 wanted: PlutusType::Constr,
-                got: PlutusType::from(&data),
+                got: PlutusType::from(data),
             }),
         }
     }
@@ -186,21 +186,21 @@ impl IsPlutusData for StakingCredential {
         }
     }
 
-    fn from_plutus_data(data: PlutusData) -> Result<Self, PlutusDataError> {
+    fn from_plutus_data(data: &PlutusData) -> Result<Self, PlutusDataError> {
         match data {
-            PlutusData::Constr(flag, fields) => match u32::try_from(&flag) {
+            PlutusData::Constr(flag, fields) => match u32::try_from(flag) {
                 Ok(0) => {
                     verify_constr_fields(&fields, 1)?;
                     Ok(StakingCredential::Hash(Credential::from_plutus_data(
-                        fields[0].clone(),
+                        &fields[0],
                     )?))
                 }
                 Ok(1) => {
                     verify_constr_fields(&fields, 3)?;
                     Ok(StakingCredential::Pointer(ChainPointer {
-                        slot_number: Slot::from_plutus_data(fields[0].clone())?,
-                        transaction_index: TransactionIndex::from_plutus_data(fields[1].clone())?,
-                        certificate_index: CertificateIndex::from_plutus_data(fields[2].clone())?,
+                        slot_number: Slot::from_plutus_data(&fields[0])?,
+                        transaction_index: TransactionIndex::from_plutus_data(&fields[1])?,
+                        certificate_index: CertificateIndex::from_plutus_data(&fields[2])?,
                     }))
                 }
                 _ => Err(PlutusDataError::UnexpectedPlutusInvariant {
@@ -211,7 +211,7 @@ impl IsPlutusData for StakingCredential {
 
             _ => Err(PlutusDataError::UnexpectedPlutusType {
                 wanted: PlutusType::Constr,
-                got: PlutusType::from(&data),
+                got: PlutusType::from(data),
             }),
         }
     }
@@ -290,7 +290,7 @@ impl IsPlutusData for Slot {
         self.0.to_plutus_data()
     }
 
-    fn from_plutus_data(data: PlutusData) -> Result<Self, PlutusDataError> {
+    fn from_plutus_data(data: &PlutusData) -> Result<Self, PlutusDataError> {
         IsPlutusData::from_plutus_data(data).map(Self)
     }
 }
@@ -306,7 +306,7 @@ impl IsPlutusData for CertificateIndex {
         self.0.to_plutus_data()
     }
 
-    fn from_plutus_data(data: PlutusData) -> Result<Self, PlutusDataError> {
+    fn from_plutus_data(data: &PlutusData) -> Result<Self, PlutusDataError> {
         IsPlutusData::from_plutus_data(data).map(Self)
     }
 }
@@ -323,7 +323,7 @@ impl IsPlutusData for TransactionIndex {
         self.0.to_plutus_data()
     }
 
-    fn from_plutus_data(data: PlutusData) -> Result<Self, PlutusDataError> {
+    fn from_plutus_data(data: &PlutusData) -> Result<Self, PlutusDataError> {
         IsPlutusData::from_plutus_data(data).map(Self)
     }
 }

@@ -17,7 +17,7 @@ impl IsPlutusData for Redeemer {
         self.0.clone()
     }
 
-    fn from_plutus_data(data: PlutusData) -> Result<Self, PlutusDataError> {
+    fn from_plutus_data(data: &PlutusData) -> Result<Self, PlutusDataError> {
         IsPlutusData::from_plutus_data(data).map(Self)
     }
 }

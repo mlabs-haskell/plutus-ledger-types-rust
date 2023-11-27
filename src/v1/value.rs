@@ -30,7 +30,7 @@ impl IsPlutusData for CurrencySymbol {
         }
     }
 
-    fn from_plutus_data(data: PlutusData) -> Result<Self, PlutusDataError> {
+    fn from_plutus_data(data: &PlutusData) -> Result<Self, PlutusDataError> {
         IsPlutusData::from_plutus_data(data).and_then(|bytes: LedgerBytes| {
             if bytes.0.is_empty() {
                 Ok(CurrencySymbol::Ada)
@@ -81,7 +81,7 @@ impl IsPlutusData for Value {
         self.0.to_plutus_data()
     }
 
-    fn from_plutus_data(data: PlutusData) -> Result<Self, PlutusDataError> {
+    fn from_plutus_data(data: &PlutusData) -> Result<Self, PlutusDataError> {
         IsPlutusData::from_plutus_data(data).map(Self)
     }
 }
@@ -103,7 +103,7 @@ impl IsPlutusData for TokenName {
         self.0.to_plutus_data()
     }
 
-    fn from_plutus_data(data: PlutusData) -> Result<Self, PlutusDataError> {
+    fn from_plutus_data(data: &PlutusData) -> Result<Self, PlutusDataError> {
         IsPlutusData::from_plutus_data(data).map(Self)
     }
 }
@@ -128,14 +128,14 @@ impl IsPlutusData for AssetClass {
         )
     }
 
-    fn from_plutus_data(data: PlutusData) -> Result<Self, PlutusDataError> {
+    fn from_plutus_data(data: &PlutusData) -> Result<Self, PlutusDataError> {
         match data {
-            PlutusData::Constr(flag, fields) => match u32::try_from(&flag) {
+            PlutusData::Constr(flag, fields) => match u32::try_from(flag) {
                 Ok(0) => {
                     verify_constr_fields(&fields, 2)?;
                     Ok(AssetClass {
-                        currency_symbol: CurrencySymbol::from_plutus_data(fields[0].clone())?,
-                        token_name: TokenName::from_plutus_data(fields[1].clone())?,
+                        currency_symbol: CurrencySymbol::from_plutus_data(&fields[0])?,
+                        token_name: TokenName::from_plutus_data(&fields[1])?,
                     })
                 }
                 _ => Err(PlutusDataError::UnexpectedPlutusInvariant {
@@ -146,7 +146,7 @@ impl IsPlutusData for AssetClass {
 
             _ => Err(PlutusDataError::UnexpectedPlutusType {
                 wanted: PlutusType::Constr,
-                got: PlutusType::from(&data),
+                got: PlutusType::from(data),
             }),
         }
     }

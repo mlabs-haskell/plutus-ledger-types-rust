@@ -60,7 +60,7 @@ pub fn case_plutus_data<T>(
 pub trait IsPlutusData {
     fn to_plutus_data(&self) -> PlutusData;
 
-    fn from_plutus_data(plutus_data: PlutusData) -> Result<Self, PlutusDataError>
+    fn from_plutus_data(plutus_data: &PlutusData) -> Result<Self, PlutusDataError>
     where
         Self: Sized;
 }
@@ -103,12 +103,12 @@ impl IsPlutusData for BigInt {
         PlutusData::Integer(self.clone())
     }
 
-    fn from_plutus_data(plutus_data: PlutusData) -> Result<Self, PlutusDataError> {
+    fn from_plutus_data(plutus_data: &PlutusData) -> Result<Self, PlutusDataError> {
         match plutus_data {
-            PlutusData::Integer(int) => Ok(int),
+            PlutusData::Integer(int) => Ok(int.clone()),
             _ => Err(PlutusDataError::UnexpectedPlutusType {
                 wanted: PlutusType::Integer,
-                got: PlutusType::from(&plutus_data),
+                got: PlutusType::from(plutus_data),
             }),
         }
     }
@@ -123,9 +123,9 @@ impl IsPlutusData for bool {
         }
     }
 
-    fn from_plutus_data(plutus_data: PlutusData) -> Result<Self, PlutusDataError> {
+    fn from_plutus_data(plutus_data: &PlutusData) -> Result<Self, PlutusDataError> {
         match plutus_data {
-            PlutusData::Constr(flag, fields) => match u32::try_from(&flag) {
+            PlutusData::Constr(flag, fields) => match u32::try_from(flag) {
                 Ok(0) => {
                     verify_constr_fields(&fields, 0)?;
                     Ok(false)
@@ -142,7 +142,7 @@ impl IsPlutusData for bool {
 
             _ => Err(PlutusDataError::UnexpectedPlutusType {
                 wanted: PlutusType::Constr,
-                got: PlutusType::from(&plutus_data),
+                got: PlutusType::from(plutus_data),
             }),
         }
     }
@@ -153,7 +153,7 @@ impl IsPlutusData for char {
         String::from(*self).to_plutus_data()
     }
 
-    fn from_plutus_data(plutus_data: PlutusData) -> Result<Self, PlutusDataError> {
+    fn from_plutus_data(plutus_data: &PlutusData) -> Result<Self, PlutusDataError> {
         String::from_plutus_data(plutus_data).and_then(|str| {
             let mut chars = str.chars();
             let ch = chars.next();
@@ -174,12 +174,12 @@ impl IsPlutusData for Vec<u8> {
         PlutusData::Bytes(self.clone())
     }
 
-    fn from_plutus_data(plutus_data: PlutusData) -> Result<Self, PlutusDataError> {
+    fn from_plutus_data(plutus_data: &PlutusData) -> Result<Self, PlutusDataError> {
         match plutus_data {
-            PlutusData::Bytes(bytes) => Ok(bytes),
+            PlutusData::Bytes(bytes) => Ok(bytes.clone()),
             _ => Err(PlutusDataError::UnexpectedPlutusType {
                 wanted: PlutusType::Bytes,
-                got: PlutusType::from(&plutus_data),
+                got: PlutusType::from(plutus_data),
             }),
         }
     }
@@ -190,9 +190,9 @@ impl IsPlutusData for String {
         PlutusData::Bytes(self.as_bytes().into())
     }
 
-    fn from_plutus_data(plutus_data: PlutusData) -> Result<Self, PlutusDataError> {
+    fn from_plutus_data(plutus_data: &PlutusData) -> Result<Self, PlutusDataError> {
         match plutus_data {
-            PlutusData::Bytes(bytes) => String::from_utf8(bytes).map_err(|err| {
+            PlutusData::Bytes(bytes) => String::from_utf8(bytes.clone()).map_err(|err| {
                 PlutusDataError::InternalError(format!(
                     "Couldn't convert Plutus bytes to String: {:?}",
                     err
@@ -200,7 +200,7 @@ impl IsPlutusData for String {
             }),
             _ => Err(PlutusDataError::UnexpectedPlutusType {
                 wanted: PlutusType::Integer,
-                got: PlutusType::from(&plutus_data),
+                got: PlutusType::from(plutus_data),
             }),
         }
     }
@@ -217,12 +217,12 @@ where
         }
     }
 
-    fn from_plutus_data(plutus_data: PlutusData) -> Result<Self, PlutusDataError> {
+    fn from_plutus_data(plutus_data: &PlutusData) -> Result<Self, PlutusDataError> {
         match plutus_data {
-            PlutusData::Constr(flag, fields) => match u32::try_from(&flag) {
+            PlutusData::Constr(flag, fields) => match u32::try_from(flag) {
                 Ok(0) => {
                     verify_constr_fields(&fields, 1)?;
-                    Ok(Some(T::from_plutus_data(fields[0].clone())?))
+                    Ok(Some(T::from_plutus_data(&fields[0])?))
                 }
                 Ok(1) => {
                     verify_constr_fields(&fields, 0)?;
@@ -236,7 +236,7 @@ where
 
             _ => Err(PlutusDataError::UnexpectedPlutusType {
                 wanted: PlutusType::Constr,
-                got: PlutusType::from(&plutus_data),
+                got: PlutusType::from(plutus_data),
             }),
         }
     }
@@ -254,16 +254,16 @@ where
         }
     }
 
-    fn from_plutus_data(plutus_data: PlutusData) -> Result<Self, PlutusDataError> {
+    fn from_plutus_data(plutus_data: &PlutusData) -> Result<Self, PlutusDataError> {
         match plutus_data {
-            PlutusData::Constr(flag, fields) => match u32::try_from(&flag) {
+            PlutusData::Constr(flag, fields) => match u32::try_from(flag) {
                 Ok(0) => {
                     verify_constr_fields(&fields, 1)?;
-                    Ok(Err(E::from_plutus_data(fields[0].clone())?))
+                    Ok(Err(E::from_plutus_data(&fields[0])?))
                 }
                 Ok(1) => {
                     verify_constr_fields(&fields, 1)?;
-                    Ok(Ok(T::from_plutus_data(fields[0].clone())?))
+                    Ok(Ok(T::from_plutus_data(&fields[0])?))
                 }
                 _ => Err(PlutusDataError::UnexpectedPlutusInvariant {
                     wanted: "Constr field between 0 and 1".to_owned(),
@@ -273,7 +273,7 @@ where
 
             _ => Err(PlutusDataError::UnexpectedPlutusType {
                 wanted: PlutusType::Constr,
-                got: PlutusType::from(&plutus_data),
+                got: PlutusType::from(plutus_data),
             }),
         }
     }
@@ -292,15 +292,15 @@ where
         PlutusData::List(values)
     }
 
-    fn from_plutus_data(plutus_data: PlutusData) -> Result<Self, PlutusDataError> {
+    fn from_plutus_data(plutus_data: &PlutusData) -> Result<Self, PlutusDataError> {
         match plutus_data {
             PlutusData::List(vec) => vec
                 .iter()
-                .map(|val| T::from_plutus_data(val.clone()))
+                .map(|val| T::from_plutus_data(val))
                 .collect::<Result<Vec<T>, PlutusDataError>>(),
             _ => Err(PlutusDataError::UnexpectedPlutusType {
                 wanted: PlutusType::List,
-                got: PlutusType::from(&plutus_data),
+                got: PlutusType::from(plutus_data),
             }),
         }
     }
@@ -319,7 +319,7 @@ where
         PlutusData::List(set)
     }
 
-    fn from_plutus_data(plutus_data: PlutusData) -> Result<Self, PlutusDataError> {
+    fn from_plutus_data(plutus_data: &PlutusData) -> Result<Self, PlutusDataError> {
         match plutus_data {
             PlutusData::List(vec) => vec
                 .into_iter()
@@ -327,7 +327,7 @@ where
                 .collect::<Result<Self, PlutusDataError>>(),
             _ => Err(PlutusDataError::UnexpectedPlutusType {
                 wanted: PlutusType::Map,
-                got: PlutusType::from(&plutus_data),
+                got: PlutusType::from(plutus_data),
             }),
         }
     }
@@ -347,7 +347,7 @@ where
         PlutusData::Map(assoc_map)
     }
 
-    fn from_plutus_data(plutus_data: PlutusData) -> Result<Self, PlutusDataError> {
+    fn from_plutus_data(plutus_data: &PlutusData) -> Result<Self, PlutusDataError> {
         match plutus_data {
             PlutusData::Map(dict) => dict
                 .into_iter()
@@ -355,7 +355,7 @@ where
                 .collect::<Result<Self, PlutusDataError>>(),
             _ => Err(PlutusDataError::UnexpectedPlutusType {
                 wanted: PlutusType::Map,
-                got: PlutusType::from(&plutus_data),
+                got: PlutusType::from(plutus_data),
             }),
         }
     }
@@ -366,9 +366,9 @@ impl IsPlutusData for () {
         PlutusData::Constr(BigInt::from(0), Vec::with_capacity(0))
     }
 
-    fn from_plutus_data(plutus_data: PlutusData) -> Result<Self, PlutusDataError> {
+    fn from_plutus_data(plutus_data: &PlutusData) -> Result<Self, PlutusDataError> {
         match plutus_data {
-            PlutusData::Constr(flag, fields) => match u32::try_from(&flag) {
+            PlutusData::Constr(flag, fields) => match u32::try_from(flag) {
                 Ok(0) => {
                     verify_constr_fields(&fields, 0)?;
                     Ok(())
@@ -381,7 +381,7 @@ impl IsPlutusData for () {
 
             _ => Err(PlutusDataError::UnexpectedPlutusType {
                 wanted: PlutusType::Constr,
-                got: PlutusType::from(&plutus_data),
+                got: PlutusType::from(plutus_data),
             }),
         }
     }
@@ -392,8 +392,8 @@ impl IsPlutusData for PlutusData {
         self.clone()
     }
 
-    fn from_plutus_data(plutus_data: PlutusData) -> Result<Self, PlutusDataError> {
-        Ok(plutus_data)
+    fn from_plutus_data(plutus_data: &PlutusData) -> Result<Self, PlutusDataError> {
+        Ok(plutus_data.clone())
     }
 }
 
@@ -409,14 +409,14 @@ where
         )
     }
 
-    fn from_plutus_data(plutus_data: PlutusData) -> Result<Self, PlutusDataError> {
+    fn from_plutus_data(plutus_data: &PlutusData) -> Result<Self, PlutusDataError> {
         match plutus_data {
-            PlutusData::Constr(flag, fields) => match u32::try_from(&flag) {
+            PlutusData::Constr(flag, fields) => match u32::try_from(flag) {
                 Ok(0) => {
                     verify_constr_fields(&fields, 2)?;
                     Ok((
-                        A::from_plutus_data(fields[0].clone())?,
-                        B::from_plutus_data(fields[1].clone())?,
+                        A::from_plutus_data(&fields[0])?,
+                        B::from_plutus_data(&fields[1])?,
                     ))
                 }
                 _ => Err(PlutusDataError::UnexpectedPlutusInvariant {
@@ -427,7 +427,7 @@ where
 
             _ => Err(PlutusDataError::UnexpectedPlutusType {
                 wanted: PlutusType::Constr,
-                got: PlutusType::from(&plutus_data),
+                got: PlutusType::from(plutus_data),
             }),
         }
     }
