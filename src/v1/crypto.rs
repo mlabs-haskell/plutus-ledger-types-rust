@@ -21,12 +21,12 @@ impl IsPlutusData for Ed25519PubKeyHash {
         PlutusData::Bytes(bytes.clone())
     }
 
-    fn from_plutus_data(data: PlutusData) -> Result<Self, PlutusDataError> {
+    fn from_plutus_data(data: &PlutusData) -> Result<Self, PlutusDataError> {
         match data {
-            PlutusData::Bytes(bytes) => Ok(Self(LedgerBytes(bytes))),
+            PlutusData::Bytes(bytes) => Ok(Self(LedgerBytes(bytes.clone()))),
             _ => Err(PlutusDataError::UnexpectedPlutusType {
                 wanted: PlutusType::Bytes,
-                got: PlutusType::from(&data),
+                got: PlutusType::from(data),
             }),
         }
     }
@@ -44,12 +44,12 @@ impl IsPlutusData for PaymentPubKeyHash {
         PlutusData::Bytes(bytes.clone())
     }
 
-    fn from_plutus_data(data: PlutusData) -> Result<Self, PlutusDataError> {
+    fn from_plutus_data(data: &PlutusData) -> Result<Self, PlutusDataError> {
         match data {
-            PlutusData::Bytes(bytes) => Ok(Self(Ed25519PubKeyHash(LedgerBytes(bytes)))),
+            PlutusData::Bytes(bytes) => Ok(Self(Ed25519PubKeyHash(LedgerBytes(bytes.clone())))),
             _ => Err(PlutusDataError::UnexpectedPlutusType {
                 wanted: PlutusType::Bytes,
-                got: PlutusType::from(&data),
+                got: PlutusType::from(data),
             }),
         }
     }
@@ -67,12 +67,12 @@ impl IsPlutusData for StakePubKeyHash {
         PlutusData::Bytes(bytes.clone())
     }
 
-    fn from_plutus_data(data: PlutusData) -> Result<Self, PlutusDataError> {
+    fn from_plutus_data(data: &PlutusData) -> Result<Self, PlutusDataError> {
         match data {
-            PlutusData::Bytes(bytes) => Ok(Self(Ed25519PubKeyHash(LedgerBytes(bytes)))),
+            PlutusData::Bytes(bytes) => Ok(Self(Ed25519PubKeyHash(LedgerBytes(bytes.clone())))),
             _ => Err(PlutusDataError::UnexpectedPlutusType {
                 wanted: PlutusType::Bytes,
-                got: PlutusType::from(&data),
+                got: PlutusType::from(data),
             }),
         }
     }
@@ -88,12 +88,12 @@ impl IsPlutusData for LedgerBytes {
         PlutusData::Bytes(self.0.clone())
     }
 
-    fn from_plutus_data(data: PlutusData) -> Result<Self, PlutusDataError> {
+    fn from_plutus_data(data: &PlutusData) -> Result<Self, PlutusDataError> {
         match data {
-            PlutusData::Bytes(bytes) => Ok(Self(bytes)),
+            PlutusData::Bytes(bytes) => Ok(Self(bytes.clone())),
             _ => Err(PlutusDataError::UnexpectedPlutusType {
                 wanted: PlutusType::Bytes,
-                got: PlutusType::from(&data),
+                got: PlutusType::from(data),
             }),
         }
     }
