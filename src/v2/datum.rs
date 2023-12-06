@@ -71,24 +71,19 @@ impl IsPlutusData for OutputDatum {
 
 #[cfg(feature = "lbf")]
 impl Json for OutputDatum {
-    fn to_json(&self) -> Result<serde_json::Value, Error> {
+    fn to_json(&self) -> serde_json::Value {
         match self {
-            OutputDatum::None => Ok(json::json_constructor(
-                "NoOutputDatum",
-                Vec::with_capacity(0),
-            )),
-            OutputDatum::DatumHash(dat_hash) => Ok(json::json_constructor(
-                "OutputDatumHash",
-                vec![dat_hash.to_json()?],
-            )),
-            OutputDatum::InlineDatum(datum) => Ok(json::json_constructor(
-                "OutputDatum",
-                vec![datum.to_json()?],
-            )),
+            OutputDatum::None => json::json_constructor("NoOutputDatum", &Vec::with_capacity(0)),
+            OutputDatum::DatumHash(dat_hash) => {
+                json::json_constructor("OutputDatumHash", &vec![dat_hash.to_json()])
+            }
+            OutputDatum::InlineDatum(datum) => {
+                json::json_constructor("OutputDatum", &vec![datum.to_json()])
+            }
         }
     }
 
-    fn from_json(value: serde_json::Value) -> Result<Self, Error> {
+    fn from_json(value: &serde_json::Value) -> Result<Self, Error> {
         json::case_json_constructor(
             "Plutus.V2.OutputDatum",
             vec![
@@ -106,9 +101,7 @@ impl Json for OutputDatum {
                 (
                     "OutputDatumHash",
                     Box::new(|ctor_fields| match &ctor_fields[..] {
-                        [dat_hash] => {
-                            Ok(OutputDatum::DatumHash(Json::from_json(dat_hash.clone())?))
-                        }
+                        [dat_hash] => Ok(OutputDatum::DatumHash(Json::from_json(&dat_hash)?)),
                         _ => Err(Error::UnexpectedArrayLength {
                             wanted: 1,
                             got: ctor_fields.len(),
@@ -119,7 +112,7 @@ impl Json for OutputDatum {
                 (
                     "OutputDatum",
                     Box::new(|ctor_fields| match &ctor_fields[..] {
-                        [datum] => Ok(OutputDatum::InlineDatum(Json::from_json(datum.clone())?)),
+                        [datum] => Ok(OutputDatum::InlineDatum(Json::from_json(datum)?)),
                         _ => Err(Error::UnexpectedArrayLength {
                             wanted: 1,
                             got: ctor_fields.len(),
