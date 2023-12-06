@@ -42,18 +42,18 @@ impl PlutusData {
 }
 
 /// Deserialise a Plutus data using parsers for each variant
-pub fn case_plutus_data<T>(
-    ctor_case: impl FnOnce(BigInt) -> Box<dyn Fn(Vec<PlutusData>) -> T>,
-    list_case: impl FnOnce(Vec<PlutusData>) -> T,
-    int_case: impl FnOnce(BigInt) -> T,
-    other_case: impl FnOnce(PlutusData) -> T,
-    pd: PlutusData,
+pub fn case_plutus_data<'a, T>(
+    ctor_case: impl FnOnce(&'a BigInt) -> Box<dyn 'a + FnOnce(&'a Vec<PlutusData>) -> T>,
+    list_case: impl FnOnce(&'a Vec<PlutusData>) -> T,
+    int_case: impl FnOnce(&'a BigInt) -> T,
+    other_case: impl FnOnce(&'a PlutusData) -> T,
+    pd: &'a PlutusData,
 ) -> T {
     match pd {
-        PlutusData::Constr(tag, args) => ctor_case(tag)(args),
-        PlutusData::List(args) => list_case(args),
-        PlutusData::Integer(i) => int_case(i),
-        other => other_case(other),
+        PlutusData::Constr(tag, args) => ctor_case(&tag)(&args),
+        PlutusData::List(args) => list_case(&args),
+        PlutusData::Integer(i) => int_case(&i),
+        other => other_case(&other),
     }
 }
 

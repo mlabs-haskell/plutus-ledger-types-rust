@@ -2,20 +2,22 @@ use crate::plutus_data::{self, PlutusData, PlutusDataError};
 use num_bigint::BigInt;
 
 pub fn case_plutus_data<'a, T: 'a>(
-    x0: Box<dyn FnOnce(BigInt) -> Box<dyn Fn(Vec<PlutusData>) -> T>>,
+    x0: Box<dyn 'a + FnOnce(&'a BigInt) -> Box<dyn 'a + FnOnce(&'a Vec<PlutusData>) -> T>>,
 ) -> Box<
-    dyn FnOnce(
-            Box<dyn FnOnce(Vec<PlutusData>) -> T>,
+    dyn 'a
+        + FnOnce(
+            Box<dyn FnOnce(&'a Vec<PlutusData>) -> T>,
         ) -> Box<
-            dyn FnOnce(
-                    Box<dyn FnOnce(BigInt) -> T>,
+            dyn 'a
+                + FnOnce(
+                    Box<dyn FnOnce(&'a BigInt) -> T>,
                 ) -> Box<
-                    dyn FnOnce(
-                            Box<dyn FnOnce(PlutusData) -> T>,
-                        ) -> Box<dyn FnOnce(PlutusData) -> T + 'a>
-                        + 'a,
-                > + 'a,
-        > + 'a,
+                    dyn 'a
+                        + FnOnce(
+                            Box<dyn FnOnce(&'a PlutusData) -> T>,
+                        ) -> Box<dyn 'a + FnOnce(&'a PlutusData) -> T>,
+                >,
+        >,
 > {
     Box::new(move |x1| {
         Box::new(move |x2| {
@@ -26,15 +28,23 @@ pub fn case_plutus_data<'a, T: 'a>(
     })
 }
 
+pub fn constr(tag: u32) -> Box<dyn Fn(Vec<PlutusData>) -> PlutusData> {
+    Box::new(move |fields| PlutusData::Constr(BigInt::from(tag), fields.clone()))
+}
+
 /// Fail PlutusData parsing with an internal error
-pub fn fail_parse<T>(err: &str) -> Result<T, PlutusDataError> {
-    Err(PlutusDataError::InternalError(err.to_owned()))
+pub fn fail_parse<T>() -> Result<T, PlutusDataError> {
+    Err(PlutusDataError::InternalError(
+        "Failed to parse PlutusData".to_owned(),
+    ))
 }
 
 /// Curried Result::and_then function
 pub fn bind_parse<'a, A: 'a, B: 'a>(
     x: Result<A, PlutusDataError>,
-) -> Box<dyn FnOnce(Box<dyn Fn(A) -> Result<B, PlutusDataError>>) -> Result<B, PlutusDataError> + 'a>
-{
-    Box::new(move |f| x.and_then(f))
+) -> Box<
+    dyn FnOnce(Box<dyn Fn(&A) -> Result<B, PlutusDataError> + 'a>) -> Result<B, PlutusDataError>
+        + 'a,
+> {
+    Box::new(move |f| x.and_then(|x1| f(&x1)))
 }

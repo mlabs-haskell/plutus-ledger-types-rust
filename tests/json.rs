@@ -6,7 +6,7 @@ mod json_roundtrip_tests {
     where
         T: Json + PartialEq,
     {
-        T::from_json(val.to_json()?)
+        T::from_json(&val.to_json())
     }
 
     mod v1 {

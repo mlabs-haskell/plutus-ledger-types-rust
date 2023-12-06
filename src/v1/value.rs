@@ -45,14 +45,14 @@ impl IsPlutusData for CurrencySymbol {
 
 #[cfg(feature = "lbf")]
 impl Json for CurrencySymbol {
-    fn to_json(&self) -> Result<serde_json::Value, Error> {
+    fn to_json(&self) -> serde_json::Value {
         match self {
-            CurrencySymbol::Ada => Ok(serde_json::Value::String(String::new())),
+            CurrencySymbol::Ada => serde_json::Value::String(String::new()),
             CurrencySymbol::NativeToken(policy_hash) => policy_hash.to_json(),
         }
     }
 
-    fn from_json(value: serde_json::Value) -> Result<Self, Error> {
+    fn from_json(value: &serde_json::Value) -> Result<Self, Error> {
         match value.clone() {
             serde_json::Value::String(str) => {
                 if str.is_empty() {
@@ -63,7 +63,7 @@ impl Json for CurrencySymbol {
             }
             _ => Err(Error::UnexpectedJsonType {
                 wanted: JsonType::String,
-                got: JsonType::from(&value),
+                got: JsonType::from(value),
                 parser: "Plutus.V1.CurrencySymbol".to_owned(),
             }),
         }

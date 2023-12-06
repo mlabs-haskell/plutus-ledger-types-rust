@@ -101,11 +101,11 @@ impl IsPlutusData for LedgerBytes {
 
 #[cfg(feature = "lbf")]
 impl Json for LedgerBytes {
-    fn to_json(&self) -> Result<serde_json::Value, Error> {
+    fn to_json(&self) -> serde_json::Value {
         String::to_json(&HEXLOWER.encode(&self.0))
     }
 
-    fn from_json(value: serde_json::Value) -> Result<Self, Error> {
+    fn from_json(value: &serde_json::Value) -> Result<Self, Error> {
         let bytes = String::from_json(value).and_then(|str| {
             HEXLOWER
                 .decode(&str.into_bytes())

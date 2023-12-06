@@ -112,27 +112,25 @@ impl IsPlutusData for Credential {
 
 #[cfg(feature = "lbf")]
 impl Json for Credential {
-    fn to_json(&self) -> Result<serde_json::Value, Error> {
+    fn to_json(&self) -> serde_json::Value {
         match self {
-            Credential::PubKey(pkh) => Ok(json::json_constructor(
-                "PubKeyCredential",
-                vec![pkh.to_json()?],
-            )),
-            Credential::Script(val_hash) => Ok(json::json_constructor(
-                "ScriptCredential",
-                vec![val_hash.to_json()?],
-            )),
+            Credential::PubKey(pkh) => {
+                json::json_constructor("PubKeyCredential", &vec![pkh.to_json()])
+            }
+            Credential::Script(val_hash) => {
+                json::json_constructor("ScriptCredential", &vec![val_hash.to_json()])
+            }
         }
     }
 
-    fn from_json(value: serde_json::Value) -> Result<Self, Error> {
+    fn from_json(value: &serde_json::Value) -> Result<Self, Error> {
         json::case_json_constructor(
             "Plutus.V1.Credential",
             vec![
                 (
                     "PubKeyCredential",
                     Box::new(|ctor_fields| match &ctor_fields[..] {
-                        [pkh] => Ok(Credential::PubKey(Json::from_json(pkh.clone())?)),
+                        [pkh] => Ok(Credential::PubKey(Json::from_json(pkh)?)),
                         _ => Err(Error::UnexpectedArrayLength {
                             wanted: 1,
                             got: ctor_fields.len(),
@@ -143,7 +141,7 @@ impl Json for Credential {
                 (
                     "ScriptCredential",
                     Box::new(|ctor_fields| match &ctor_fields[..] {
-                        [val_hash] => Ok(Credential::Script(Json::from_json(val_hash.clone())?)),
+                        [val_hash] => Ok(Credential::Script(Json::from_json(val_hash)?)),
                         _ => Err(Error::UnexpectedArrayLength {
                             wanted: 1,
                             got: ctor_fields.len(),
@@ -219,26 +217,25 @@ impl IsPlutusData for StakingCredential {
 
 #[cfg(feature = "lbf")]
 impl Json for StakingCredential {
-    fn to_json(&self) -> Result<serde_json::Value, Error> {
+    fn to_json(&self) -> serde_json::Value {
         match self {
             StakingCredential::Hash(pkh) => {
-                Ok(json::json_constructor("StakingHash", vec![pkh.to_json()?]))
+                json::json_constructor("StakingHash", &vec![pkh.to_json()])
             }
-            StakingCredential::Pointer(val_hash) => Ok(json::json_constructor(
-                "StakingPtr",
-                vec![val_hash.to_json()?],
-            )),
+            StakingCredential::Pointer(val_hash) => {
+                json::json_constructor("StakingPtr", &vec![val_hash.to_json()])
+            }
         }
     }
 
-    fn from_json(value: serde_json::Value) -> Result<Self, Error> {
+    fn from_json(value: &serde_json::Value) -> Result<Self, Error> {
         json::case_json_constructor(
             "Plutus.V1.StakingCredential",
             vec![
                 (
                     "StakingHash",
                     Box::new(|ctor_fields| match &ctor_fields[..] {
-                        [pkh] => Ok(StakingCredential::Hash(Json::from_json(pkh.clone())?)),
+                        [pkh] => Ok(StakingCredential::Hash(Json::from_json(pkh)?)),
                         _ => Err(Error::UnexpectedArrayLength {
                             wanted: 1,
                             got: ctor_fields.len(),
@@ -249,9 +246,7 @@ impl Json for StakingCredential {
                 (
                     "StakingPtr",
                     Box::new(|ctor_fields| match &ctor_fields[..] {
-                        [val_hash] => Ok(StakingCredential::Pointer(Json::from_json(
-                            val_hash.clone(),
-                        )?)),
+                        [val_hash] => Ok(StakingCredential::Pointer(Json::from_json(&val_hash)?)),
                         _ => Err(Error::UnexpectedArrayLength {
                             wanted: 1,
                             got: ctor_fields.len(),
