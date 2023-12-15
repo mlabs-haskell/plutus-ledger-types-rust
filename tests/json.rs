@@ -76,6 +76,13 @@ mod json_roundtrip_tests {
                 assert_eq!(val, from_to_json(&val)?);
             }
         }
+
+        proptest! {
+            #[test]
+            fn test_redeemeer_hash(val in arb_redeemer_hash()) {
+                assert_eq!(val, from_to_json(&val)?);
+            }
+        }
     }
     mod v2 {
         use super::from_to_json;
