@@ -29,7 +29,7 @@
             overlays = [ (import rust-overlay) ];
             crateName = "plutus-ledger-api";
             rustWithTools = pkgs.rust-bin.stable.latest.default.override {
-              extensions = [ "rustfmt" "rust-analyzer" "clippy" ];
+              extensions = [ "rustfmt" "rust-analyzer" "clippy" "rust-src" ];
             };
             craneLib = inputs.crane.lib.${system}.overrideToolchain rustWithTools;
             src = craneLib.cleanCargoSource (craneLib.path ./.);

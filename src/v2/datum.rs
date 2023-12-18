@@ -15,7 +15,7 @@ use serde::{Deserialize, Serialize};
 /// In case an inline datum is used, the data is embedded inside the transaction body, so it can be
 /// directly retrieved. In case of a datum hash, an off-chain indexer is required to find the
 /// associated datum by its hash.
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub enum OutputDatum {
     None,

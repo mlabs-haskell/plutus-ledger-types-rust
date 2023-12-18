@@ -10,7 +10,7 @@ use serde::{Deserialize, Serialize};
 /// ED25519 public key hash
 /// This is the standard cryptography in Cardano, commonly referred to as `PubKeyHash` in Plutus
 /// and other libraries
-#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "lbf", derive(Json))]
 pub struct Ed25519PubKeyHash(pub LedgerBytes);
@@ -33,7 +33,7 @@ impl IsPlutusData for Ed25519PubKeyHash {
 }
 
 /// Standard public key hash used to verify a transaction witness
-#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "lbf", derive(Json))]
 pub struct PaymentPubKeyHash(pub Ed25519PubKeyHash);
@@ -56,7 +56,7 @@ impl IsPlutusData for PaymentPubKeyHash {
 }
 
 /// Standard public key hash used to verify a staking
-#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "lbf", derive(Json))]
 pub struct StakePubKeyHash(pub Ed25519PubKeyHash);
@@ -79,7 +79,7 @@ impl IsPlutusData for StakePubKeyHash {
 }
 
 /// A bytestring in the Cardano ledger context
-#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct LedgerBytes(pub Vec<u8>);
 
