@@ -279,13 +279,13 @@ pub fn arb_transaction_input() -> impl Strategy<Value = TransactionInput> {
 
 /// Strategy to generate transaction output
 pub fn arb_transaction_output() -> impl Strategy<Value = TransactionOutput> {
-    (arb_address(), arb_value(), arb_datum_hash()).prop_map(|(address, value, datum_hash)| {
-        TransactionOutput {
+    (arb_address(), arb_value(), option::of(arb_datum_hash())).prop_map(
+        |(address, value, datum_hash)| TransactionOutput {
             address,
             value,
             datum_hash,
-        }
-    })
+        },
+    )
 }
 
 /// Strategy to generate a TxInInfo
