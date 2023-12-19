@@ -39,10 +39,6 @@ pub fn arb_output_datum() -> impl Strategy<Value = OutputDatum> {
 
 /// Strategy to generate a TxInInfo
 pub fn arb_tx_in_info() -> impl Strategy<Value = TxInInfo> {
-    (arb_transaction_input(), arb_transaction_output()).prop_map(|(transaction_input, resolved)| {
-        TxInInfo {
-            transaction_input,
-            resolved,
-        }
-    })
+    (arb_transaction_input(), arb_transaction_output())
+        .prop_map(|(reference, output)| TxInInfo { reference, output })
 }

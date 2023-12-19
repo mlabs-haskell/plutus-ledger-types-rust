@@ -153,8 +153,8 @@ pub type POSIXTimeRange = PlutusInterval<POSIXTime>;
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "lbf", derive(Json))]
 pub struct TxInInfo {
-    pub transaction_input: TransactionInput,
-    pub resolved: TransactionOutput,
+    pub reference: TransactionInput,
+    pub output: TransactionOutput,
 }
 
 impl IsPlutusData for TxInInfo {
@@ -162,8 +162,8 @@ impl IsPlutusData for TxInInfo {
         PlutusData::Constr(
             BigInt::from(0),
             vec![
-                self.transaction_input.to_plutus_data(),
-                self.resolved.to_plutus_data(),
+                self.reference.to_plutus_data(),
+                self.output.to_plutus_data(),
             ],
         )
     }
@@ -174,8 +174,8 @@ impl IsPlutusData for TxInInfo {
                 Ok(0) => {
                     verify_constr_fields(&fields, 2)?;
                     Ok(TxInInfo {
-                        transaction_input: TransactionInput::from_plutus_data(&fields[0])?,
-                        resolved: TransactionOutput::from_plutus_data(&fields[1])?,
+                        reference: TransactionInput::from_plutus_data(&fields[0])?,
+                        output: TransactionOutput::from_plutus_data(&fields[1])?,
                     })
                 }
                 _ => Err(PlutusDataError::UnexpectedPlutusInvariant {
