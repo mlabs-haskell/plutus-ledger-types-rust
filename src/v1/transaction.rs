@@ -89,7 +89,7 @@ impl IsPlutusData for TransactionHash {
 #[cfg_attr(feature = "lbf", derive(Json))]
 pub struct TransactionOutput {
     pub address: Address,
-    pub datum_hash: DatumHash,
+    pub datum_hash: Option<DatumHash>,
     pub value: Value,
 }
 
@@ -112,7 +112,7 @@ impl IsPlutusData for TransactionOutput {
                     verify_constr_fields(&fields, 3)?;
                     Ok(TransactionOutput {
                         address: Address::from_plutus_data(&fields[0])?,
-                        datum_hash: DatumHash::from_plutus_data(&fields[1])?,
+                        datum_hash: <Option<DatumHash>>::from_plutus_data(&fields[1])?,
                         value: Value::from_plutus_data(&fields[2])?,
                     })
                 }
