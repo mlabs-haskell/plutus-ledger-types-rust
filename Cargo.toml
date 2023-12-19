@@ -7,7 +7,7 @@ edition = "2021"
 
 [dependencies]
 proptest = "1.3.1"
-lbr-prelude = { git = "https://github.com/mlabs-haskell/lambda-buffers.git", rev = "59616901e686f7b1423d5aa930514755ef436db9", optional = true }
+lbr-prelude = { git = "https://github.com/mlabs-haskell/lambda-buffers.git", rev = "fc9ce0635e3a0adc4ecc35e371c7034167b19f7a", optional = true }
 serde_json = { version = "1.0.107", features = [
   "arbitrary_precision",
 ], optional = true }
