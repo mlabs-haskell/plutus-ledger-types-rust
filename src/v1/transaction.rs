@@ -72,11 +72,27 @@ pub struct TransactionHash(pub LedgerBytes);
 
 impl IsPlutusData for TransactionHash {
     fn to_plutus_data(&self) -> PlutusData {
-        self.0.to_plutus_data()
+        PlutusData::Constr(BigInt::from(0), vec![self.0.to_plutus_data()])
     }
 
     fn from_plutus_data(data: &PlutusData) -> Result<Self, PlutusDataError> {
-        IsPlutusData::from_plutus_data(data).map(Self)
+        match data {
+            PlutusData::Constr(flag, fields) => match u32::try_from(flag) {
+                Ok(0) => {
+                    verify_constr_fields(&fields, 1)?;
+                    Ok(TransactionHash(IsPlutusData::from_plutus_data(&fields[0])?))
+                }
+                _ => Err(PlutusDataError::UnexpectedPlutusInvariant {
+                    wanted: "Constr field to be 0".to_owned(),
+                    got: flag.to_string(),
+                }),
+            },
+
+            _ => Err(PlutusDataError::UnexpectedPlutusType {
+                wanted: PlutusType::Constr,
+                got: PlutusType::from(data),
+            }),
+        }
     }
 }
 
