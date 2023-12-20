@@ -24,6 +24,28 @@ pub enum PlutusData {
     Bytes(Vec<u8>),
 }
 
+impl PlutusData {
+    pub fn constr(tag: u32, fields: Vec<PlutusData>) -> Self {
+        PlutusData::Constr(BigInt::from(tag), fields)
+    }
+
+    pub fn map(fields: Vec<(PlutusData, PlutusData)>) -> Self {
+        PlutusData::Map(fields)
+    }
+
+    pub fn list(fields: Vec<PlutusData>) -> Self {
+        PlutusData::List(fields)
+    }
+
+    pub fn integer(value: u32) -> Self {
+        PlutusData::Integer(BigInt::from(value))
+    }
+
+    pub fn bytes(value: Vec<u8>) -> Self {
+        PlutusData::Bytes(value)
+    }
+}
+
 #[cfg(feature = "lbf")]
 impl Json for PlutusData {
     fn to_json(&self) -> serde_json::Value {
@@ -137,28 +159,6 @@ impl Json for PlutusData {
             ],
             value,
         )
-    }
-}
-
-impl PlutusData {
-    pub fn constr(tag: u32, fields: Vec<PlutusData>) -> Self {
-        PlutusData::Constr(BigInt::from(tag), fields)
-    }
-
-    pub fn map(fields: Vec<(PlutusData, PlutusData)>) -> Self {
-        PlutusData::Map(fields)
-    }
-
-    pub fn list(fields: Vec<PlutusData>) -> Self {
-        PlutusData::List(fields)
-    }
-
-    pub fn integer(value: u32) -> Self {
-        PlutusData::Integer(BigInt::from(value))
-    }
-
-    pub fn bytes(value: Vec<u8>) -> Self {
-        PlutusData::Bytes(value)
     }
 }
 

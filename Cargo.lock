@@ -116,7 +116,7 @@ checksum = "e2abad23fbc42b3700f2f279844dc832adb2b2eb069b2df918f455c4e18cc646"
 [[package]]
 name = "lbr-prelude"
 version = "0.1.0"
-source = "git+https://github.com/mlabs-haskell/lambda-buffers.git?rev=fc9ce0635e3a0adc4ecc35e371c7034167b19f7a#fc9ce0635e3a0adc4ecc35e371c7034167b19f7a"
+source = "git+https://github.com/mlabs-haskell/lambda-buffers.git?rev=59d3fb6422fef707c66fb83c2bd29327371d9bd3#59d3fb6422fef707c66fb83c2bd29327371d9bd3"
 dependencies = [
  "data-encoding",
  "lbr-prelude-derive",
@@ -130,7 +130,7 @@ dependencies = [
 [[package]]
 name = "lbr-prelude-derive"
 version = "0.1.0"
-source = "git+https://github.com/mlabs-haskell/lambda-buffers.git?rev=fc9ce0635e3a0adc4ecc35e371c7034167b19f7a#fc9ce0635e3a0adc4ecc35e371c7034167b19f7a"
+source = "git+https://github.com/mlabs-haskell/lambda-buffers.git?rev=59d3fb6422fef707c66fb83c2bd29327371d9bd3#59d3fb6422fef707c66fb83c2bd29327371d9bd3"
 dependencies = [
  "proc-macro2",
  "quote",
