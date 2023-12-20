@@ -10,7 +10,7 @@ use crate::v1::address::{
 use crate::v1::crypto::{Ed25519PubKeyHash, LedgerBytes};
 use crate::v1::datum::{Datum, DatumHash};
 use crate::v1::interval::{Extended, LowerBound, PlutusInterval, UpperBound};
-use crate::v1::redeemer::Redeemer;
+use crate::v1::redeemer::{Redeemer, RedeemerHash};
 use crate::v1::script::{MintingPolicyHash, ScriptHash, ValidatorHash};
 use crate::v1::transaction::{
     POSIXTime, TransactionHash, TransactionInput, TransactionOutput, TxInInfo,
@@ -142,6 +142,11 @@ pub fn arb_datum() -> impl Strategy<Value = Datum> {
 /// Strategy to generate a Redeemer
 pub fn arb_redeemer() -> impl Strategy<Value = Redeemer> {
     arb_plutus_data().prop_map(Redeemer)
+}
+
+/// Strategy to generate a Datum hash
+pub fn arb_redeemer_hash() -> impl Strategy<Value = RedeemerHash> {
+    arb_ledger_bytes(32).prop_map(RedeemerHash)
 }
 
 /// Strategy to generate an Extended set

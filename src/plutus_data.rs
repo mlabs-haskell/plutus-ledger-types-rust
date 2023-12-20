@@ -19,6 +19,44 @@ pub enum PlutusData {
     Bytes(Vec<u8>),
 }
 
+impl PlutusData {
+    pub fn constr(tag: u32, fields: Vec<PlutusData>) -> Self {
+        PlutusData::Constr(BigInt::from(tag), fields)
+    }
+
+    pub fn map(fields: Vec<(PlutusData, PlutusData)>) -> Self {
+        PlutusData::Map(fields)
+    }
+
+    pub fn list(fields: Vec<PlutusData>) -> Self {
+        PlutusData::List(fields)
+    }
+
+    pub fn integer(value: u32) -> Self {
+        PlutusData::Integer(BigInt::from(value))
+    }
+
+    pub fn bytes(value: Vec<u8>) -> Self {
+        PlutusData::Bytes(value)
+    }
+}
+
+/// Deserialise a Plutus data using parsers for each variant
+pub fn case_plutus_data<'a, T>(
+    ctor_case: impl FnOnce(&'a BigInt) -> Box<dyn 'a + FnOnce(&'a Vec<PlutusData>) -> T>,
+    list_case: impl FnOnce(&'a Vec<PlutusData>) -> T,
+    int_case: impl FnOnce(&'a BigInt) -> T,
+    other_case: impl FnOnce(&'a PlutusData) -> T,
+    pd: &'a PlutusData,
+) -> T {
+    match pd {
+        PlutusData::Constr(tag, args) => ctor_case(&tag)(&args),
+        PlutusData::List(args) => list_case(&args),
+        PlutusData::Integer(i) => int_case(&i),
+        other => other_case(&other),
+    }
+}
+
 pub trait IsPlutusData {
     fn to_plutus_data(&self) -> PlutusData;
 

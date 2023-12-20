@@ -160,6 +160,13 @@ mod plutusdata_roundtrip_tests {
                 assert_eq!(val, from_to_plutus_data(&val)?);
             }
         }
+
+        proptest! {
+            #[test]
+            fn test_redeemeer_hash(val in arb_redeemer_hash()) {
+                assert_eq!(val, from_to_plutus_data(&val)?);
+            }
+        }
     }
     mod v2 {
         use super::from_to_plutus_data;

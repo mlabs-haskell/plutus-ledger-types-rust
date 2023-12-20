@@ -6,7 +6,7 @@ mod json_roundtrip_tests {
     where
         T: Json + PartialEq,
     {
-        T::from_json(val.to_json()?)
+        T::from_json(&val.to_json())
     }
 
     mod v1 {
@@ -73,6 +73,13 @@ mod json_roundtrip_tests {
         proptest! {
             #[test]
             fn test_redeemeer(val in arb_redeemer()) {
+                assert_eq!(val, from_to_json(&val)?);
+            }
+        }
+
+        proptest! {
+            #[test]
+            fn test_redeemeer_hash(val in arb_redeemer_hash()) {
                 assert_eq!(val, from_to_json(&val)?);
             }
         }
