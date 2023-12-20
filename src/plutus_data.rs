@@ -75,7 +75,7 @@ impl Json for PlutusData {
                         _ => Err(Error::UnexpectedArrayLength {
                             wanted: 1,
                             got: ctor_fields.len(),
-                            parser: "Prelude.Maybe".to_owned(),
+                            parser: "PlutusV1.PlutusData".to_owned(),
                         }),
                     }),
                 ),
@@ -86,7 +86,7 @@ impl Json for PlutusData {
                         _ => Err(Error::UnexpectedArrayLength {
                             wanted: 1,
                             got: ctor_fields.len(),
-                            parser: "Prelude.Maybe".to_owned(),
+                            parser: "PlutusV1.PlutusData".to_owned(),
                         }),
                     }),
                 ),
@@ -97,7 +97,7 @@ impl Json for PlutusData {
                         _ => Err(Error::UnexpectedArrayLength {
                             wanted: 1,
                             got: ctor_fields.len(),
-                            parser: "Prelude.Maybe".to_owned(),
+                            parser: "PlutusV1.PlutusData".to_owned(),
                         }),
                     }),
                 ),
@@ -108,7 +108,7 @@ impl Json for PlutusData {
                         _ => Err(Error::UnexpectedArrayLength {
                             wanted: 1,
                             got: ctor_fields.len(),
-                            parser: "Prelude.Maybe".to_owned(),
+                            parser: "PlutusV1.PlutusData".to_owned(),
                         }),
                     }),
                 ),
@@ -130,7 +130,7 @@ impl Json for PlutusData {
                         _ => Err(Error::UnexpectedArrayLength {
                             wanted: 1,
                             got: ctor_fields.len(),
-                            parser: "Prelude.Maybe".to_owned(),
+                            parser: "PlutusV1.PlutusData".to_owned(),
                         }),
                     }),
                 ),
