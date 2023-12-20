@@ -23,9 +23,9 @@ use serde::{Deserialize, Serialize};
 #[cfg_attr(feature = "lbf", derive(Json))]
 pub struct TransactionOutput {
     pub address: Address,
+    pub value: Value,
     pub datum: OutputDatum,
     pub reference_script: Option<ScriptHash>,
-    pub value: Value,
 }
 
 impl IsPlutusData for TransactionOutput {
@@ -34,9 +34,9 @@ impl IsPlutusData for TransactionOutput {
             BigInt::from(0),
             vec![
                 self.address.to_plutus_data(),
+                self.value.to_plutus_data(),
                 self.datum.to_plutus_data(),
                 self.reference_script.to_plutus_data(),
-                self.value.to_plutus_data(),
             ],
         )
     }
@@ -48,9 +48,9 @@ impl IsPlutusData for TransactionOutput {
                     verify_constr_fields(&fields, 4)?;
                     Ok(TransactionOutput {
                         address: Address::from_plutus_data(&fields[0])?,
-                        datum: OutputDatum::from_plutus_data(&fields[1])?,
-                        reference_script: <Option<ScriptHash>>::from_plutus_data(&fields[2])?,
-                        value: Value::from_plutus_data(&fields[3])?,
+                        value: Value::from_plutus_data(&fields[1])?,
+                        datum: OutputDatum::from_plutus_data(&fields[2])?,
+                        reference_script: <Option<ScriptHash>>::from_plutus_data(&fields[3])?,
                     })
                 }
                 _ => Err(PlutusDataError::UnexpectedPlutusInvariant {

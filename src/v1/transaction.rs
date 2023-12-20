@@ -105,8 +105,8 @@ impl IsPlutusData for TransactionHash {
 #[cfg_attr(feature = "lbf", derive(Json))]
 pub struct TransactionOutput {
     pub address: Address,
-    pub datum_hash: Option<DatumHash>,
     pub value: Value,
+    pub datum_hash: Option<DatumHash>,
 }
 
 impl IsPlutusData for TransactionOutput {
@@ -115,8 +115,8 @@ impl IsPlutusData for TransactionOutput {
             BigInt::from(0),
             vec![
                 self.address.to_plutus_data(),
-                self.datum_hash.to_plutus_data(),
                 self.value.to_plutus_data(),
+                self.datum_hash.to_plutus_data(),
             ],
         )
     }
@@ -128,8 +128,8 @@ impl IsPlutusData for TransactionOutput {
                     verify_constr_fields(&fields, 3)?;
                     Ok(TransactionOutput {
                         address: Address::from_plutus_data(&fields[0])?,
-                        datum_hash: <Option<DatumHash>>::from_plutus_data(&fields[1])?,
-                        value: Value::from_plutus_data(&fields[2])?,
+                        value: Value::from_plutus_data(&fields[1])?,
+                        datum_hash: <Option<DatumHash>>::from_plutus_data(&fields[2])?,
                     })
                 }
                 _ => Err(PlutusDataError::UnexpectedPlutusInvariant {
