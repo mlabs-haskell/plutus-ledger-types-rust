@@ -72,11 +72,27 @@ pub struct TransactionHash(pub LedgerBytes);
 
 impl IsPlutusData for TransactionHash {
     fn to_plutus_data(&self) -> PlutusData {
-        self.0.to_plutus_data()
+        PlutusData::Constr(BigInt::from(0), vec![self.0.to_plutus_data()])
     }
 
     fn from_plutus_data(data: &PlutusData) -> Result<Self, PlutusDataError> {
-        IsPlutusData::from_plutus_data(data).map(Self)
+        match data {
+            PlutusData::Constr(flag, fields) => match u32::try_from(flag) {
+                Ok(0) => {
+                    verify_constr_fields(&fields, 1)?;
+                    Ok(TransactionHash(IsPlutusData::from_plutus_data(&fields[0])?))
+                }
+                _ => Err(PlutusDataError::UnexpectedPlutusInvariant {
+                    wanted: "Constr field to be 0".to_owned(),
+                    got: flag.to_string(),
+                }),
+            },
+
+            _ => Err(PlutusDataError::UnexpectedPlutusType {
+                wanted: PlutusType::Constr,
+                got: PlutusType::from(data),
+            }),
+        }
     }
 }
 
@@ -89,8 +105,8 @@ impl IsPlutusData for TransactionHash {
 #[cfg_attr(feature = "lbf", derive(Json))]
 pub struct TransactionOutput {
     pub address: Address,
-    pub datum_hash: Option<DatumHash>,
     pub value: Value,
+    pub datum_hash: Option<DatumHash>,
 }
 
 impl IsPlutusData for TransactionOutput {
@@ -99,8 +115,8 @@ impl IsPlutusData for TransactionOutput {
             BigInt::from(0),
             vec![
                 self.address.to_plutus_data(),
-                self.datum_hash.to_plutus_data(),
                 self.value.to_plutus_data(),
+                self.datum_hash.to_plutus_data(),
             ],
         )
     }
@@ -112,8 +128,8 @@ impl IsPlutusData for TransactionOutput {
                     verify_constr_fields(&fields, 3)?;
                     Ok(TransactionOutput {
                         address: Address::from_plutus_data(&fields[0])?,
-                        datum_hash: <Option<DatumHash>>::from_plutus_data(&fields[1])?,
-                        value: Value::from_plutus_data(&fields[2])?,
+                        value: Value::from_plutus_data(&fields[1])?,
+                        datum_hash: <Option<DatumHash>>::from_plutus_data(&fields[2])?,
                     })
                 }
                 _ => Err(PlutusDataError::UnexpectedPlutusInvariant {
@@ -153,8 +169,8 @@ pub type POSIXTimeRange = PlutusInterval<POSIXTime>;
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "lbf", derive(Json))]
 pub struct TxInInfo {
-    pub transaction_input: TransactionInput,
-    pub resolved: TransactionOutput,
+    pub reference: TransactionInput,
+    pub output: TransactionOutput,
 }
 
 impl IsPlutusData for TxInInfo {
@@ -162,8 +178,8 @@ impl IsPlutusData for TxInInfo {
         PlutusData::Constr(
             BigInt::from(0),
             vec![
-                self.transaction_input.to_plutus_data(),
-                self.resolved.to_plutus_data(),
+                self.reference.to_plutus_data(),
+                self.output.to_plutus_data(),
             ],
         )
     }
@@ -174,8 +190,8 @@ impl IsPlutusData for TxInInfo {
                 Ok(0) => {
                     verify_constr_fields(&fields, 2)?;
                     Ok(TxInInfo {
-                        transaction_input: TransactionInput::from_plutus_data(&fields[0])?,
-                        resolved: TransactionOutput::from_plutus_data(&fields[1])?,
+                        reference: TransactionInput::from_plutus_data(&fields[0])?,
+                        output: TransactionOutput::from_plutus_data(&fields[1])?,
                     })
                 }
                 _ => Err(PlutusDataError::UnexpectedPlutusInvariant {
