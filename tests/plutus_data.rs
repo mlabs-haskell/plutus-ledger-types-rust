@@ -95,7 +95,7 @@ mod plutusdata_roundtrip_tests {
     }
     mod v1 {
         use super::from_to_plutus_data;
-        use plutus_ledger_api::generators::correct::v1::*;
+        use plutus_ledger_api::generators::correct::{primitive::arb_integer, v1::*};
         use proptest::prelude::*;
 
         proptest! {
@@ -167,6 +167,55 @@ mod plutusdata_roundtrip_tests {
                 assert_eq!(val, from_to_plutus_data(&val)?);
             }
         }
+
+        proptest! {
+            #[test]
+            fn test_bigint_assoc_map(val in arb_assoc_map(arb_integer(), arb_integer())) {
+                assert_eq!(val, from_to_plutus_data(&val)?);
+            }
+        }
+
+        proptest! {
+            #[test]
+            fn test_bigint_tuple(val in arb_tuple(arb_integer(), arb_integer())) {
+                assert_eq!(val, from_to_plutus_data(&val)?);
+            }
+        }
+
+        proptest! {
+            #[test]
+            fn test_arb_payment_pub_key_hash(val in arb_payment_pub_key_hash()) {
+                assert_eq!(val, from_to_plutus_data(&val)?)
+            }
+        }
+
+        proptest! {
+            #[test]
+            fn test_delegation_certification(val in arb_delegation_certification()) {
+                assert_eq!(val, from_to_plutus_data(&val)?)
+            }
+        }
+
+        proptest! {
+            #[test]
+            fn test_script_purpose(val in arb_script_purpose()) {
+                assert_eq!(val, from_to_plutus_data(&val)?)
+            }
+        }
+
+        proptest! {
+            #[test]
+            fn test_transaction_info(val in arb_transaction_info()) {
+                assert_eq!(val, from_to_plutus_data(&val)?)
+            }
+        }
+
+        proptest! {
+            #[test]
+            fn test_script_context(val in arb_script_context()) {
+                assert_eq!(val, from_to_plutus_data(&val)?)
+            }
+        }
     }
     mod v2 {
         use super::from_to_plutus_data;
@@ -191,6 +240,20 @@ mod plutusdata_roundtrip_tests {
             #[test]
             fn test_output_datum(val in arb_output_datum()) {
                 assert_eq!(val, from_to_plutus_data(&val)?);
+            }
+        }
+
+        proptest! {
+            #[test]
+            fn test_transaction_info(val in arb_transaction_info()) {
+                assert_eq!(val, from_to_plutus_data(&val)?)
+            }
+        }
+
+        proptest! {
+            #[test]
+            fn test_script_context(val in arb_script_context()) {
+                assert_eq!(val, from_to_plutus_data(&val)?)
             }
         }
     }

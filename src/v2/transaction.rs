@@ -185,7 +185,7 @@ impl IsPlutusData for TransactionInfo {
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub struct ScriptContext {
     pub purpose: ScriptPurpose,
-    pub tx_info: TxInInfo,
+    pub tx_info: TransactionInfo,
 }
 
 impl IsPlutusData for ScriptContext {
