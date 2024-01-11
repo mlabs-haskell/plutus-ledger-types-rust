@@ -9,6 +9,7 @@ use lbr_prelude::json::{
 };
 use num_bigint::BigInt;
 use std::collections::{BTreeMap, BTreeSet};
+use std::iter::{empty, once};
 
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
@@ -567,4 +568,61 @@ pub fn verify_constr_fields(
     } else {
         Ok(())
     }
+}
+
+pub fn parse_fixed_len_constr_fields<'a, const LEN: usize>(
+    v: &'a [PlutusData],
+) -> Result<&'a [PlutusData; LEN], PlutusDataError> {
+    v.try_into()
+        .map_err(|_| PlutusDataError::UnexpectedListLength {
+            got: v.len(),
+            wanted: LEN,
+        })
+}
+
+pub fn parse_constr<'a>(
+    data: &'a PlutusData,
+) -> Result<(u32, &'a Vec<PlutusData>), PlutusDataError> {
+    match data {
+        PlutusData::Constr(tag, fields) => u32::try_from(tag)
+            .map_err(|err| PlutusDataError::UnexpectedPlutusInvariant {
+                got: err.to_string(),
+                wanted: "Constr bigint tag within u32 range".into(),
+            })
+            .map(|tag| (tag, fields)),
+        _ => Err(PlutusDataError::UnexpectedPlutusType {
+            wanted: PlutusType::Constr,
+            got: PlutusType::from(data),
+        }),
+    }
+}
+
+pub fn parse_constr_with_tag<'a>(
+    data: &'a PlutusData,
+    expected_tag: u32,
+) -> Result<&'a Vec<PlutusData>, PlutusDataError> {
+    let (tag, fields) = parse_constr(data)?;
+
+    if tag != expected_tag {
+        Err(PlutusDataError::UnexpectedPlutusInvariant {
+            got: tag.to_string(),
+            wanted: format!("Constr tag to be: {}", expected_tag),
+        })
+    } else {
+        Ok(fields)
+    }
+}
+
+pub fn singleton<T, C>(value: T) -> C
+where
+    C: FromIterator<T>,
+{
+    once(value).into_iter().collect()
+}
+
+pub fn none<T, C>() -> C
+where
+    C: FromIterator<T>,
+{
+    empty::<T>().into_iter().collect()
 }
