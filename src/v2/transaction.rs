@@ -124,6 +124,8 @@ impl IsPlutusData for TxInInfo {
 }
 
 #[derive(Debug, PartialEq, Eq, Clone)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "lbf", derive(Json))]
 pub struct TransactionInfo {
     pub inputs: Vec<TxInInfo>,
     pub reference_inputs: Vec<TxInInfo>,
@@ -183,6 +185,8 @@ impl IsPlutusData for TransactionInfo {
 }
 
 #[derive(Debug, PartialEq, Eq, Clone)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "lbf", derive(Json))]
 pub struct ScriptContext {
     pub purpose: ScriptPurpose,
     pub tx_info: TransactionInfo,

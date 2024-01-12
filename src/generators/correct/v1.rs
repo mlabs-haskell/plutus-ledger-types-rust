@@ -304,11 +304,11 @@ pub fn arb_assoc_map<K: std::fmt::Debug, V: std::fmt::Debug>(
     vec((arb_k, arb_v), 10).prop_map(AssocMap)
 }
 
-pub fn arb_tuple<K: std::fmt::Debug, V: std::fmt::Debug>(
-    arb_k: impl Strategy<Value = K>,
-    arb_v: impl Strategy<Value = V>,
-) -> impl Strategy<Value = Tuple<K, V>> {
-    (arb_k, arb_v).prop_map(Tuple)
+pub fn arb_tuple<T: std::fmt::Debug, U: std::fmt::Debug>(
+    arb_k: impl Strategy<Value = T>,
+    arb_v: impl Strategy<Value = U>,
+) -> impl Strategy<Value = Tuple<T, U>> {
+    (arb_k, arb_v).prop_map(|(l, r)| Tuple(l, r))
 }
 
 pub fn arb_payment_pub_key_hash() -> impl Strategy<Value = PaymentPubKeyHash> {

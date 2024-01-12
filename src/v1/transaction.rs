@@ -216,6 +216,8 @@ impl IsPlutusData for TxInInfo {
 }
 
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Hash)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "lbf", derive(Json))]
 pub enum DelegationCertification {
     DelegKey(StakingCredential),
     DelegDeregKey(StakingCredential),
@@ -297,6 +299,8 @@ impl IsPlutusData for DelegationCertification {
 }
 
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Hash)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "lbf", derive(Json))]
 pub enum ScriptPurpose {
     Minting(CurrencySymbol),
     Spending(TransactionInput),
@@ -334,6 +338,8 @@ impl IsPlutusData for ScriptPurpose {
 }
 
 #[derive(Debug, PartialEq, Eq, Clone)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "lbf", derive(Json))]
 pub struct TransactionInfo {
     pub inputs: Vec<TxInInfo>,
     pub outputs: Vec<TransactionOutput>,
@@ -387,6 +393,8 @@ impl IsPlutusData for TransactionInfo {
 }
 
 #[derive(Debug, PartialEq, Eq, Clone)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "lbf", derive(Json))]
 pub struct ScriptContext {
     pub purpose: ScriptPurpose,
     pub tx_info: TransactionInfo,
