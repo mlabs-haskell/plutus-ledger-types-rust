@@ -1,25 +1,22 @@
 //! Types related to Cardano transactions.
-use crate::plutus_data::{
-    none, parse_constr, parse_constr_with_tag, parse_fixed_len_constr_fields, singleton,
-    verify_constr_fields, IsPlutusData, PlutusData, PlutusDataError, PlutusType,
+use super::{
+    address::{Address, StakingCredential},
+    crypto::{LedgerBytes, PaymentPubKeyHash},
+    datum::{Datum, DatumHash},
+    interval::PlutusInterval,
+    tuple::Tuple,
+    value::{CurrencySymbol, Value},
 };
-use crate::v1::address::Address;
-use crate::v1::crypto::LedgerBytes;
-use crate::v1::datum::DatumHash;
-use crate::v1::interval::PlutusInterval;
-use crate::v1::value::Value;
+use crate::plutus_data::{
+    parse_constr, parse_constr_with_tag, parse_fixed_len_constr_fields, verify_constr_fields,
+    IsPlutusData, PlutusData, PlutusDataError, PlutusType,
+};
+use crate::utils::{none, singleton};
 #[cfg(feature = "lbf")]
 use lbr_prelude::json::Json;
 use num_bigint::BigInt;
-
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
-
-use super::address::StakingCredential;
-use super::crypto::PaymentPubKeyHash;
-use super::datum::Datum;
-use super::tuple::Tuple;
-use super::value::CurrencySymbol;
 
 /// An input of a transaction
 ///
@@ -215,35 +212,47 @@ impl IsPlutusData for TxInInfo {
     }
 }
 
+/// Partial representation of digests of certificates on the ledger.
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "lbf", derive(Json))]
-pub enum DelegationCertification {
+pub enum DCert {
     DelegKey(StakingCredential),
     DelegDeregKey(StakingCredential),
-    DelegDelegate(StakingCredential, PaymentPubKeyHash),
-    PoolRegister(PaymentPubKeyHash, PaymentPubKeyHash),
-    PoolRetire(PaymentPubKeyHash, BigInt),
+    DelegDelegate(
+        /// Delegator
+        StakingCredential,
+        /// Delegatee
+        PaymentPubKeyHash,
+    ),
+    /// A digest of the PoolParam
+    PoolRegister(
+        /// Pool id
+        PaymentPubKeyHash,
+        /// Pool VFR
+        PaymentPubKeyHash,
+    ),
+    PoolRetire(
+        PaymentPubKeyHash,
+        /// Epoch
+        BigInt,
+    ),
     Genesis,
     Mir,
 }
 
-impl IsPlutusData for DelegationCertification {
+impl IsPlutusData for DCert {
     fn to_plutus_data(&self) -> PlutusData {
         let (tag, fields) = match self {
-            DelegationCertification::DelegKey(c) => (0u32, singleton(c.to_plutus_data())),
-            DelegationCertification::DelegDeregKey(c) => (1, singleton(c.to_plutus_data())),
-            DelegationCertification::DelegDelegate(c, pkh) => {
-                (2, vec![c.to_plutus_data(), pkh.to_plutus_data()])
-            }
-            DelegationCertification::PoolRegister(pkh, pkh1) => {
+            DCert::DelegKey(c) => (0u32, singleton(c.to_plutus_data())),
+            DCert::DelegDeregKey(c) => (1, singleton(c.to_plutus_data())),
+            DCert::DelegDelegate(c, pkh) => (2, vec![c.to_plutus_data(), pkh.to_plutus_data()]),
+            DCert::PoolRegister(pkh, pkh1) => {
                 (3, vec![pkh.to_plutus_data(), pkh1.to_plutus_data()])
             }
-            DelegationCertification::PoolRetire(pkh, i) => {
-                (4, vec![pkh.to_plutus_data(), i.to_plutus_data()])
-            }
-            DelegationCertification::Genesis => (5, none()),
-            DelegationCertification::Mir => (6, none()),
+            DCert::PoolRetire(pkh, i) => (4, vec![pkh.to_plutus_data(), i.to_plutus_data()]),
+            DCert::Genesis => (5, none()),
+            DCert::Mir => (6, none()),
         };
 
         PlutusData::Constr(BigInt::from(tag), fields)
@@ -298,6 +307,7 @@ impl IsPlutusData for DelegationCertification {
     }
 }
 
+/// The purpose of the script that's currently running.
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "lbf", derive(Json))]
@@ -305,7 +315,7 @@ pub enum ScriptPurpose {
     Minting(CurrencySymbol),
     Spending(TransactionInput),
     Rewarding(StakingCredential),
-    Certifying(DelegationCertification),
+    Certifying(DCert),
 }
 
 impl IsPlutusData for ScriptPurpose {
@@ -337,6 +347,7 @@ impl IsPlutusData for ScriptPurpose {
     }
 }
 
+/// A pending transaction as seen by validator scripts, also known as TxInfo in Plutus
 #[derive(Debug, PartialEq, Eq, Clone)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "lbf", derive(Json))]
@@ -345,7 +356,7 @@ pub struct TransactionInfo {
     pub outputs: Vec<TransactionOutput>,
     pub fee: Value,
     pub mint: Value,
-    pub d_cert: Vec<DelegationCertification>,
+    pub d_cert: Vec<DCert>,
     pub wdrl: Vec<Tuple<StakingCredential, BigInt>>,
     pub valid_range: POSIXTimeRange,
     pub signatories: Vec<PaymentPubKeyHash>,
@@ -392,6 +403,7 @@ impl IsPlutusData for TransactionInfo {
     }
 }
 
+/// The context that is presented to the currently-executing script.
 #[derive(Debug, PartialEq, Eq, Clone)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "lbf", derive(Json))]

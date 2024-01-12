@@ -100,7 +100,7 @@ mod json_roundtrip_tests {
 
         proptest! {
             #[test]
-            fn test_delegation_certification(val in arb_delegation_certification()) {
+            fn test_d_cert(val in arb_d_cert()) {
                 assert_eq!(val, from_to_json(&val)?)
             }
         }

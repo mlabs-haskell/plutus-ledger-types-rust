@@ -4,13 +4,8 @@ use crate::plutus_data::{
     verify_constr_fields, IsPlutusData, PlutusData, PlutusDataError, PlutusType,
 };
 pub use crate::v1::transaction::{
-    DelegationCertification, POSIXTime, POSIXTimeRange, ScriptPurpose, TransactionHash,
-    TransactionInput,
+    DCert, POSIXTime, POSIXTimeRange, ScriptPurpose, TransactionHash, TransactionInput,
 };
-use crate::v2::address::Address;
-use crate::v2::datum::OutputDatum;
-use crate::v2::script::ScriptHash;
-use crate::v2::value::Value;
 #[cfg(feature = "lbf")]
 use lbr_prelude::json::Json;
 use num_bigint::BigInt;
@@ -19,11 +14,13 @@ use num_bigint::BigInt;
 use serde::{Deserialize, Serialize};
 
 use super::{
-    address::StakingCredential,
+    address::{Address, StakingCredential},
     assoc_map::AssocMap,
     crypto::PaymentPubKeyHash,
-    datum::{Datum, DatumHash},
+    datum::{Datum, DatumHash, OutputDatum},
     redeemer::Redeemer,
+    script::ScriptHash,
+    value::Value,
 };
 
 /// An output of a transaction
@@ -123,6 +120,7 @@ impl IsPlutusData for TxInInfo {
     }
 }
 
+/// A pending transaction as seen by validator scripts, also known as TxInfo in Plutus
 #[derive(Debug, PartialEq, Eq, Clone)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "lbf", derive(Json))]
@@ -132,7 +130,7 @@ pub struct TransactionInfo {
     pub outputs: Vec<TransactionOutput>,
     pub fee: Value,
     pub mint: Value,
-    pub d_cert: Vec<DelegationCertification>,
+    pub d_cert: Vec<DCert>,
     pub wdrl: AssocMap<StakingCredential, BigInt>,
     pub valid_range: POSIXTimeRange,
     pub signatories: Vec<PaymentPubKeyHash>,
@@ -184,6 +182,7 @@ impl IsPlutusData for TransactionInfo {
     }
 }
 
+/// The context that is presented to the currently-executing script.
 #[derive(Debug, PartialEq, Eq, Clone)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "lbf", derive(Json))]

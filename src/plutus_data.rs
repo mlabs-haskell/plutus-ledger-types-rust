@@ -9,7 +9,6 @@ use lbr_prelude::json::{
 };
 use num_bigint::BigInt;
 use std::collections::{BTreeMap, BTreeSet};
-use std::iter::{empty, once};
 
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
@@ -570,6 +569,8 @@ pub fn verify_constr_fields(
     }
 }
 
+/// Given a vector of PlutusData, parse it as an array whose length is known at
+/// compile time.
 pub fn parse_fixed_len_constr_fields<'a, const LEN: usize>(
     v: &'a [PlutusData],
 ) -> Result<&'a [PlutusData; LEN], PlutusDataError> {
@@ -580,6 +581,8 @@ pub fn parse_fixed_len_constr_fields<'a, const LEN: usize>(
         })
 }
 
+/// Given a PlutusData, parse it as PlutusData::Constr and its tag as u32. Return
+/// the u32 tag and fields.
 pub fn parse_constr<'a>(
     data: &'a PlutusData,
 ) -> Result<(u32, &'a Vec<PlutusData>), PlutusDataError> {
@@ -597,6 +600,7 @@ pub fn parse_constr<'a>(
     }
 }
 
+/// Given a PlutusData, parse it as PlutusData::Constr and verify its tag.
 pub fn parse_constr_with_tag<'a>(
     data: &'a PlutusData,
     expected_tag: u32,
@@ -611,18 +615,4 @@ pub fn parse_constr_with_tag<'a>(
     } else {
         Ok(fields)
     }
-}
-
-pub fn singleton<T, C>(value: T) -> C
-where
-    C: FromIterator<T>,
-{
-    once(value).into_iter().collect()
-}
-
-pub fn none<T, C>() -> C
-where
-    C: FromIterator<T>,
-{
-    empty::<T>().into_iter().collect()
 }

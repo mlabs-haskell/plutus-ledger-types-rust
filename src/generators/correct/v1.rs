@@ -14,8 +14,8 @@ use crate::v1::interval::{Extended, LowerBound, PlutusInterval, UpperBound};
 use crate::v1::redeemer::{Redeemer, RedeemerHash};
 use crate::v1::script::{MintingPolicyHash, ScriptHash, ValidatorHash};
 use crate::v1::transaction::{
-    DelegationCertification, POSIXTime, ScriptContext, ScriptPurpose, TransactionHash,
-    TransactionInfo, TransactionInput, TransactionOutput, TxInInfo,
+    DCert, POSIXTime, ScriptContext, ScriptPurpose, TransactionHash, TransactionInfo,
+    TransactionInput, TransactionOutput, TxInInfo,
 };
 use crate::v1::tuple::Tuple;
 use crate::v2::value::{AssetClass, CurrencySymbol, TokenName, Value};
@@ -246,7 +246,7 @@ pub fn arb_transaction_index() -> impl Strategy<Value = TransactionIndex> {
     arb_integer().prop_map(TransactionIndex)
 }
 
-/// Strategy to generate a certificate indVexV
+/// Strategy to generate a certificate index.
 pub fn arb_certificate_index() -> impl Strategy<Value = CertificateIndex> {
     arb_integer().prop_map(CertificateIndex)
 }
@@ -297,6 +297,7 @@ pub fn arb_tx_in_info() -> impl Strategy<Value = TxInInfo> {
         .prop_map(|(reference, output)| TxInInfo { reference, output })
 }
 
+/// Strategy to generate an AssocMap, given the strategies to generate keys and values
 pub fn arb_assoc_map<K: std::fmt::Debug, V: std::fmt::Debug>(
     arb_k: impl Strategy<Value = K>,
     arb_v: impl Strategy<Value = V>,
@@ -304,6 +305,7 @@ pub fn arb_assoc_map<K: std::fmt::Debug, V: std::fmt::Debug>(
     vec((arb_k, arb_v), 10).prop_map(AssocMap)
 }
 
+/// Strategy to generate a Tuple, given the strategies to generate its two elements
 pub fn arb_tuple<T: std::fmt::Debug, U: std::fmt::Debug>(
     arb_k: impl Strategy<Value = T>,
     arb_v: impl Strategy<Value = U>,
@@ -311,41 +313,45 @@ pub fn arb_tuple<T: std::fmt::Debug, U: std::fmt::Debug>(
     (arb_k, arb_v).prop_map(|(l, r)| Tuple(l, r))
 }
 
+/// Strategy to generate a PaymentPubKeyHash
 pub fn arb_payment_pub_key_hash() -> impl Strategy<Value = PaymentPubKeyHash> {
     arb_ed25519_pub_key_hash().prop_map(PaymentPubKeyHash)
 }
 
-pub fn arb_delegation_certification() -> impl Strategy<Value = DelegationCertification> {
+/// Strategy to generate a DCert
+pub fn arb_d_cert() -> impl Strategy<Value = DCert> {
     prop_oneof![
-        arb_staking_credential().prop_map(DelegationCertification::DelegKey),
-        arb_staking_credential().prop_map(DelegationCertification::DelegDeregKey),
+        arb_staking_credential().prop_map(DCert::DelegKey),
+        arb_staking_credential().prop_map(DCert::DelegDeregKey),
         (arb_staking_credential(), arb_payment_pub_key_hash())
-            .prop_map(|(sc, pkh)| DelegationCertification::DelegDelegate(sc, pkh)),
+            .prop_map(|(sc, pkh)| DCert::DelegDelegate(sc, pkh)),
         (arb_payment_pub_key_hash(), arb_payment_pub_key_hash())
-            .prop_map(|(p1, p2)| DelegationCertification::PoolRegister(p1, p2)),
-        (arb_payment_pub_key_hash(), arb_integer())
-            .prop_map(|(pkh, i)| DelegationCertification::PoolRetire(pkh, i)),
-        Just(DelegationCertification::Genesis),
-        Just(DelegationCertification::Mir)
+            .prop_map(|(p1, p2)| DCert::PoolRegister(p1, p2)),
+        (arb_payment_pub_key_hash(), arb_integer()).prop_map(|(pkh, i)| DCert::PoolRetire(pkh, i)),
+        Just(DCert::Genesis),
+        Just(DCert::Mir)
     ]
 }
 
+/// Strategy to generate a ScriptPurpose
 pub fn arb_script_purpose() -> impl Strategy<Value = ScriptPurpose> {
     prop_oneof![
         arb_currency_symbol().prop_map(ScriptPurpose::Minting),
         arb_transaction_input().prop_map(ScriptPurpose::Spending),
         arb_staking_credential().prop_map(ScriptPurpose::Rewarding),
-        arb_delegation_certification().prop_map(ScriptPurpose::Certifying)
+        arb_d_cert().prop_map(ScriptPurpose::Certifying)
     ]
 }
 
+/// Strategy to generate a TransactionInfo. Note that its inputs, outputs, d_cert,
+/// signatories and datums field will each have a length of 0 to 5
 pub fn arb_transaction_info() -> impl Strategy<Value = TransactionInfo> {
     (
         vec(arb_tx_in_info(), 5),
         vec(arb_transaction_output(), 5),
         arb_value(),
         arb_value(),
-        vec(arb_delegation_certification(), 5),
+        vec(arb_d_cert(), 5),
         vec(arb_tuple(arb_staking_credential(), arb_integer()), 5),
         arb_plutus_interval_posix_time(),
         vec(arb_payment_pub_key_hash(), 5),
@@ -370,6 +376,7 @@ pub fn arb_transaction_info() -> impl Strategy<Value = TransactionInfo> {
         )
 }
 
+/// Strategy to generate a ScriptContext
 pub fn arb_script_context() -> impl Strategy<Value = ScriptContext> {
     (arb_script_purpose(), arb_transaction_info())
         .prop_map(|(purpose, tx_info)| ScriptContext { purpose, tx_info })
