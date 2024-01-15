@@ -6,6 +6,7 @@ pub mod transaction;
 
 // Inherited from v1
 pub use crate::v1::address;
+pub use crate::v1::assoc_map;
 pub use crate::v1::crypto;
 pub use crate::v1::interval;
 pub use crate::v1::redeemer;

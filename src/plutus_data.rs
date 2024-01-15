@@ -568,3 +568,51 @@ pub fn verify_constr_fields(
         Ok(())
     }
 }
+
+/// Given a vector of PlutusData, parse it as an array whose length is known at
+/// compile time.
+pub fn parse_fixed_len_constr_fields<'a, const LEN: usize>(
+    v: &'a [PlutusData],
+) -> Result<&'a [PlutusData; LEN], PlutusDataError> {
+    v.try_into()
+        .map_err(|_| PlutusDataError::UnexpectedListLength {
+            got: v.len(),
+            wanted: LEN,
+        })
+}
+
+/// Given a PlutusData, parse it as PlutusData::Constr and its tag as u32. Return
+/// the u32 tag and fields.
+pub fn parse_constr<'a>(
+    data: &'a PlutusData,
+) -> Result<(u32, &'a Vec<PlutusData>), PlutusDataError> {
+    match data {
+        PlutusData::Constr(tag, fields) => u32::try_from(tag)
+            .map_err(|err| PlutusDataError::UnexpectedPlutusInvariant {
+                got: err.to_string(),
+                wanted: "Constr bigint tag within u32 range".into(),
+            })
+            .map(|tag| (tag, fields)),
+        _ => Err(PlutusDataError::UnexpectedPlutusType {
+            wanted: PlutusType::Constr,
+            got: PlutusType::from(data),
+        }),
+    }
+}
+
+/// Given a PlutusData, parse it as PlutusData::Constr and verify its tag.
+pub fn parse_constr_with_tag<'a>(
+    data: &'a PlutusData,
+    expected_tag: u32,
+) -> Result<&'a Vec<PlutusData>, PlutusDataError> {
+    let (tag, fields) = parse_constr(data)?;
+
+    if tag != expected_tag {
+        Err(PlutusDataError::UnexpectedPlutusInvariant {
+            got: tag.to_string(),
+            wanted: format!("Constr tag to be: {}", expected_tag),
+        })
+    } else {
+        Ok(fields)
+    }
+}

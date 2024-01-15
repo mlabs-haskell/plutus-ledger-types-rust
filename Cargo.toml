@@ -16,6 +16,7 @@ serde = { version = "1.0.189", features = ["derive"], optional = true }
 true = { version = "0.1.0", optional = true }
 data-encoding = { version = "2.4.0", optional = true }
 thiserror = "1.0.50"
+linked-hash-map = "0.5.6"
 
 [features]
 serde = ["dep:serde", "num-bigint/serde"]
