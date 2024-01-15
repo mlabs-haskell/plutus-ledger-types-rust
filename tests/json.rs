@@ -11,7 +11,7 @@ mod json_roundtrip_tests {
 
     mod v1 {
         use super::from_to_json;
-        use plutus_ledger_api::generators::correct::v1::*;
+        use plutus_ledger_api::generators::correct::{primitive::arb_integer, v1::*};
         use proptest::prelude::*;
 
         proptest! {
@@ -83,6 +83,41 @@ mod json_roundtrip_tests {
                 assert_eq!(val, from_to_json(&val)?);
             }
         }
+
+        proptest! {
+            #[test]
+            fn test_bigint_assoc_map(val in arb_assoc_map(arb_integer(), arb_integer())) {
+                assert_eq!(val, from_to_json(&val)?);
+            }
+        }
+
+        proptest! {
+            #[test]
+            fn test_d_cert(val in arb_d_cert()) {
+                assert_eq!(val, from_to_json(&val)?)
+            }
+        }
+
+        proptest! {
+            #[test]
+            fn test_script_purpose(val in arb_script_purpose()) {
+                assert_eq!(val, from_to_json(&val)?)
+            }
+        }
+
+        proptest! {
+            #[test]
+            fn test_transaction_info(val in arb_transaction_info()) {
+                assert_eq!(val, from_to_json(&val)?)
+            }
+        }
+
+        proptest! {
+            #[test]
+            fn test_script_context(val in arb_script_context()) {
+                assert_eq!(val, from_to_json(&val)?)
+            }
+        }
     }
     mod v2 {
         use super::from_to_json;
@@ -107,6 +142,20 @@ mod json_roundtrip_tests {
             #[test]
             fn test_output_datum(val in arb_output_datum()) {
                 assert_eq!(val, from_to_json(&val)?);
+            }
+        }
+
+        proptest! {
+            #[test]
+            fn test_transaction_info(val in arb_transaction_info()) {
+                assert_eq!(val, from_to_json(&val)?)
+            }
+        }
+
+        proptest! {
+            #[test]
+            fn test_script_context(val in arb_script_context()) {
+                assert_eq!(val, from_to_json(&val)?)
             }
         }
     }
