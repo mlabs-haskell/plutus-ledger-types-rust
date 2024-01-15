@@ -11,5 +11,4 @@ pub use crate::v1::crypto;
 pub use crate::v1::interval;
 pub use crate::v1::redeemer;
 pub use crate::v1::script;
-pub use crate::v1::tuple;
 pub use crate::v1::value;

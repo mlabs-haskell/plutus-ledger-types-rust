@@ -7,5 +7,4 @@ pub mod interval;
 pub mod redeemer;
 pub mod script;
 pub mod transaction;
-pub mod tuple;
 pub mod value;

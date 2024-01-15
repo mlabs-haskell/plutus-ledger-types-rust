@@ -17,7 +17,6 @@ use crate::v1::transaction::{
     DCert, POSIXTime, ScriptContext, ScriptPurpose, TransactionHash, TransactionInfo,
     TransactionInput, TransactionOutput, TxInInfo,
 };
-use crate::v1::tuple::Tuple;
 use crate::v2::value::{AssetClass, CurrencySymbol, TokenName, Value};
 use num_bigint::BigInt;
 use proptest::collection::btree_map;
@@ -305,14 +304,6 @@ pub fn arb_assoc_map<K: std::fmt::Debug, V: std::fmt::Debug>(
     vec((arb_k, arb_v), 10).prop_map(AssocMap)
 }
 
-/// Strategy to generate a Tuple, given the strategies to generate its two elements
-pub fn arb_tuple<T: std::fmt::Debug, U: std::fmt::Debug>(
-    arb_k: impl Strategy<Value = T>,
-    arb_v: impl Strategy<Value = U>,
-) -> impl Strategy<Value = Tuple<T, U>> {
-    (arb_k, arb_v).prop_map(|(l, r)| Tuple(l, r))
-}
-
 /// Strategy to generate a PaymentPubKeyHash
 pub fn arb_payment_pub_key_hash() -> impl Strategy<Value = PaymentPubKeyHash> {
     arb_ed25519_pub_key_hash().prop_map(PaymentPubKeyHash)
@@ -352,10 +343,10 @@ pub fn arb_transaction_info() -> impl Strategy<Value = TransactionInfo> {
         arb_value(),
         arb_value(),
         vec(arb_d_cert(), 5),
-        vec(arb_tuple(arb_staking_credential(), arb_integer()), 5),
+        vec((arb_staking_credential(), arb_integer()), 5),
         arb_plutus_interval_posix_time(),
         vec(arb_payment_pub_key_hash(), 5),
-        vec(arb_tuple(arb_datum_hash(), arb_datum()), 5),
+        vec((arb_datum_hash(), arb_datum()), 5),
         arb_transaction_hash(),
     )
         .prop_map(

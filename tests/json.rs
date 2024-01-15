@@ -93,13 +93,6 @@ mod json_roundtrip_tests {
 
         proptest! {
             #[test]
-            fn test_bigint_tuple(val in arb_tuple(arb_integer(), arb_integer())) {
-                assert_eq!(val, from_to_json(&val)?);
-            }
-        }
-
-        proptest! {
-            #[test]
             fn test_d_cert(val in arb_d_cert()) {
                 assert_eq!(val, from_to_json(&val)?)
             }

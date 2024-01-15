@@ -177,13 +177,6 @@ mod plutusdata_roundtrip_tests {
 
         proptest! {
             #[test]
-            fn test_bigint_tuple(val in arb_tuple(arb_integer(), arb_integer())) {
-                assert_eq!(val, from_to_plutus_data(&val)?);
-            }
-        }
-
-        proptest! {
-            #[test]
             fn test_arb_payment_pub_key_hash(val in arb_payment_pub_key_hash()) {
                 assert_eq!(val, from_to_plutus_data(&val)?)
             }

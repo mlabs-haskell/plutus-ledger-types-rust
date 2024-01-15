@@ -8,8 +8,6 @@ use serde::{Deserialize, Serialize};
 
 use crate::plutus_data::{IsPlutusData, PlutusData, PlutusDataError, PlutusType};
 
-use super::tuple::Tuple;
-
 #[derive(Debug, PartialEq, Eq, Clone)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct AssocMap<K, V>(pub Vec<(K, V)>);
@@ -39,15 +37,15 @@ impl<K: IsPlutusData, V: IsPlutusData> IsPlutusData for AssocMap<K, V> {
     }
 }
 
-impl<K, V> From<Vec<Tuple<K, V>>> for AssocMap<K, V> {
-    fn from(vec: Vec<Tuple<K, V>>) -> Self {
-        AssocMap(vec.into_iter().map(|Tuple(l, r)| (l, r)).collect())
+impl<K, V> From<Vec<(K, V)>> for AssocMap<K, V> {
+    fn from(vec: Vec<(K, V)>) -> Self {
+        AssocMap(vec)
     }
 }
 
-impl<K, V> From<AssocMap<K, V>> for Vec<Tuple<K, V>> {
+impl<K, V> From<AssocMap<K, V>> for Vec<(K, V)> {
     fn from(m: AssocMap<K, V>) -> Self {
-        m.0.into_iter().map(|(l, r)| Tuple(l, r)).collect()
+        m.0
     }
 }
 

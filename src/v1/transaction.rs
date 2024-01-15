@@ -4,7 +4,6 @@ use super::{
     crypto::{LedgerBytes, PaymentPubKeyHash},
     datum::{Datum, DatumHash},
     interval::PlutusInterval,
-    tuple::Tuple,
     value::{CurrencySymbol, Value},
 };
 use crate::plutus_data::{
@@ -357,10 +356,10 @@ pub struct TransactionInfo {
     pub fee: Value,
     pub mint: Value,
     pub d_cert: Vec<DCert>,
-    pub wdrl: Vec<Tuple<StakingCredential, BigInt>>,
+    pub wdrl: Vec<(StakingCredential, BigInt)>,
     pub valid_range: POSIXTimeRange,
     pub signatories: Vec<PaymentPubKeyHash>,
-    pub datums: Vec<Tuple<DatumHash, Datum>>,
+    pub datums: Vec<(DatumHash, Datum)>,
     pub id: TransactionHash,
 }
 
