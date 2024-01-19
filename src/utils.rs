@@ -19,17 +19,17 @@ where
     empty::<T>().collect()
 }
 
-pub fn union_b_tree_maps_with<const N: usize, K: Clone + Ord, V: Clone, F: Fn(&V, &V) -> V>(
+/// Union two BTreeMaps, call f to resolve conflicts if duplicate keys are encountered.
+pub fn union_b_tree_maps_with<K: Clone + Ord, V: Clone, F: Fn(&V, &V) -> V>(
     f: F,
-    maps: [&BTreeMap<K, V>; N],
+    l: &BTreeMap<K, V>,
+    r: &BTreeMap<K, V>,
 ) -> BTreeMap<K, V> {
-    maps.into_iter().fold(BTreeMap::new(), |acc, m| {
-        m.into_iter().fold(acc, |mut acc, (k, v)| {
-            acc.entry(k.clone())
-                .and_modify(|va: &mut V| *va = f(va, v))
-                .or_insert(v.clone());
+    r.into_iter().fold(l.clone(), |mut acc, (k, vr)| {
+        acc.entry(k.clone())
+            .and_modify(|vl| *vl = f(&vl, vr))
+            .or_insert(vr.clone());
 
-            acc
-        })
+        acc
     })
 }

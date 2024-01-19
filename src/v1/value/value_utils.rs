@@ -9,10 +9,12 @@ use std::{
 use super::{CurrencySymbol, TokenName, Value};
 
 impl Value {
+    /// Create a Value containing only ada tokens, given the quantity in lovelace.
     pub fn ada_value(amount: &BigInt) -> Self {
         Self::token_value(&CurrencySymbol::Ada, &TokenName::ada(), amount)
     }
 
+    /// Create a Value containing only the given quantity of the given token.
     pub fn token_value(cs: &CurrencySymbol, tn: &TokenName, amount: &BigInt) -> Self {
         Value(singleton((
             cs.clone(),
@@ -20,6 +22,7 @@ impl Value {
         )))
     }
 
+    /// Lookup the quantity of the given token.
     pub fn get_token_amount(&self, cs: &CurrencySymbol, tn: &TokenName) -> BigInt {
         self.0
             .get(cs)
@@ -27,10 +30,12 @@ impl Value {
             .map_or(BigInt::zero(), Clone::clone)
     }
 
+    /// Lookup the quantity of ada(unit: lovelace).
     pub fn get_ada_amount(&self) -> BigInt {
         self.get_token_amount(&CurrencySymbol::Ada, &TokenName::ada())
     }
 
+    /// Insert a new token into the value, or replace the existing quantity.
     pub fn insert_token(&self, cs: &CurrencySymbol, tn: &TokenName, a: &BigInt) -> Self {
         let mut result_map = self.0.clone();
 
@@ -49,14 +54,17 @@ impl Value {
         Self(result_map)
     }
 
+    /// Return true if the value don't have any entries.
     pub fn is_empty(&self) -> bool {
         self.0.is_empty()
     }
 
+    /// Remove all tokens whose quantity is zero.
     pub fn normalize(&self) -> Self {
         self.filter_map_amount(|_, _, a| a.is_zero().not().then(|| a.clone()))
     }
 
+    /// Apply a function to each token of the value, and use its result as the new amount.
     pub fn map_amount<F>(&self, mut f: F) -> Self
     where
         F: FnMut(&CurrencySymbol, &TokenName, &BigInt) -> BigInt,
@@ -64,6 +72,11 @@ impl Value {
         self.filter_map_amount(|cs, tn, a| Some(f(cs, tn, a)))
     }
 
+    /// Apply a function to each token of the value. If the result is None, the token entry will be
+    /// removed.
+    ///
+    /// Note that if the name-quantity map of any given currency symbols is empty, the currency entry
+    /// will be removed from the top-level map entirely.
     pub fn filter_map_amount<F>(&self, mut f: F) -> Self
     where
         F: FnMut(&CurrencySymbol, &TokenName, &BigInt) -> Option<BigInt>,
@@ -113,8 +126,9 @@ impl Add<&Value> for &Value {
 
     fn add(self, rhs: &Value) -> Self::Output {
         Value(union_b_tree_maps_with(
-            |lhs, rhs| union_b_tree_maps_with(|lhs, rhs| lhs + rhs, [lhs, rhs]),
-            [&self.0, &rhs.0],
+            |lhs, rhs| union_b_tree_maps_with(|lhs, rhs| lhs + rhs, lhs, rhs),
+            &self.0,
+            &rhs.0,
         ))
     }
 }
@@ -128,8 +142,9 @@ impl Sub<&Value> for &Value {
 
     fn sub(self, rhs: &Value) -> Self::Output {
         Value(union_b_tree_maps_with(
-            |lhs, rhs| union_b_tree_maps_with(|lhs, rhs| lhs - rhs, [lhs, rhs]),
-            [&self.0, &rhs.0],
+            |lhs, rhs| union_b_tree_maps_with(|lhs, rhs| lhs - rhs, lhs, rhs),
+            &self.0,
+            &rhs.0,
         ))
     }
 }
