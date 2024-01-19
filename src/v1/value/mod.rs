@@ -2,6 +2,7 @@
 use crate::plutus_data::{
     verify_constr_fields, IsPlutusData, PlutusData, PlutusDataError, PlutusType,
 };
+
 use crate::v1::crypto::LedgerBytes;
 use crate::v1::script::{MintingPolicyHash, ScriptHash};
 #[cfg(feature = "lbf")]
@@ -12,6 +13,9 @@ use serde::{Deserialize, Serialize};
 #[cfg(feature = "lbf")]
 use serde_json;
 use std::collections::BTreeMap;
+#[macro_use]
+mod macros;
+mod value_utils;
 
 /// Identifier of a currency, which could be either Ada (or tAda), or a native token represented by
 /// it's minting policy hash. A currency may be associated with multiple `AssetClass`es.
