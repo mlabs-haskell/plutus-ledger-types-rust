@@ -1,6 +1,8 @@
 #[cfg(test)]
 mod value_tests {
-    mod semiring {
+    mod ring_ish {
+        use std::ops::Neg;
+
         use num_bigint::BigInt;
         use num_traits::{One, Zero};
         use plutus_ledger_api::{
@@ -59,6 +61,16 @@ mod value_tests {
             fn test_scalar_annihilation(val in arb_value()) {
               assert_eq!(&val * BigInt::zero(), BigInt::zero() * &val);
               assert_eq!(Value::zero(), (BigInt::zero() * &val).normalize());
+            }
+
+            #[test]
+            fn test_additive_inverse_annihilation(val in arb_value()) {
+              assert_eq!((&val + (&val).neg()).normalize(), Value::zero());
+            }
+
+            #[test]
+            fn test_minus(x in arb_value(), y in arb_value()) {
+              assert_eq!(&x - &y, &x + (&y).neg());
             }
         }
     }

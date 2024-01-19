@@ -3,7 +3,7 @@ use num_bigint::BigInt;
 use num_traits::Zero;
 use std::{
     collections::BTreeMap,
-    ops::{Add, Mul, Not, Sub},
+    ops::{Add, Mul, Neg, Not, Sub},
 };
 
 use super::{CurrencySymbol, TokenName, Value};
@@ -133,6 +133,22 @@ impl Add<&Value> for &Value {
     }
 }
 
+impl Neg for Value {
+    type Output = Value;
+
+    fn neg(self) -> Self::Output {
+        (&self).neg()
+    }
+}
+
+impl Neg for &Value {
+    type Output = Value;
+
+    fn neg(self) -> Self::Output {
+        self.map_amount(|_, _, a| a.neg())
+    }
+}
+
 forward_val_val_binop!(impl Sub for Value, sub);
 forward_ref_val_binop!(impl Sub for Value, sub);
 forward_val_ref_binop!(impl Sub for Value, sub);
@@ -141,11 +157,7 @@ impl Sub<&Value> for &Value {
     type Output = Value;
 
     fn sub(self, rhs: &Value) -> Self::Output {
-        Value(union_b_tree_maps_with(
-            |lhs, rhs| union_b_tree_maps_with(|lhs, rhs| lhs - rhs, lhs, rhs),
-            &self.0,
-            &rhs.0,
-        ))
+        self.add(rhs.neg())
     }
 }
 
