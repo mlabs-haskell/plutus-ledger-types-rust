@@ -79,12 +79,12 @@
           updateBranch = "updated-flake-lock";
           # Next two parameters should always be set explicitly
           createPullRequest = true;
-          autoMergeMethod = "merge";
+          autoMergeMethod = null;
           when = {
             # Perform update by Sundays at 12:45
-            minute = 25;
-            hour = 16;
-            dayOfWeek = "Mon";
+            minute = 45;
+            hour = 12;
+            dayOfWeek = "Sun";
           };
         };
       };
