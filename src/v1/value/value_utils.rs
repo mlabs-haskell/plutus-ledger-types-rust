@@ -62,7 +62,7 @@ impl Value {
 
     /// Remove all tokens whose quantity is zero.
     pub fn normalize(&self) -> Self {
-        self.filter_map_amount(|_, _, a| a.is_zero().not().then(|| a.clone()))
+        self.filter(|_, _, a| a.is_zero().not())
     }
 
     /// Apply a function to each token of the value, and use its result as the new amount.
@@ -71,6 +71,14 @@ impl Value {
         F: FnMut(&CurrencySymbol, &TokenName, &BigInt) -> BigInt,
     {
         self.filter_map_amount(|cs, tn, a| Some(f(cs, tn, a)))
+    }
+
+    /// Apply a predicate to tokens.
+    pub fn filter<F>(&self, mut f: F) -> Self
+    where
+        F: FnMut(&CurrencySymbol, &TokenName, &BigInt) -> bool,
+    {
+        self.filter_map_amount(|cs, tn, a| f(cs, tn, a).then(|| a.clone()))
     }
 
     /// Apply a function to each token of the value. If the result is None, the token entry will be
