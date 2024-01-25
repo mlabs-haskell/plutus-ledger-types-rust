@@ -3,6 +3,7 @@ use num_bigint::BigInt;
 use num_traits::Zero;
 use std::{
     collections::BTreeMap,
+    iter::Sum,
     ops::{Add, Mul, Neg, Not, Sub},
 };
 
@@ -196,5 +197,17 @@ impl Mul<&BigInt> for &Value {
                 })
                 .collect(),
         )
+    }
+}
+
+impl Sum<Value> for Value {
+    fn sum<I: Iterator<Item = Value>>(iter: I) -> Self {
+        iter.fold(Zero::zero(), Add::add)
+    }
+}
+
+impl<'a> Sum<&'a Value> for Value {
+    fn sum<I: Iterator<Item = &'a Value>>(iter: I) -> Self {
+        iter.fold(Zero::zero(), Add::add)
     }
 }
