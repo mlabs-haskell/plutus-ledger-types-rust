@@ -1,4 +1,4 @@
-use crate::utils::{singleton, union_b_tree_maps_with};
+use crate::utils::{singleton, union_btree_maps_with};
 use num_bigint::BigInt;
 use num_traits::Zero;
 use std::{
@@ -134,10 +134,10 @@ impl Add<&Value> for &Value {
     type Output = Value;
 
     fn add(self, rhs: &Value) -> Self::Output {
-        Value(union_b_tree_maps_with(
-            |lhs, rhs| union_b_tree_maps_with(|lhs, rhs| lhs + rhs, lhs, rhs),
-            &self.0,
-            &rhs.0,
+        Value(union_btree_maps_with(
+            |lhs, rhs| union_btree_maps_with(|lhs, rhs| lhs + rhs, lhs.clone(), rhs.clone()),
+            self.0.clone(),
+            rhs.0.clone(),
         ))
     }
 }

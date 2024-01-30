@@ -20,16 +20,18 @@ where
 }
 
 /// Union two BTreeMaps, call f to resolve conflicts if duplicate keys are encountered.
-pub fn union_b_tree_maps_with<K: Clone + Ord, V: Clone, F: Fn(&V, &V) -> V>(
+pub fn union_btree_maps_with<K: Clone + Ord, V: Clone, F: Fn(V, V) -> V>(
     f: F,
-    l: &BTreeMap<K, V>,
-    r: &BTreeMap<K, V>,
+    l: BTreeMap<K, V>,
+    r: BTreeMap<K, V>,
 ) -> BTreeMap<K, V> {
     r.into_iter().fold(l.clone(), |mut acc, (k, vr)| {
-        acc.entry(k.clone())
-            .and_modify(|vl| *vl = f(&vl, vr))
-            .or_insert(vr.clone());
-
+        let v = if let Some((_, vl)) = acc.remove_entry(&k) {
+            f(vl, vr)
+        } else {
+            vr
+        };
+        acc.insert(k, v);
         acc
     })
 }
