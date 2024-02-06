@@ -7,7 +7,7 @@ use std::{
     ops::{Add, Mul, Neg, Not, Sub},
 };
 
-use super::{CurrencySymbol, TokenName, Value};
+use crate::v1::value::{CurrencySymbol, TokenName, Value};
 
 impl Value {
     /// Create a Value containing only ada tokens, given the quantity in lovelace.

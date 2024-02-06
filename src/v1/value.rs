@@ -13,9 +13,6 @@ use serde::{Deserialize, Serialize};
 #[cfg(feature = "lbf")]
 use serde_json;
 use std::collections::BTreeMap;
-#[macro_use]
-mod macros;
-mod value_utils;
 
 /// Identifier of a currency, which could be either Ada (or tAda), or a native token represented by
 /// it's minting policy hash. A currency may be associated with multiple `AssetClass`es.
