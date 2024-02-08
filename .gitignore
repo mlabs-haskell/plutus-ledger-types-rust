@@ -1,5 +1,3 @@
-target
-proptest-regressions
 result
 .direnv
 .pre-commit-config.yaml

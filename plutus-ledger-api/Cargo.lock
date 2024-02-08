@@ -116,8 +116,6 @@ checksum = "e2abad23fbc42b3700f2f279844dc832adb2b2eb069b2df918f455c4e18cc646"
 [[package]]
 name = "lbr-prelude"
 version = "0.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "70b334b1177e5a3305d18a7f4c559092178e6fea3e47932438969d256711cc45"
 dependencies = [
  "data-encoding",
  "lbr-prelude-derive",
@@ -131,8 +129,6 @@ dependencies = [
 [[package]]
 name = "lbr-prelude-derive"
 version = "0.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d3265146216a6d6879697e8e540f2b5d4f55fb866393483d8b26fab2edab7957"
 dependencies = [
  "proc-macro2",
  "quote",
