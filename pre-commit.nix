@@ -1,6 +1,7 @@
 { inputs, ... }: {
   imports = [
     inputs.pre-commit-hooks.flakeModule
+    inputs.flake-lang.flakeModules.rustMonorepoPreCommit
   ];
   perSystem = { config, ... }:
     {
@@ -16,11 +17,9 @@
             shellcheck.enable = true;
             typos.enable = true;
             markdownlint.enable = true;
+            rustfmt-monorepo.enable = true;
           };
 
-          settings = {
-            statix.ignore = [ "**spago-packages.nix" ];
-          };
         };
       };
     };
