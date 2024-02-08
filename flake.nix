@@ -1,5 +1,5 @@
 {
-  description = "LambdaBuffers Cardano Demo";
+  description = "Plutus Ledger types and utilities implemented in Rust";
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs";
 
