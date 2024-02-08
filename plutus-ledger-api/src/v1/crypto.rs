@@ -1,4 +1,4 @@
-//! Types for cryptograhic primitives, and other lower level building blocks
+//! Types for cryptographic primitives, and other lower level building blocks
 use crate::plutus_data::{IsPlutusData, PlutusData, PlutusDataError, PlutusType};
 #[cfg(feature = "lbf")]
 use data_encoding::HEXLOWER;

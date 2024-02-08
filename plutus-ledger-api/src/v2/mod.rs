@@ -1,6 +1,6 @@
 //! Plutus types and utilities for Plutus V2
 //!
-//! Types and utilites unchanged in the new version are re-exported from the v1 module.
+//! Types and utilities unchanged in the new version are re-exported from the v1 module.
 pub mod datum;
 pub mod transaction;
 
