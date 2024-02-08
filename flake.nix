@@ -12,7 +12,10 @@
     # Code quality automation
     pre-commit-hooks.url = "github:cachix/pre-commit-hooks.nix";
 
-    flake-lang.url = "github:mlabs-haskell/flake-lang.nix";
+    flake-lang = {
+      url = "github:mlabs-haskell/flake-lang.nix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
     crane.url = "github:ipetkov/crane";
   };
 
