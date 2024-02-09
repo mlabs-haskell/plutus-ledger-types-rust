@@ -12,6 +12,12 @@ use crate::plutus_data::{IsPlutusData, PlutusData, PlutusDataError, PlutusType};
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct AssocMap<K, V>(pub Vec<(K, V)>);
 
+impl<K, V> AssocMap<K, V> {
+    pub fn new() -> Self {
+        AssocMap(Vec::new())
+    }
+}
+
 impl<K: IsPlutusData, V: IsPlutusData> IsPlutusData for AssocMap<K, V> {
     fn to_plutus_data(&self) -> PlutusData {
         PlutusData::Map(

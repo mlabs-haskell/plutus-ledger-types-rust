@@ -77,6 +77,12 @@ impl Json for CurrencySymbol {
 #[cfg_attr(feature = "lbf", derive(Json))]
 pub struct Value(pub BTreeMap<CurrencySymbol, BTreeMap<TokenName, BigInt>>);
 
+impl Value {
+    pub fn new() -> Self {
+        Value(BTreeMap::new())
+    }
+}
+
 impl IsPlutusData for Value {
     fn to_plutus_data(&self) -> PlutusData {
         self.0.to_plutus_data()

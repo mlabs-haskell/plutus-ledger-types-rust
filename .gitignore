@@ -1,6 +1,4 @@
-/target
-/proptest-regressions
-/result
+result
 .direnv
 .pre-commit-config.yaml
 .DS_Store
