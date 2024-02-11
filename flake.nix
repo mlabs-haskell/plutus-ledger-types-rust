@@ -15,7 +15,7 @@
 
     lbf = {
       url = "github:mlabs-haskell/lambda-buffers";
-      inputs.nixpkgs.follows = "flake-lang/nixpkgs";
+      inputs.flake-lang.follows = "flake-lang";
     };
 
     crane = {
