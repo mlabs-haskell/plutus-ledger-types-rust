@@ -13,6 +13,7 @@ use serde::{Deserialize, Serialize};
 #[cfg(feature = "lbf")]
 use serde_json;
 use std::collections::BTreeMap;
+use std::string::String;
 
 /// Identifier of a currency, which could be either Ada (or tAda), or a native token represented by
 /// it's minting policy hash. A currency may be associated with multiple `AssetClass`es.
@@ -102,6 +103,16 @@ pub struct TokenName(pub LedgerBytes);
 impl TokenName {
     pub fn ada() -> TokenName {
         TokenName(LedgerBytes(Vec::with_capacity(0)))
+    }
+}
+
+impl TokenName {
+    pub fn from_bytes(bytes: Vec<u8>) -> Self {
+        TokenName(LedgerBytes(bytes))
+    }
+
+    pub fn from_string(str: &str) -> Self {
+        TokenName(LedgerBytes(String::from(str).into_bytes()))
     }
 }
 
