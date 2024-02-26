@@ -139,12 +139,12 @@ impl Value {
     }
 
     /// Remove all tokens whose quantity is zero.
-    pub fn normalize(&self) -> Self {
+    pub fn normalize(self) -> Self {
         self.filter(|_, _, a| a.is_zero().not())
     }
 
     /// Apply a function to each token of the value, and use its result as the new amount.
-    pub fn map_amount<F>(&self, mut f: F) -> Self
+    pub fn map_amount<F>(self, mut f: F) -> Self
     where
         F: FnMut(&CurrencySymbol, &TokenName, &BigInt) -> BigInt,
     {
@@ -152,7 +152,7 @@ impl Value {
     }
 
     /// Apply a predicate to tokens.
-    pub fn filter<F>(&self, mut f: F) -> Self
+    pub fn filter<F>(self, mut f: F) -> Self
     where
         F: FnMut(&CurrencySymbol, &TokenName, &BigInt) -> bool,
     {
@@ -164,17 +164,17 @@ impl Value {
     ///
     /// Note that if the name-quantity map of any given currency symbols is empty, the currency entry
     /// will be removed from the top-level map entirely.
-    pub fn filter_map_amount<F>(&self, mut f: F) -> Self
+    pub fn filter_map_amount<F>(self, mut f: F) -> Self
     where
         F: FnMut(&CurrencySymbol, &TokenName, &BigInt) -> Option<BigInt>,
     {
         Value(
-            (&self.0)
+            (self.0)
                 .into_iter()
                 .filter_map(|(cs, tn_map)| {
                     let filtered_tn_map = tn_map
                         .into_iter()
-                        .filter_map(|(tn, a)| f(cs, tn, a).map(|a| (tn.clone(), a)))
+                        .filter_map(|(tn, a)| f(&cs, &tn, &a).map(|a| (tn, a)))
                         .collect::<BTreeMap<TokenName, BigInt>>();
 
                     if filtered_tn_map.is_empty() {
@@ -204,18 +204,18 @@ impl Zero for Value {
     }
 }
 
-impl_op!(+ |a: Value, b: Value| -> Value { &a + &b });
-impl_op!(+ |a: &Value, b: Value| -> Value { a + &b });
-impl_op!(+ |a: Value, b: &Value| -> Value { &a + b });
+impl_op!(+ |a: &Value, b: &Value| -> Value { a.clone() + b.clone() });
+impl_op!(+ |a: &Value, b: Value| -> Value { a.clone() + b });
+impl_op!(+ |a: Value, b: &Value| -> Value { a + b.clone() });
 
-impl Add<&Value> for &Value {
+impl Add<Value> for Value {
     type Output = Value;
 
-    fn add(self, rhs: &Value) -> Self::Output {
+    fn add(self, rhs: Value) -> Self::Output {
         Value(union_btree_maps_with(
-            |lhs, rhs| union_btree_maps_with(|lhs, rhs| lhs + rhs, lhs.clone(), rhs.clone()),
-            self.0.clone(),
-            rhs.0.clone(),
+            |lhs, rhs| union_btree_maps_with(|lhs, rhs| lhs + rhs, lhs, rhs),
+            self.0,
+            rhs.0,
         ))
     }
 }
@@ -224,7 +224,7 @@ impl Neg for Value {
     type Output = Value;
 
     fn neg(self) -> Self::Output {
-        (&self).neg()
+        self.map_amount(|_, _, a| a.neg())
     }
 }
 
@@ -232,18 +232,18 @@ impl Neg for &Value {
     type Output = Value;
 
     fn neg(self) -> Self::Output {
-        self.map_amount(|_, _, a| a.neg())
+        self.clone().neg()
     }
 }
 
-impl_op!(-|a: Value, b: Value| -> Value { &a - &b });
-impl_op!(-|a: &Value, b: Value| -> Value { a - &b });
-impl_op!(-|a: Value, b: &Value| -> Value { &a - b });
+impl_op!(-|a: &Value, b: &Value| -> Value { a.clone() - b.clone() });
+impl_op!(-|a: &Value, b: Value| -> Value { a.clone() - b });
+impl_op!(-|a: Value, b: &Value| -> Value { a - b.clone() });
 
-impl Sub<&Value> for &Value {
+impl Sub<Value> for Value {
     type Output = Value;
 
-    fn sub(self, rhs: &Value) -> Self::Output {
+    fn sub(self, rhs: Value) -> Self::Output {
         self.add(rhs.neg())
     }
 }
