@@ -16,6 +16,60 @@ impl<K, V> AssocMap<K, V> {
     pub fn new() -> Self {
         AssocMap(Vec::new())
     }
+
+    /// Inserts a key-value pair into the map.
+    ///
+    /// If the map did not have this key present, None is returned.
+    ///
+    /// If the map did have this key present, the value is updated, and the old value is returned. The key is not updated, though; this matters for types that can be == without being identical. See the module-level documentation for more.
+    pub fn insert(&mut self, key: K, value: V) -> Option<V>
+    where
+        K: PartialEq,
+        V: Clone,
+    {
+        let vec = &mut self.0;
+
+        let old_value = vec.iter().enumerate().find_map(|(i, (k, v))| {
+            if k == &key {
+                Some((i, v.clone()))
+            } else {
+                None
+            }
+        });
+        match old_value {
+            None => {
+                self.0.push((key, value));
+                None
+            }
+            Some((i, v)) => {
+                vec[i] = (key, value);
+                Some(v)
+            }
+        }
+    }
+
+    /// Removes a key from the map, returning the value at the key if the key was previously in the map.
+    ///
+    /// The key may be any borrowed form of the map’s key type, but the ordering on the borrowed form must match the ordering on the key type.
+    pub fn remove(&mut self, key: &K) -> Option<V>
+    where
+        K: PartialEq,
+        V: Clone,
+    {
+        let vec = &mut self.0;
+
+        let old_value = vec
+            .iter()
+            .enumerate()
+            .find_map(|(i, (k, _))| if k == key { Some(i) } else { None });
+        match old_value {
+            None => None,
+            Some(i) => {
+                let (_, v) = vec.remove(i);
+                Some(v)
+            }
+        }
+    }
 }
 
 impl<K: IsPlutusData, V: IsPlutusData> IsPlutusData for AssocMap<K, V> {
