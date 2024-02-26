@@ -3,8 +3,6 @@ use std::{
     iter::{empty, once},
 };
 
-pub mod value;
-
 /// Create a container C from one element.
 pub fn singleton<T, C>(value: T) -> C
 where

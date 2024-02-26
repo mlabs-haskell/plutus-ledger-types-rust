@@ -8,3 +8,6 @@ pub mod v2;
 #[cfg(feature = "lbf")]
 pub use lbr_prelude::json;
 pub mod utils;
+
+#[macro_use]
+extern crate impl_ops;
