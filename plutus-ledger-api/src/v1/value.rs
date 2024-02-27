@@ -248,6 +248,7 @@ impl Sub<Value> for Value {
     }
 }
 
+impl_op!(*|a: &BigInt, b: &Value| -> Value { b * a });
 impl_op_commutative!(*|a: Value, b: BigInt| -> Value { &a * &b });
 impl_op_commutative!(*|a: &Value, b: BigInt| -> Value { a * &b });
 impl_op_commutative!(*|a: Value, b: &BigInt| -> Value { &a * b });
