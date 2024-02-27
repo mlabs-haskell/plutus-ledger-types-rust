@@ -211,6 +211,21 @@ impl IsPlutusData for TxInInfo {
     }
 }
 
+impl From<(TransactionInput, TransactionOutput)> for TxInInfo {
+    fn from((reference, output): (TransactionInput, TransactionOutput)) -> TxInInfo {
+        TxInInfo { reference, output }
+    }
+}
+
+impl From<(&TransactionInput, &TransactionOutput)> for TxInInfo {
+    fn from((reference, output): (&TransactionInput, &TransactionOutput)) -> TxInInfo {
+        TxInInfo {
+            reference: reference.clone(),
+            output: output.clone(),
+        }
+    }
+}
+
 /// Partial representation of digests of certificates on the ledger.
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
