@@ -191,6 +191,26 @@ impl TryFrom<POSIXTime> for chrono::NaiveDateTime {
     }
 }
 
+#[cfg(feature = "chrono")]
+impl<Tz: chrono::TimeZone> From<chrono::DateTime<Tz>> for POSIXTime {
+    fn from(datetime: chrono::DateTime<Tz>) -> POSIXTime {
+        POSIXTime(BigInt::from(datetime.timestamp_millis()))
+    }
+}
+
+#[cfg(feature = "chrono")]
+impl TryFrom<POSIXTime> for chrono::DateTime<chrono::Utc> {
+    type Error = POSIXTimeConversionError;
+
+    fn try_from(posix_time: POSIXTime) -> Result<chrono::DateTime<chrono::Utc>, Self::Error> {
+        let POSIXTime(millis) = posix_time;
+        Ok(chrono::DateTime::from_timestamp_millis(
+            <i64>::try_from(millis).map_err(POSIXTimeConversionError::TryFromBigIntError)?,
+        )
+        .ok_or(POSIXTimeConversionError::OutOfBoundsError)?)
+    }
+}
+
 pub type POSIXTimeRange = PlutusInterval<POSIXTime>;
 
 /// An input of a pending transaction.
