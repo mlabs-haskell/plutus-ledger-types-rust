@@ -17,11 +17,6 @@
       url = "github:mlabs-haskell/lambda-buffers";
       inputs.nixpkgs.follows = "flake-lang/nixpkgs";
     };
-
-    crane = {
-      url = "github:ipetkov/crane";
-      inputs.nixpkgs.follows = "flake-lang/nixpkgs";
-    };
   };
 
   outputs = inputs@{ flake-parts, ... }:
