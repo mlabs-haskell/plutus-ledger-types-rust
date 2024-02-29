@@ -15,13 +15,13 @@ use serde::{Deserialize, Serialize};
 pub enum Interval<T> {
     Finite(T, T),
     StartAt(T),
+    StartAfter(T),
     EndAt(T),
+    EndBefore(T),
     Always,
     Never,
 }
 
-/// Loosely following the CTL implementation of `intervalToPlutusInterval`
-/// However, as we don't have Semiring classes, the interval upper bounds are always closed
 impl<T> From<Interval<T>> for PlutusInterval<T>
 where
     T: FeatureTraits,
@@ -38,7 +38,27 @@ where
                     closed: true,
                 },
             },
-            Interval::StartAt(end) => PlutusInterval {
+            Interval::StartAt(start) => PlutusInterval {
+                from: LowerBound {
+                    bound: Extended::Finite(start),
+                    closed: true,
+                },
+                to: UpperBound {
+                    bound: Extended::PosInf,
+                    closed: true,
+                },
+            },
+            Interval::StartAfter(start) => PlutusInterval {
+                from: LowerBound {
+                    bound: Extended::Finite(start),
+                    closed: false,
+                },
+                to: UpperBound {
+                    bound: Extended::PosInf,
+                    closed: true,
+                },
+            },
+            Interval::EndAt(end) => PlutusInterval {
                 from: LowerBound {
                     bound: Extended::NegInf,
                     closed: true,
@@ -48,14 +68,14 @@ where
                     closed: true,
                 },
             },
-            Interval::EndAt(start) => PlutusInterval {
+            Interval::EndBefore(end) => PlutusInterval {
                 from: LowerBound {
-                    bound: Extended::Finite(start),
+                    bound: Extended::NegInf,
                     closed: true,
                 },
                 to: UpperBound {
-                    bound: Extended::PosInf,
-                    closed: true,
+                    bound: Extended::Finite(end),
+                    closed: false,
                 },
             },
             Interval::Always => PlutusInterval {
