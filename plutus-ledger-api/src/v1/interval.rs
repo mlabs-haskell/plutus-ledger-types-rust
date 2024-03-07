@@ -102,9 +102,12 @@ where
     }
 }
 
+#[derive(thiserror::Error, Debug)]
 pub enum TryFromPlutusIntervalError {
+    #[error("Interval is invalid.")]
     InvalidInterval,
-    UnexpectedClosedBound,
+    #[error("Interval with open bound could not be converted.")]
+    UnexpectedOpenBound,
 }
 
 impl<T> TryFrom<PlutusInterval<T>> for Interval<T>
@@ -130,7 +133,7 @@ where
                 if lc && uc {
                     Interval::Finite(start, end)
                 } else {
-                    Err(TryFromPlutusIntervalError::UnexpectedClosedBound)?
+                    Err(TryFromPlutusIntervalError::UnexpectedOpenBound)?
                 }
             }
             PlutusInterval {
@@ -150,7 +153,7 @@ where
                 } else if !lc && uc {
                     Interval::StartAfter(start)
                 } else {
-                    Err(TryFromPlutusIntervalError::UnexpectedClosedBound)?
+                    Err(TryFromPlutusIntervalError::UnexpectedOpenBound)?
                 }
             }
             PlutusInterval {
@@ -170,7 +173,7 @@ where
                 } else if !uc && lc {
                     Interval::EndBefore(end)
                 } else {
-                    Err(TryFromPlutusIntervalError::UnexpectedClosedBound)?
+                    Err(TryFromPlutusIntervalError::UnexpectedOpenBound)?
                 }
             }
             PlutusInterval {
@@ -188,7 +191,7 @@ where
                 if lc && uc {
                     Interval::Always
                 } else {
-                    Err(TryFromPlutusIntervalError::UnexpectedClosedBound)?
+                    Err(TryFromPlutusIntervalError::UnexpectedOpenBound)?
                 }
             }
             PlutusInterval {
@@ -206,7 +209,7 @@ where
                 if lc && uc {
                     Interval::Never
                 } else {
-                    Err(TryFromPlutusIntervalError::UnexpectedClosedBound)?
+                    Err(TryFromPlutusIntervalError::UnexpectedOpenBound)?
                 }
             }
 
