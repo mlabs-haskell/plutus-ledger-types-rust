@@ -102,6 +102,119 @@ where
     }
 }
 
+pub enum TryFromPlutusIntervalError {
+    InvalidInterval,
+    UnexpectedClosedBound,
+}
+
+impl<T> TryFrom<PlutusInterval<T>> for Interval<T>
+where
+    T: FeatureTraits,
+{
+    type Error = TryFromPlutusIntervalError;
+
+    fn try_from(interval: PlutusInterval<T>) -> Result<Self, Self::Error> {
+        Ok(match interval {
+            PlutusInterval {
+                from:
+                    LowerBound {
+                        bound: Extended::Finite(start),
+                        closed: lc,
+                    },
+                to:
+                    UpperBound {
+                        bound: Extended::Finite(end),
+                        closed: uc,
+                    },
+            } => {
+                if lc && uc {
+                    Interval::Finite(start, end)
+                } else {
+                    Err(TryFromPlutusIntervalError::UnexpectedClosedBound)?
+                }
+            }
+            PlutusInterval {
+                from:
+                    LowerBound {
+                        bound: Extended::Finite(start),
+                        closed: lc,
+                    },
+                to:
+                    UpperBound {
+                        bound: Extended::PosInf,
+                        closed: uc,
+                    },
+            } => {
+                if lc && uc {
+                    Interval::StartAt(start)
+                } else if !lc && uc {
+                    Interval::StartAfter(start)
+                } else {
+                    Err(TryFromPlutusIntervalError::UnexpectedClosedBound)?
+                }
+            }
+            PlutusInterval {
+                from:
+                    LowerBound {
+                        bound: Extended::NegInf,
+                        closed: lc,
+                    },
+                to:
+                    UpperBound {
+                        bound: Extended::Finite(end),
+                        closed: uc,
+                    },
+            } => {
+                if uc && lc {
+                    Interval::EndAt(end)
+                } else if !uc && lc {
+                    Interval::EndBefore(end)
+                } else {
+                    Err(TryFromPlutusIntervalError::UnexpectedClosedBound)?
+                }
+            }
+            PlutusInterval {
+                from:
+                    LowerBound {
+                        bound: Extended::NegInf,
+                        closed: lc,
+                    },
+                to:
+                    UpperBound {
+                        bound: Extended::PosInf,
+                        closed: uc,
+                    },
+            } => {
+                if lc && uc {
+                    Interval::Always
+                } else {
+                    Err(TryFromPlutusIntervalError::UnexpectedClosedBound)?
+                }
+            }
+            PlutusInterval {
+                from:
+                    LowerBound {
+                        bound: Extended::PosInf,
+                        closed: lc,
+                    },
+                to:
+                    UpperBound {
+                        bound: Extended::NegInf,
+                        closed: uc,
+                    },
+            } => {
+                if lc && uc {
+                    Interval::Never
+                } else {
+                    Err(TryFromPlutusIntervalError::UnexpectedClosedBound)?
+                }
+            }
+
+            _ => Err(TryFromPlutusIntervalError::InvalidInterval)?,
+        })
+    }
+}
+
 /// An interval of `T`s.
 ///
 /// The interval may be either closed or open at either end, meaning
