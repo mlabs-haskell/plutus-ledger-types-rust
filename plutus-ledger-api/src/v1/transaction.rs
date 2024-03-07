@@ -173,8 +173,11 @@ impl From<chrono::NaiveDateTime> for POSIXTime {
 }
 
 #[cfg(feature = "chrono")]
+#[derive(thiserror::Error, Debug)]
 pub enum POSIXTimeConversionError {
-    TryFromBigIntError(num_bigint::TryFromBigIntError<BigInt>),
+    #[error(transparent)]
+    TryFromBigIntError(#[from] num_bigint::TryFromBigIntError<BigInt>),
+    #[error("POSIXTime is out of bounds.")]
     OutOfBoundsError,
 }
 
@@ -184,10 +187,10 @@ impl TryFrom<POSIXTime> for chrono::NaiveDateTime {
 
     fn try_from(posix_time: POSIXTime) -> Result<chrono::NaiveDateTime, Self::Error> {
         let POSIXTime(millis) = posix_time;
-        Ok(chrono::NaiveDateTime::from_timestamp_millis(
-            <i64>::try_from(millis).map_err(POSIXTimeConversionError::TryFromBigIntError)?,
+        Ok(
+            chrono::NaiveDateTime::from_timestamp_millis(<i64>::try_from(millis)?)
+                .ok_or(POSIXTimeConversionError::OutOfBoundsError)?,
         )
-        .ok_or(POSIXTimeConversionError::OutOfBoundsError)?)
     }
 }
 
