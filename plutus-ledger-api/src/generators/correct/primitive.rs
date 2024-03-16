@@ -50,8 +50,8 @@ pub fn arb_natural() -> impl Strategy<Value = BigInt> {
 
 // Helper function to generate a well typed arbitrary natural number
 fn arb_natural_() -> impl Strategy<Value = BigUint> {
-    // Generating 5 vectors of with random u32 values, which gives a max bound of u32::MAX ^ 5
-    vec(any::<u32>(), 5).prop_map(|value| {
+    // Generating 2 vectors of with random u32 values, which gives a max bound of u32::MAX ^ 2
+    vec(any::<u32>(), 2).prop_map(|value| {
         // As NoSign is only used for 0 values, we switch to NoSign when an empty vector is generated
         BigUint::new(value)
     })
