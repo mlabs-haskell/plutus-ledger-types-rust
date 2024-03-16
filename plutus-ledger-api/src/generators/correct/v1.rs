@@ -114,7 +114,7 @@ pub fn arb_plutus_data() -> impl Strategy<Value = PlutusData> {
             arb_bytes().prop_map(PlutusData::Bytes),
             vec(arb_data.clone(), 5).prop_map(PlutusData::List),
             vec((arb_data.clone(), arb_data.clone()), 5).prop_map(PlutusData::Map),
-            (arb_integer(), vec(arb_data.clone(), 5))
+            (arb_index(), vec(arb_data.clone(), 5))
                 .prop_map(|(id, fields)| PlutusData::Constr(id, fields)),
         ]
     })
