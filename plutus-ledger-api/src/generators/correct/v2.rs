@@ -11,7 +11,7 @@ use proptest::option;
 use proptest::prelude::{prop_oneof, Just};
 use proptest::strategy::Strategy;
 
-use super::primitive::arb_index;
+use super::primitive::arb_bignum;
 use super::v1::{
     arb_assoc_map, arb_d_cert, arb_payment_pub_key_hash, arb_plutus_interval_posix_time,
     arb_redeemer, arb_script_purpose, arb_staking_credential, arb_transaction_hash,
@@ -58,7 +58,7 @@ pub fn arb_transaction_info() -> impl Strategy<Value = TransactionInfo> {
         arb_value(),
         arb_value(),
         vec(arb_d_cert(), 5),
-        arb_assoc_map(arb_staking_credential(), arb_index()),
+        arb_assoc_map(arb_staking_credential(), arb_bignum()),
         arb_plutus_interval_posix_time(),
         vec(arb_payment_pub_key_hash(), 5),
         arb_assoc_map(arb_script_purpose(), arb_redeemer()),

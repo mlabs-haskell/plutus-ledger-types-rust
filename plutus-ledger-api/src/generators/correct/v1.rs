@@ -3,7 +3,7 @@
 //! These strategies always return valid values.
 use crate::feature_traits::FeatureTraits;
 use crate::generators::correct::primitive::{
-    arb_bool, arb_bytes, arb_index, arb_integer, arb_natural,
+    arb_bignum, arb_bool, arb_bytes, arb_integer, arb_natural,
 };
 use crate::plutus_data::PlutusData;
 use crate::v1::address::{
@@ -100,7 +100,7 @@ pub fn arb_value() -> impl Strategy<Value = Value> {
 pub fn arb_native_tokens() -> impl Strategy<Value = Value> {
     btree_map(
         arb_minting_policy_hash().prop_map(CurrencySymbol::NativeToken),
-        btree_map(arb_token_name(), arb_index(), 5),
+        btree_map(arb_token_name(), arb_bignum(), 5),
         5,
     )
     .prop_map(Value)
@@ -114,7 +114,7 @@ pub fn arb_plutus_data() -> impl Strategy<Value = PlutusData> {
             arb_bytes().prop_map(PlutusData::Bytes),
             vec(arb_data.clone(), 5).prop_map(PlutusData::List),
             vec((arb_data.clone(), arb_data.clone()), 5).prop_map(PlutusData::Map),
-            (arb_index(), vec(arb_data.clone(), 5))
+            (arb_bignum(), vec(arb_data.clone(), 5))
                 .prop_map(|(id, fields)| PlutusData::Constr(id, fields)),
         ]
     })
@@ -239,17 +239,17 @@ pub fn arb_chain_pointer() -> impl Strategy<Value = ChainPointer> {
 
 /// Strategy to generate a slot number
 pub fn arb_slot() -> impl Strategy<Value = Slot> {
-    arb_index().prop_map(Slot)
+    arb_bignum().prop_map(Slot)
 }
 
 /// Strategy to generate a transaction index
 pub fn arb_transaction_index() -> impl Strategy<Value = TransactionIndex> {
-    arb_index().prop_map(TransactionIndex)
+    arb_bignum().prop_map(TransactionIndex)
 }
 
 /// Strategy to generate a certificate index.
 pub fn arb_certificate_index() -> impl Strategy<Value = CertificateIndex> {
-    arb_index().prop_map(CertificateIndex)
+    arb_bignum().prop_map(CertificateIndex)
 }
 
 /// Strategy to generate a staking credential
@@ -275,7 +275,7 @@ pub fn arb_transaction_hash() -> impl Strategy<Value = TransactionHash> {
 
 /// Strategy to generate a transaction input
 pub fn arb_transaction_input() -> impl Strategy<Value = TransactionInput> {
-    (arb_transaction_hash(), arb_index()).prop_map(|(transaction_id, index)| TransactionInput {
+    (arb_transaction_hash(), arb_bignum()).prop_map(|(transaction_id, index)| TransactionInput {
         transaction_id,
         index,
     })
@@ -320,7 +320,7 @@ pub fn arb_d_cert() -> impl Strategy<Value = DCert> {
             .prop_map(|(sc, pkh)| DCert::DelegDelegate(sc, pkh)),
         (arb_payment_pub_key_hash(), arb_payment_pub_key_hash())
             .prop_map(|(p1, p2)| DCert::PoolRegister(p1, p2)),
-        (arb_payment_pub_key_hash(), arb_index()).prop_map(|(pkh, i)| DCert::PoolRetire(pkh, i)),
+        (arb_payment_pub_key_hash(), arb_bignum()).prop_map(|(pkh, i)| DCert::PoolRetire(pkh, i)),
         Just(DCert::Genesis),
         Just(DCert::Mir)
     ]
@@ -345,7 +345,7 @@ pub fn arb_transaction_info() -> impl Strategy<Value = TransactionInfo> {
         arb_value(),
         arb_value(),
         vec(arb_d_cert(), 5),
-        vec((arb_staking_credential(), arb_index()), 5),
+        vec((arb_staking_credential(), arb_bignum()), 5),
         arb_plutus_interval_posix_time(),
         vec(arb_payment_pub_key_hash(), 5),
         vec((arb_datum_hash(), arb_datum()), 5),
