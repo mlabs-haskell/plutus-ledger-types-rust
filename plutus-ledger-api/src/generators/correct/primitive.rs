@@ -57,6 +57,15 @@ fn arb_natural_() -> impl Strategy<Value = BigUint> {
     })
 }
 
+/// Strategy to generate an arbitrary non-negative integer small enough to be an index
+pub fn arb_index() -> impl Strategy<Value = BigInt> {
+    // Generating 1 vector with random u32 values, which gives a max bound of u32::MAX
+    vec(any::<u32>(), 1).prop_map(|value| {
+        // In case of empty vector, the smart constructor will automatically assign NoSign.
+        BigInt::new(Sign::Plus, value)
+    })
+}
+
 /// Strategy to generate an arbitrary character
 pub fn arb_char<'a>() -> CharStrategy<'a> {
     any::<char>()
