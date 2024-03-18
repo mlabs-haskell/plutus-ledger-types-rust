@@ -8,6 +8,7 @@ use lbr_prelude::json::Json;
 use num_bigint::BigInt;
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
+use std::cmp;
 
 /// An abstraction over `PlutusInterval`, allowing valid values only
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -371,7 +372,7 @@ where
 }
 
 /// A set extended with a positive and negative infinity.
-#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "lbf", derive(Json))]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub enum Extended<T>
@@ -381,6 +382,52 @@ where
     NegInf,
     Finite(T),
     PosInf,
+}
+
+impl<T> Ord for Extended<T>
+where
+    T: Ord,
+{
+    fn cmp(&self, other: &Self) -> cmp::Ordering {
+        match self {
+            Extended::PosInf => match other {
+                Extended::PosInf => cmp::Ordering::Equal,
+                _ => cmp::Ordering::Greater,
+            },
+            Extended::NegInf => match other {
+                Extended::NegInf => cmp::Ordering::Equal,
+                _ => cmp::Ordering::Less,
+            },
+            Extended::Finite(self_val) => match other {
+                Extended::NegInf => cmp::Ordering::Greater,
+                Extended::Finite(other_val) => self_val.cmp(other_val),
+                Extended::PosInf => cmp::Ordering::Less,
+            },
+        }
+    }
+}
+
+impl<T> PartialOrd for Extended<T>
+where
+    T: PartialOrd,
+{
+    fn partial_cmp(&self, other: &Self) -> Option<cmp::Ordering> {
+        match self {
+            Extended::PosInf => match other {
+                Extended::PosInf => Some(cmp::Ordering::Equal),
+                _ => Some(cmp::Ordering::Greater),
+            },
+            Extended::NegInf => match other {
+                Extended::NegInf => Some(cmp::Ordering::Equal),
+                _ => Some(cmp::Ordering::Less),
+            },
+            Extended::Finite(self_val) => match other {
+                Extended::NegInf => Some(cmp::Ordering::Greater),
+                Extended::Finite(other_val) => self_val.partial_cmp(other_val),
+                Extended::PosInf => Some(cmp::Ordering::Less),
+            },
+        }
+    }
 }
 
 impl<T> IsPlutusData for Extended<T>
