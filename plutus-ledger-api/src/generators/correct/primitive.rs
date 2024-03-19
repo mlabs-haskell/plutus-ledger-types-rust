@@ -28,15 +28,15 @@ fn arb_sign() -> impl Strategy<Value = Sign> {
 /// Strategy to generate an arbitrary BigInt
 pub fn arb_integer() -> impl Strategy<Value = BigInt> {
     // Wrapping around BigUint.
-    (arb_sign(), arb_natural_()).prop_map(|(sign, nat)| {
-        // As NoSign is only used for 0 values.
+    (arb_sign(), arb_biguint(2)).prop_map(|(sign, nat)| {
+        // NoSign is only used for 0 values.
         BigInt::from_biguint(if nat.is_zero() { Sign::NoSign } else { sign }, nat)
     })
 }
 
 /// Strategy to generate an arbitrary non-negative BigInt
-pub fn arb_natural() -> impl Strategy<Value = BigInt> {
-    arb_natural_().prop_map(|x| {
+pub fn arb_natural(n: usize) -> impl Strategy<Value = BigInt> {
+    arb_biguint(n).prop_map(|x| {
         BigInt::from_biguint(
             if x.is_zero() {
                 Sign::NoSign
@@ -48,13 +48,10 @@ pub fn arb_natural() -> impl Strategy<Value = BigInt> {
     })
 }
 
-// Helper function to generate a well typed arbitrary natural number
-fn arb_natural_() -> impl Strategy<Value = BigUint> {
-    // Generating 5 vectors of with random u32 values, which gives a max bound of u32::MAX ^ 5
-    vec(any::<u32>(), 5).prop_map(|value| {
-        // As NoSign is only used for 0 values, we switch to NoSign when an empty vector is generated
-        BigUint::new(value)
-    })
+/// Helper function to generate a well typed arbitrary natural number
+/// Generating `n` vectors of random u32 values, which gives a max bound of u32::MAX ^ n
+fn arb_biguint(n: usize) -> impl Strategy<Value = BigUint> {
+    vec(any::<u32>(), n).prop_map(|value| BigUint::new(value))
 }
 
 /// Strategy to generate an arbitrary character
