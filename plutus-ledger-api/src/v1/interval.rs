@@ -386,7 +386,7 @@ where
 
 impl<T> Ord for Extended<T>
 where
-    T: Ord,
+    T: FeatureTraits + Ord,
 {
     fn cmp(&self, other: &Self) -> cmp::Ordering {
         match self {
@@ -409,7 +409,7 @@ where
 
 impl<T> PartialOrd for Extended<T>
 where
-    T: PartialOrd,
+    T: FeatureTraits + PartialOrd,
 {
     fn partial_cmp(&self, other: &Self) -> Option<cmp::Ordering> {
         match self {
