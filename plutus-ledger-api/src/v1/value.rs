@@ -326,6 +326,10 @@ impl TokenName {
     pub fn from_string(str: &str) -> Self {
         TokenName(LedgerBytes(String::from(str).into_bytes()))
     }
+
+    pub fn try_into_string(self) -> Result<String, std::string::FromUtf8Error> {
+        String::from_utf8(self.0 .0)
+    }
 }
 
 impl IsPlutusData for TokenName {
@@ -379,5 +383,18 @@ impl IsPlutusData for AssetClass {
                 got: PlutusType::from(data),
             }),
         }
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn to_from_string_token_name() {
+        let name = "Hello";
+        let token_name = TokenName::from_string(name);
+
+        assert_eq!(token_name.try_into_string().unwrap(), name);
     }
 }

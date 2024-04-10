@@ -474,3 +474,20 @@ where
         }
     }
 }
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    use crate::{generators::correct::v1::arb_interval_posix_time, v1::transaction::POSIXTime};
+    use proptest::prelude::*;
+
+    proptest! {
+        #[test]
+        fn interval_to_from_plutus_interval(interval in arb_interval_posix_time()) {
+            let plutus_interval: PlutusInterval<POSIXTime> = interval.clone().into();
+            let interval2: Interval<POSIXTime> = plutus_interval.clone().try_into().unwrap();
+
+            assert_eq!(interval, interval2);
+        }
+    }
+}

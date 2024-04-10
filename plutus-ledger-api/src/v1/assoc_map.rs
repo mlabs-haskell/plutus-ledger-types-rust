@@ -96,6 +96,12 @@ impl<K, V> From<Vec<(K, V)>> for AssocMap<K, V> {
     }
 }
 
+impl<K: Clone, V: Clone, const N: usize> From<[(K, V); N]> for AssocMap<K, V> {
+    fn from(vec: [(K, V); N]) -> Self {
+        AssocMap(vec.to_vec())
+    }
+}
+
 impl<K, V> From<AssocMap<K, V>> for Vec<(K, V)> {
     fn from(m: AssocMap<K, V>) -> Self {
         m.0
@@ -147,5 +153,36 @@ impl<K: Json, V: Json> Json for AssocMap<K, V> {
             .collect::<Result<Vec<(K, V)>, _>>()?;
 
         Ok(Self(vec_of_pairs))
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn assoc_map_insert() {
+        let mut assoc_map = AssocMap::new();
+
+        assoc_map.insert(1, "one");
+        assoc_map.insert(2, "to");
+        assoc_map.insert(3, "three");
+        assoc_map.insert(2, "two");
+
+        let expected = AssocMap::from([(1, "one"), (2, "two"), (3, "three")]);
+
+        assert_eq!(assoc_map, expected);
+    }
+
+    #[test]
+    fn assoc_map_remove() {
+        let mut assoc_map = AssocMap::from([(1, "one"), (2, "two"), (3, "three")]);
+
+        let removed = assoc_map.remove(&1);
+
+        let expected = AssocMap::from([(2, "two"), (3, "three")]);
+
+        assert_eq!(assoc_map, expected);
+        assert_eq!(removed, Some("one"))
     }
 }
