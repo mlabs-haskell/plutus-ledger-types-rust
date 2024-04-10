@@ -1,7 +1,8 @@
 //! Proptest strategies for most common primitive types
 //!
 //! These strategies always return valid values.
-use num_bigint::{BigInt, Sign};
+use num_bigint::{BigInt, BigUint, Sign};
+use num_traits::identities::Zero;
 use proptest::arbitrary::{any, StrategyFor};
 use proptest::char::CharStrategy;
 use proptest::collection::vec;
@@ -26,11 +27,31 @@ fn arb_sign() -> impl Strategy<Value = Sign> {
 
 /// Strategy to generate an arbitrary BigInt
 pub fn arb_integer() -> impl Strategy<Value = BigInt> {
-    // Generating 5 vectors of with random u32 values, which gives a max bound of u32::MAX ^ 5
-    (arb_sign(), vec(any::<u32>(), 5)).prop_map(|(sign, value)| {
-        // As NoSign is only used for 0 values, we switch to NoSign when an empty vector is generated
-        BigInt::new(if value.is_empty() { Sign::NoSign } else { sign }, value)
+    // Wrapping around BigUint.
+    (arb_sign(), arb_biguint(2)).prop_map(|(sign, nat)| {
+        // NoSign is only used for 0 values.
+        BigInt::from_biguint(if nat.is_zero() { Sign::NoSign } else { sign }, nat)
     })
+}
+
+/// Strategy to generate an arbitrary non-negative BigInt
+pub fn arb_natural(n: usize) -> impl Strategy<Value = BigInt> {
+    arb_biguint(n).prop_map(|x| {
+        BigInt::from_biguint(
+            if x.is_zero() {
+                Sign::NoSign
+            } else {
+                Sign::Plus
+            },
+            x,
+        )
+    })
+}
+
+/// Helper function to generate a well typed arbitrary natural number
+/// Generating `n` vectors of random u32 values, which gives a max bound of u32::MAX ^ n
+fn arb_biguint(n: usize) -> impl Strategy<Value = BigUint> {
+    vec(any::<u32>(), n).prop_map(|value| BigUint::new(value))
 }
 
 /// Strategy to generate an arbitrary character
