@@ -22,28 +22,21 @@ impl<K, V> AssocMap<K, V> {
     /// If the map did not have this key present, None is returned.
     ///
     /// If the map did have this key present, the value is updated, and the old value is returned. The key is not updated, though; this matters for types that can be == without being identical. See the module-level documentation for more.
-    pub fn insert(&mut self, key: K, value: V) -> Option<V>
+    pub fn insert(&mut self, key: K, mut value: V) -> Option<V>
     where
         K: PartialEq,
-        V: Clone,
     {
         let vec = &mut self.0;
 
-        let old_value = vec.iter().enumerate().find_map(|(i, (k, v))| {
-            if k == &key {
-                Some((i, v.clone()))
-            } else {
-                None
-            }
-        });
+        let old_value = vec.into_iter().find(|(k, _v)| k == &key);
         match old_value {
             None => {
                 self.0.push((key, value));
                 None
             }
-            Some((i, v)) => {
-                vec[i] = (key, value);
-                Some(v)
+            Some((_, v)) => {
+                std::mem::swap(v, &mut value);
+                Some(value)
             }
         }
     }

@@ -113,7 +113,7 @@ pub enum TryFromPlutusIntervalError {
 
 impl<T> TryFrom<PlutusInterval<T>> for Interval<T>
 where
-    T: FeatureTraits,
+    T: FeatureTraits + PartialOrd,
 {
     type Error = TryFromPlutusIntervalError;
 
@@ -132,7 +132,11 @@ where
                     },
             } => {
                 if lc && uc {
-                    Interval::Finite(start, end)
+                    if start > end {
+                        Err(TryFromPlutusIntervalError::InvalidInterval)?
+                    } else {
+                        Interval::Finite(start, end)
+                    }
                 } else {
                     Err(TryFromPlutusIntervalError::UnexpectedOpenBound)?
                 }
@@ -389,20 +393,16 @@ where
     T: FeatureTraits + Ord,
 {
     fn cmp(&self, other: &Self) -> cmp::Ordering {
-        match self {
-            Extended::PosInf => match other {
-                Extended::PosInf => cmp::Ordering::Equal,
-                _ => cmp::Ordering::Greater,
-            },
-            Extended::NegInf => match other {
-                Extended::NegInf => cmp::Ordering::Equal,
-                _ => cmp::Ordering::Less,
-            },
-            Extended::Finite(self_val) => match other {
-                Extended::NegInf => cmp::Ordering::Greater,
-                Extended::Finite(other_val) => self_val.cmp(other_val),
-                Extended::PosInf => cmp::Ordering::Less,
-            },
+        match (self, other) {
+            (Extended::PosInf, Extended::PosInf) => cmp::Ordering::Equal,
+            (Extended::PosInf, _) => cmp::Ordering::Greater,
+
+            (Extended::NegInf, Extended::NegInf) => cmp::Ordering::Equal,
+            (Extended::NegInf, _) => cmp::Ordering::Less,
+
+            (Extended::Finite(_), Extended::NegInf) => cmp::Ordering::Greater,
+            (Extended::Finite(self_val), Extended::Finite(other_val)) => self_val.cmp(other_val),
+            (Extended::Finite(_), Extended::PosInf) => cmp::Ordering::Less,
         }
     }
 }

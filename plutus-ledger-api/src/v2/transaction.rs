@@ -3,8 +3,6 @@ use crate::plutus_data::{parse_constr_with_tag, parse_fixed_len_constr_fields};
 use crate::plutus_data::{
     verify_constr_fields, IsPlutusData, PlutusData, PlutusDataError, PlutusType,
 };
-#[cfg(feature = "chrono")]
-pub use crate::v1::transaction::POSIXTimeConversionError;
 pub use crate::v1::transaction::{
     DCert, POSIXTime, POSIXTimeRange, ScriptPurpose, TransactionHash, TransactionInput,
 };
@@ -90,15 +88,6 @@ pub struct TxInInfo {
 impl From<(TransactionInput, TransactionOutput)> for TxInInfo {
     fn from((reference, output): (TransactionInput, TransactionOutput)) -> TxInInfo {
         TxInInfo { reference, output }
-    }
-}
-
-impl From<(&TransactionInput, &TransactionOutput)> for TxInInfo {
-    fn from((reference, output): (&TransactionInput, &TransactionOutput)) -> TxInInfo {
-        TxInInfo {
-            reference: reference.clone(),
-            output: output.clone(),
-        }
     }
 }
 
