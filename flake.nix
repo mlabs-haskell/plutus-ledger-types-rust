@@ -14,11 +14,6 @@
 
     # Code quality automation
     pre-commit-hooks.follows = "lbf/pre-commit-hooks";
-
-    crane = {
-      url = "github:ipetkov/crane";
-      inputs.nixpkgs.follows = "flake-lang/nixpkgs";
-    };
   };
 
   outputs = inputs@{ flake-parts, ... }:
