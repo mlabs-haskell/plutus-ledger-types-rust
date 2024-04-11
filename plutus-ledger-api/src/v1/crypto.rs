@@ -1,6 +1,5 @@
 //! Types for cryptographic primitives, and other lower level building blocks
 use crate::plutus_data::{IsPlutusData, PlutusData, PlutusDataError, PlutusType};
-#[cfg(feature = "lbf")]
 use data_encoding::HEXLOWER;
 #[cfg(feature = "lbf")]
 use lbr_prelude::json::{Error, Json};
@@ -79,9 +78,15 @@ impl IsPlutusData for StakePubKeyHash {
 }
 
 /// A bytestring in the Cardano ledger context
-#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct LedgerBytes(pub Vec<u8>);
+
+impl std::fmt::Debug for LedgerBytes {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", HEXLOWER.encode(&self.0))
+    }
+}
 
 impl IsPlutusData for LedgerBytes {
     fn to_plutus_data(&self) -> PlutusData {

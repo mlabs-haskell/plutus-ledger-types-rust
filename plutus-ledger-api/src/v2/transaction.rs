@@ -85,6 +85,12 @@ pub struct TxInInfo {
     pub output: TransactionOutput,
 }
 
+impl From<(TransactionInput, TransactionOutput)> for TxInInfo {
+    fn from((reference, output): (TransactionInput, TransactionOutput)) -> TxInInfo {
+        TxInInfo { reference, output }
+    }
+}
+
 impl IsPlutusData for TxInInfo {
     fn to_plutus_data(&self) -> PlutusData {
         PlutusData::Constr(
