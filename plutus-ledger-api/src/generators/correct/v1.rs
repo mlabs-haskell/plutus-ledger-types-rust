@@ -10,7 +10,7 @@ use crate::v1::address::{
 use crate::v1::assoc_map::AssocMap;
 use crate::v1::crypto::{Ed25519PubKeyHash, LedgerBytes, PaymentPubKeyHash};
 use crate::v1::datum::{Datum, DatumHash};
-use crate::v1::interval::{Extended, LowerBound, PlutusInterval, UpperBound};
+use crate::v1::interval::{Extended, Interval, LowerBound, PlutusInterval, UpperBound};
 use crate::v1::redeemer::{Redeemer, RedeemerHash};
 use crate::v1::script::{MintingPolicyHash, ScriptHash, ValidatorHash};
 use crate::v1::transaction::{
@@ -171,7 +171,7 @@ pub fn arb_extended_posix_time() -> impl Strategy<Value = Extended<POSIXTime>> {
 
 /// Strategy to generate a POSIX Time
 pub fn arb_posix_time() -> impl Strategy<Value = POSIXTime> {
-    (0..1000000).prop_map(|int| POSIXTime(BigInt::from(int)))
+    (0..2000000000).prop_map(|int| POSIXTime(BigInt::from(int)))
 }
 
 /// Strategy to generate an UpperBound
@@ -190,6 +190,25 @@ where
     T::Value: FeatureTraits + Clone,
 {
     (arb_extended(element), arb_bool()).prop_map(|(bound, closed)| LowerBound { bound, closed })
+}
+
+/// Strategy to generate a Interval
+pub fn arb_interval<T>(lower_bound: T, upper_bound: T) -> impl Strategy<Value = Interval<T::Value>>
+where
+    T: Strategy,
+    T::Value: FeatureTraits + Clone,
+{
+    (lower_bound, upper_bound).prop_flat_map(|(lb, ub)| {
+        prop_oneof![
+            4 => Just(Interval::Finite(lb.clone(), ub.clone())),
+            4 => Just(Interval::StartAt(lb.clone())),
+            4 => Just(Interval::StartAfter(lb)),
+            4 => Just(Interval::EndAt(ub.clone())),
+            4 => Just(Interval::EndBefore(ub)),
+            1 => Just(Interval::Always),
+            1 => Just(Interval::Never)
+        ]
+    })
 }
 
 /// Strategy to generate a PlutusInterval
@@ -212,6 +231,17 @@ where
 /// This implementation is not normalized, so impossible values might be generated
 pub fn arb_plutus_interval_posix_time() -> impl Strategy<Value = PlutusInterval<POSIXTime>> {
     arb_plutus_interval(arb_posix_time(), arb_posix_time())
+}
+
+/// Strategy to generate a Interval
+pub fn arb_interval_posix_time() -> impl Strategy<Value = Interval<POSIXTime>> {
+    (arb_posix_time(), arb_posix_time()).prop_flat_map(|(x, y)| {
+        if x > y {
+            arb_interval(Just(y), Just(x))
+        } else {
+            arb_interval(Just(x), Just(y))
+        }
+    })
 }
 
 /// Strategy to generate a Cardano address

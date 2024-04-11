@@ -3954,6 +3954,27 @@
     },
     "crane": {
       "inputs": {
+        "nixpkgs": [
+          "flake-lang",
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1712681629,
+        "narHash": "sha256-bMDXn4AkTXLCpoZbII6pDGoSeSe9gI87jxPsHRXgu/E=",
+        "owner": "ipetkov",
+        "repo": "crane",
+        "rev": "220387ac8e99cbee0ca4c95b621c4bc782b6a235",
+        "type": "github"
+      },
+      "original": {
+        "owner": "ipetkov",
+        "repo": "crane",
+        "type": "github"
+      }
+    },
+    "crane_2": {
+      "inputs": {
         "nixpkgs": "nixpkgs"
       },
       "locked": {
@@ -3970,7 +3991,7 @@
         "type": "github"
       }
     },
-    "crane_2": {
+    "crane_3": {
       "inputs": {
         "nixpkgs": [
           "lbf",
@@ -3993,7 +4014,7 @@
         "type": "github"
       }
     },
-    "crane_3": {
+    "crane_4": {
       "inputs": {
         "nixpkgs": "nixpkgs_42"
       },
@@ -4011,7 +4032,7 @@
         "type": "github"
       }
     },
-    "crane_4": {
+    "crane_5": {
       "inputs": {
         "nixpkgs": "nixpkgs_76"
       },
@@ -4029,7 +4050,7 @@
         "type": "github"
       }
     },
-    "crane_5": {
+    "crane_6": {
       "inputs": {
         "nixpkgs": "nixpkgs_77"
       },
@@ -6572,7 +6593,7 @@
     "flake-lang": {
       "inputs": {
         "cardano-haskell-packages": "cardano-haskell-packages",
-        "crane": "crane",
+        "crane": "crane_2",
         "ctl": "ctl",
         "db-sync-ctl": "db-sync-ctl",
         "flake-parts": "flake-parts_2",
@@ -6602,7 +6623,7 @@
     "flake-lang_2": {
       "inputs": {
         "cardano-haskell-packages": "cardano-haskell-packages_2",
-        "crane": "crane_3",
+        "crane": "crane_4",
         "ctl": "ctl_2",
         "db-sync-ctl": "db-sync-ctl_2",
         "flake-parts": "flake-parts_11",
@@ -6632,7 +6653,7 @@
     "flake-lang_3": {
       "inputs": {
         "cardano-haskell-packages": "cardano-haskell-packages_3",
-        "crane": "crane_5",
+        "crane": "crane_6",
         "ctl": "ctl_3",
         "db-sync-ctl": "db-sync-ctl_3",
         "flake-parts": "flake-parts_16",
@@ -18449,7 +18470,7 @@
     },
     "lbf_2": {
       "inputs": {
-        "crane": "crane_4",
+        "crane": "crane_5",
         "ctl": [
           "lbf",
           "plutus-ledger-api-rust",
@@ -28503,7 +28524,7 @@
     },
     "plutus-ledger-api-rust": {
       "inputs": {
-        "crane": "crane_2",
+        "crane": "crane_3",
         "flake-lang": "flake-lang_2",
         "flake-parts": "flake-parts_13",
         "hci-effects": "hci-effects_4",
@@ -29317,6 +29338,7 @@
     },
     "root": {
       "inputs": {
+        "crane": "crane",
         "flake-lang": [
           "lbf",
           "flake-lang"

@@ -165,6 +165,35 @@ impl IsPlutusData for POSIXTime {
     }
 }
 
+#[cfg(feature = "chrono")]
+#[derive(thiserror::Error, Debug)]
+pub enum POSIXTimeConversionError {
+    #[error(transparent)]
+    TryFromBigIntError(#[from] num_bigint::TryFromBigIntError<BigInt>),
+    #[error("POSIXTime is out of bounds.")]
+    OutOfBoundsError,
+}
+
+#[cfg(feature = "chrono")]
+impl<Tz: chrono::TimeZone> From<chrono::DateTime<Tz>> for POSIXTime {
+    fn from(datetime: chrono::DateTime<Tz>) -> POSIXTime {
+        POSIXTime(BigInt::from(datetime.timestamp_millis()))
+    }
+}
+
+#[cfg(feature = "chrono")]
+impl TryFrom<POSIXTime> for chrono::DateTime<chrono::Utc> {
+    type Error = POSIXTimeConversionError;
+
+    fn try_from(posix_time: POSIXTime) -> Result<chrono::DateTime<chrono::Utc>, Self::Error> {
+        let POSIXTime(millis) = posix_time;
+        Ok(chrono::DateTime::from_timestamp_millis(
+            <i64>::try_from(millis).map_err(POSIXTimeConversionError::TryFromBigIntError)?,
+        )
+        .ok_or(POSIXTimeConversionError::OutOfBoundsError)?)
+    }
+}
+
 pub type POSIXTimeRange = PlutusInterval<POSIXTime>;
 
 /// An input of a pending transaction.
@@ -208,6 +237,12 @@ impl IsPlutusData for TxInInfo {
                 got: PlutusType::from(data),
             }),
         }
+    }
+}
+
+impl From<(TransactionInput, TransactionOutput)> for TxInInfo {
+    fn from((reference, output): (TransactionInput, TransactionOutput)) -> TxInInfo {
+        TxInInfo { reference, output }
     }
 }
 

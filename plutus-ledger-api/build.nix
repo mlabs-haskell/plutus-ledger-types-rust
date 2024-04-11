@@ -10,6 +10,7 @@
             inputs'.lbf.packages.lbr-prelude-rust-src
             inputs'.lbf.packages.lbr-prelude-derive-rust-src
           ];
+          cargoNextestExtraArgs = "--all-features";
         };
     in
     {
