@@ -251,8 +251,8 @@ impl From<(TransactionInput, TransactionOutput)> for TxInInfo {
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "lbf", derive(Json))]
 pub enum DCert {
-    DelegKey(StakingCredential),
-    DelegDeregKey(StakingCredential),
+    DelegRegKey(StakingCredential),
+    DelegDeRegKey(StakingCredential),
     DelegDelegate(
         /// Delegator
         StakingCredential,
@@ -278,8 +278,8 @@ pub enum DCert {
 impl IsPlutusData for DCert {
     fn to_plutus_data(&self) -> PlutusData {
         let (tag, fields) = match self {
-            DCert::DelegKey(c) => (0u32, singleton(c.to_plutus_data())),
-            DCert::DelegDeregKey(c) => (1, singleton(c.to_plutus_data())),
+            DCert::DelegRegKey(c) => (0u32, singleton(c.to_plutus_data())),
+            DCert::DelegDeRegKey(c) => (1, singleton(c.to_plutus_data())),
             DCert::DelegDelegate(c, pkh) => (2, vec![c.to_plutus_data(), pkh.to_plutus_data()]),
             DCert::PoolRegister(pkh, pkh1) => {
                 (3, vec![pkh.to_plutus_data(), pkh1.to_plutus_data()])
@@ -298,11 +298,11 @@ impl IsPlutusData for DCert {
         match tag {
             0 => {
                 let [field] = parse_fixed_len_constr_fields::<1>(fields)?;
-                IsPlutusData::from_plutus_data(field).map(Self::DelegKey)
+                IsPlutusData::from_plutus_data(field).map(Self::DelegRegKey)
             }
             1 => {
                 let [field] = parse_fixed_len_constr_fields::<1>(fields)?;
-                IsPlutusData::from_plutus_data(field).map(Self::DelegDeregKey)
+                IsPlutusData::from_plutus_data(field).map(Self::DelegDeRegKey)
             }
             2 => {
                 let [field1, field2] = parse_fixed_len_constr_fields::<2>(fields)?;
