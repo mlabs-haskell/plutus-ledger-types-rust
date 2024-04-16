@@ -251,8 +251,8 @@ impl From<(TransactionInput, TransactionOutput)> for TxInInfo {
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "lbf", derive(Json))]
 pub enum DCert {
-    DelegKey(StakingCredential),
-    DelegDeregKey(StakingCredential),
+    DelegRegKey(StakingCredential),
+    DelegDeRegKey(StakingCredential),
     DelegDelegate(
         /// Delegator
         StakingCredential,
@@ -278,8 +278,8 @@ pub enum DCert {
 impl IsPlutusData for DCert {
     fn to_plutus_data(&self) -> PlutusData {
         let (tag, fields) = match self {
-            DCert::DelegKey(c) => (0u32, singleton(c.to_plutus_data())),
-            DCert::DelegDeregKey(c) => (1, singleton(c.to_plutus_data())),
+            DCert::DelegRegKey(c) => (0u32, singleton(c.to_plutus_data())),
+            DCert::DelegDeRegKey(c) => (1, singleton(c.to_plutus_data())),
             DCert::DelegDelegate(c, pkh) => (2, vec![c.to_plutus_data(), pkh.to_plutus_data()]),
             DCert::PoolRegister(pkh, pkh1) => {
                 (3, vec![pkh.to_plutus_data(), pkh1.to_plutus_data()])
@@ -298,11 +298,11 @@ impl IsPlutusData for DCert {
         match tag {
             0 => {
                 let [field] = parse_fixed_len_constr_fields::<1>(fields)?;
-                IsPlutusData::from_plutus_data(field).map(Self::DelegKey)
+                IsPlutusData::from_plutus_data(field).map(Self::DelegRegKey)
             }
             1 => {
                 let [field] = parse_fixed_len_constr_fields::<1>(fields)?;
-                IsPlutusData::from_plutus_data(field).map(Self::DelegDeregKey)
+                IsPlutusData::from_plutus_data(field).map(Self::DelegDeRegKey)
             }
             2 => {
                 let [field1, field2] = parse_fixed_len_constr_fields::<2>(fields)?;
@@ -442,25 +442,25 @@ impl IsPlutusData for TransactionInfo {
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "lbf", derive(Json))]
 pub struct ScriptContext {
-    pub purpose: ScriptPurpose,
     pub tx_info: TransactionInfo,
+    pub purpose: ScriptPurpose,
 }
 
 impl IsPlutusData for ScriptContext {
     fn to_plutus_data(&self) -> PlutusData {
         PlutusData::Constr(
             BigInt::from(0),
-            vec![self.purpose.to_plutus_data(), self.tx_info.to_plutus_data()],
+            vec![self.tx_info.to_plutus_data(), self.purpose.to_plutus_data()],
         )
     }
 
     fn from_plutus_data(data: &PlutusData) -> Result<Self, PlutusDataError> {
         let fields = parse_constr_with_tag(data, 0)?;
-        let [purpose, tx_info] = parse_fixed_len_constr_fields(fields)?;
+        let [tx_info, purpose] = parse_fixed_len_constr_fields(fields)?;
 
         Ok(Self {
-            purpose: IsPlutusData::from_plutus_data(purpose)?,
             tx_info: IsPlutusData::from_plutus_data(tx_info)?,
+            purpose: IsPlutusData::from_plutus_data(purpose)?,
         })
     }
 }

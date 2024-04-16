@@ -195,25 +195,25 @@ impl IsPlutusData for TransactionInfo {
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "lbf", derive(Json))]
 pub struct ScriptContext {
-    pub purpose: ScriptPurpose,
     pub tx_info: TransactionInfo,
+    pub purpose: ScriptPurpose,
 }
 
 impl IsPlutusData for ScriptContext {
     fn to_plutus_data(&self) -> PlutusData {
         PlutusData::Constr(
             BigInt::from(0),
-            vec![self.purpose.to_plutus_data(), self.tx_info.to_plutus_data()],
+            vec![self.tx_info.to_plutus_data(), self.purpose.to_plutus_data()],
         )
     }
 
     fn from_plutus_data(data: &PlutusData) -> Result<Self, PlutusDataError> {
         let fields = parse_constr_with_tag(data, 0)?;
-        let [purpose, tx_info] = parse_fixed_len_constr_fields(fields)?;
+        let [tx_info, purpose] = parse_fixed_len_constr_fields(fields)?;
 
         Ok(Self {
-            purpose: IsPlutusData::from_plutus_data(purpose)?,
             tx_info: IsPlutusData::from_plutus_data(tx_info)?,
+            purpose: IsPlutusData::from_plutus_data(purpose)?,
         })
     }
 }

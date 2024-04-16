@@ -342,8 +342,8 @@ pub fn arb_payment_pub_key_hash() -> impl Strategy<Value = PaymentPubKeyHash> {
 /// Strategy to generate a DCert
 pub fn arb_d_cert() -> impl Strategy<Value = DCert> {
     prop_oneof![
-        arb_staking_credential().prop_map(DCert::DelegKey),
-        arb_staking_credential().prop_map(DCert::DelegDeregKey),
+        arb_staking_credential().prop_map(DCert::DelegRegKey),
+        arb_staking_credential().prop_map(DCert::DelegDeRegKey),
         (arb_staking_credential(), arb_payment_pub_key_hash())
             .prop_map(|(sc, pkh)| DCert::DelegDelegate(sc, pkh)),
         (arb_payment_pub_key_hash(), arb_payment_pub_key_hash())
