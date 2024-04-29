@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod plutusdata_roundtrip_tests {
-    use plutus_ledger_api::plutus_data::{IsPlutusData, PlutusDataError};
+    use plutus_ledger_api::v1::plutus_data::{IsPlutusData, PlutusDataError};
     fn from_to_plutus_data<T>(val: &T) -> Result<T, PlutusDataError>
     where
         T: IsPlutusData + PartialEq,

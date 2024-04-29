@@ -1,6 +1,6 @@
 //! Types related to PlutusInterval
 use crate::feature_traits::FeatureTraits;
-use crate::plutus_data::{
+use crate::v1::plutus_data::{
     verify_constr_fields, IsPlutusData, PlutusData, PlutusDataError, PlutusType,
 };
 #[cfg(feature = "lbf")]

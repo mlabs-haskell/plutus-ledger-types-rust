@@ -1,6 +1,6 @@
 //! Types related to Plutus Datums
-use crate::plutus_data::{IsPlutusData, PlutusData, PlutusDataError};
 use crate::v1::crypto::LedgerBytes;
+use crate::v1::plutus_data::{IsPlutusData, PlutusData, PlutusDataError};
 #[cfg(feature = "lbf")]
 use lbr_prelude::json::Json;
 

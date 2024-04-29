@@ -4,6 +4,7 @@ pub mod assoc_map;
 pub mod crypto;
 pub mod datum;
 pub mod interval;
+pub mod plutus_data;
 pub mod redeemer;
 pub mod script;
 pub mod transaction;

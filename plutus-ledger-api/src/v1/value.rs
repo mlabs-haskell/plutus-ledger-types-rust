@@ -1,9 +1,9 @@
 //! Types related to Cardano values, such as Ada and native tokens.
-use crate::plutus_data::{
-    verify_constr_fields, IsPlutusData, PlutusData, PlutusDataError, PlutusType,
-};
 use crate::utils::{singleton, union_btree_maps_with};
 use crate::v1::crypto::LedgerBytes;
+use crate::v1::plutus_data::{
+    verify_constr_fields, IsPlutusData, PlutusData, PlutusDataError, PlutusType,
+};
 use crate::v1::script::{MintingPolicyHash, ScriptHash};
 #[cfg(feature = "lbf")]
 use lbr_prelude::json::{Error, Json, JsonType};

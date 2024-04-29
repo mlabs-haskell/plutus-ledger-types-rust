@@ -1,5 +1,5 @@
 //! Types for cryptographic primitives, and other lower level building blocks
-use crate::plutus_data::{IsPlutusData, PlutusData, PlutusDataError, PlutusType};
+use crate::v1::plutus_data::{IsPlutusData, PlutusData, PlutusDataError, PlutusType};
 use data_encoding::HEXLOWER;
 #[cfg(feature = "lbf")]
 use lbr_prelude::json::{Error, Json};

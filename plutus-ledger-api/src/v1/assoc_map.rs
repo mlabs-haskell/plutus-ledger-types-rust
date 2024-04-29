@@ -6,7 +6,7 @@ use linked_hash_map::LinkedHashMap;
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
-use crate::plutus_data::{IsPlutusData, PlutusData, PlutusDataError, PlutusType};
+use crate::v1::plutus_data::{IsPlutusData, PlutusData, PlutusDataError, PlutusType};
 
 #[derive(Debug, PartialEq, Eq, Clone)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]

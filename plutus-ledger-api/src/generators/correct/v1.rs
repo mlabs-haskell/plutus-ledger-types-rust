@@ -3,7 +3,6 @@
 //! These strategies always return valid values.
 use crate::feature_traits::FeatureTraits;
 use crate::generators::correct::primitive::{arb_bool, arb_bytes, arb_integer, arb_natural};
-use crate::plutus_data::PlutusData;
 use crate::v1::address::{
     Address, CertificateIndex, ChainPointer, Credential, Slot, StakingCredential, TransactionIndex,
 };
@@ -11,6 +10,7 @@ use crate::v1::assoc_map::AssocMap;
 use crate::v1::crypto::{Ed25519PubKeyHash, LedgerBytes, PaymentPubKeyHash};
 use crate::v1::datum::{Datum, DatumHash};
 use crate::v1::interval::{Extended, Interval, LowerBound, PlutusInterval, UpperBound};
+use crate::v1::plutus_data::PlutusData;
 use crate::v1::redeemer::{Redeemer, RedeemerHash};
 use crate::v1::script::{MintingPolicyHash, ScriptHash, ValidatorHash};
 use crate::v1::transaction::{

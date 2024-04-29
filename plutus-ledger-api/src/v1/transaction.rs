@@ -6,11 +6,11 @@ use super::{
     interval::PlutusInterval,
     value::{CurrencySymbol, Value},
 };
-use crate::plutus_data::{
+use crate::utils::{none, singleton};
+use crate::v1::plutus_data::{
     parse_constr, parse_constr_with_tag, parse_fixed_len_constr_fields, verify_constr_fields,
     IsPlutusData, PlutusData, PlutusDataError, PlutusType,
 };
-use crate::utils::{none, singleton};
 #[cfg(feature = "lbf")]
 use lbr_prelude::json::Json;
 use num_bigint::BigInt;

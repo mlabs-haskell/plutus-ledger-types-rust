@@ -1,8 +1,8 @@
 //! Types related to Plutus Datums
-use crate::plutus_data::{
+pub use crate::v1::datum::{Datum, DatumHash};
+use crate::v2::plutus_data::{
     verify_constr_fields, IsPlutusData, PlutusData, PlutusDataError, PlutusType,
 };
-pub use crate::v1::datum::{Datum, DatumHash};
 #[cfg(feature = "lbf")]
 use lbr_prelude::json::{self, Error, Json};
 use num_bigint::BigInt;
