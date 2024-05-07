@@ -18434,11 +18434,11 @@
         "proto-nix": "proto-nix_2"
       },
       "locked": {
-        "lastModified": 1712221321,
-        "narHash": "sha256-BB71V9hSY7lEmpfanvJmb94LeiqUolntWZhU3b1f0z4=",
+        "lastModified": 1713516585,
+        "narHash": "sha256-Kpy8qa0+spl2h9lCeCLEU/tp632q1ypO0Yuwr6D1EgI=",
         "owner": "mlabs-haskell",
         "repo": "lambda-buffers",
-        "rev": "887c17afbf0b51d867eef02938e9a5998d12d549",
+        "rev": "22728a271aa5e2e0907ec2ce0f60e56aea2e2ebd",
         "type": "github"
       },
       "original": {
@@ -26260,11 +26260,11 @@
     },
     "nixpkgs_35": {
       "locked": {
-        "lastModified": 1712753962,
-        "narHash": "sha256-hj4Z55txAufE2dI2Qo3okPfJANn9dHnj2e8bc1jmCKw=",
+        "lastModified": 1711888344,
+        "narHash": "sha256-MsQmYqPmYUGALyZEFbC1rCVFZIrzUJPScuhLZ0wOzME=",
         "owner": "NixOS",
         "repo": "nixpkgs",
-        "rev": "c392dd79976fdcc7cd4617514463c12d29b5a708",
+        "rev": "8f4a6210b3ab450642daeb97c83dfcef70e2a41f",
         "type": "github"
       },
       "original": {
