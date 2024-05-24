@@ -1,4 +1,4 @@
-{ inputs, config, ... }: {
+{ inputs, ... }: {
   imports = [
     inputs.hci-effects.flakeModule # Adds hercules-ci and herculesCI options
   ];
@@ -17,14 +17,17 @@
     };
   };
 
-  herculesCI = {
-    onPush.cargo-publish = {
+  herculesCI = { config, ... }: {
+    onPush.plutus-ledger-api-publish = {
       enable =
         config.repo.branch != null && (builtins.match "v[0-9]+" config.repo.branch) != null;
       outputs = {
         effects.cargo-publish = {
           secretName = "cargo-api-token";
-          extraPublishArgs = [ "--dry-run" ];
+          extraPublishArgs = [
+            "--manifest-path ./plutus-ledger-api/Cargo.toml"
+            "--dry-run"
+          ];
         };
       };
     };
