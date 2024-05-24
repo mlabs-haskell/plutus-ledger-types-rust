@@ -19,7 +19,8 @@
 
   herculesCI = {
     onPush.cargo-publish = {
-      enable = builtins.match "v[0-9]+" config.repo.branch;
+      enable =
+        config.repo.branch != null && (builtins.match "v[0-9]+" config.repo.branch) != null;
       outputs = {
         effects.cargo-publish = {
           secretName = "cargo-api-token";
