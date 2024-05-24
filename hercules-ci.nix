@@ -1,4 +1,4 @@
-{ inputs, ... }: {
+{ inputs, config, ... }: {
   imports = [
     inputs.hci-effects.flakeModule # Adds hercules-ci and herculesCI options
   ];
@@ -17,5 +17,19 @@
     };
   };
 
-  herculesCI.ciSystems = [ "x86_64-linux" "x86_64-darwin" ];
+  herculesCI = {
+    onPush.cargo-publish = {
+      enable = builtins.match "v[0-9]+" config.repo.branch;
+      outputs = {
+        effects.cargo-publish = {
+          secretName = "cargo-api-token";
+          extraPublishArgs = [ "--dry-run" ];
+        };
+      };
+    };
+
+
+    ciSystems = [ "x86_64-linux" "x86_64-darwin" ];
+  };
+
 }

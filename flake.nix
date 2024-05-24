@@ -10,7 +10,7 @@
     flake-parts.follows = "lbf/flake-parts";
 
     # Hercules CI effects
-    hci-effects.follows = "lbf/hci-effects";
+    hci-effects.url = "github:szg251/hercules-ci-effects?ref=cargo-publish";
 
     # Code quality automation
     pre-commit-hooks.follows = "lbf/pre-commit-hooks";
