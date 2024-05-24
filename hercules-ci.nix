@@ -1,4 +1,4 @@
-{ inputs, ... }: {
+{ inputs, withSystem, ... }: {
   imports = [
     inputs.hci-effects.flakeModule # Adds hercules-ci and herculesCI options
   ];
@@ -19,17 +19,19 @@
 
   herculesCI = { config, ... }: {
     onPush.plutus-ledger-api-publish = {
-      enable =
-        config.repo.branch != null && (builtins.match "v[0-9]+" config.repo.branch) != null;
-      outputs = {
-        effects.cargo-publish = {
-          secretName = "cargo-api-token";
-          extraPublishArgs = [
-            "--manifest-path ./plutus-ledger-api/Cargo.toml"
-            "--dry-run"
-          ];
-        };
-      };
+      outputs.effects = withSystem "x86_64-linux"
+        ({ hci-effects, ... }:
+          hci-effects.runIf
+            (config.repo.branch != null && (builtins.match "v[0-9]+" config.repo.branch) != null)
+            (hci-effects.cargoPublish
+              {
+                secretName = "cargo-api-token";
+                extraPublishArgs = [
+                  "--manifest-path ./plutus-ledger-api/Cargo.toml"
+                  "--dry-run"
+                ];
+              })
+        );
     };
 
 
@@ -37,3 +39,4 @@
   };
 
 }
+
