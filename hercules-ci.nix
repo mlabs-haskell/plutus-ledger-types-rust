@@ -27,8 +27,6 @@
               {
                 secretName = "crates-io-token";
                 manifestPath = "${config.packages.plutus-ledger-api-rust-src}/Cargo.toml";
-
-                extraPublishArgs = [ "--dry-run" ];
               })
         );
     };
