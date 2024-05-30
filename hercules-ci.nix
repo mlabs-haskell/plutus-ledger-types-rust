@@ -26,11 +26,8 @@
             (hci-effects.cargoPublish
               {
                 secretName = "crates-io-token";
-                extraPublishArgs = [
-                  "--manifest-path"
-                  "./plutus-ledger-api/Cargo.toml"
-                  "--dry-run"
-                ];
+                manifestPath = "./plutus-ledger-api/Cargo.toml";
+                extraPublishArgs = [ "--dry-run" ];
               })
         );
     };
