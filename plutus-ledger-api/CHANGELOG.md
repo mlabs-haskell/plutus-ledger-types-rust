@@ -11,6 +11,10 @@ Changelog](https://keepachangelog.com/en/1.1.0).
 
 ### Removed
 
+## v0.2.0
+
+Start of this Changelog
+
 ## v0.1.0
 
 MVP version including all Plutus Ledger types
