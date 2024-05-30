@@ -17,16 +17,16 @@
     };
   };
 
-  herculesCI = { config, ... }: {
+  herculesCI = herculesArgs: {
     onPush.plutus-ledger-api-publish = {
       outputs.effects = withSystem "x86_64-linux"
-        ({ hci-effects, ... }:
+        ({ hci-effects, config, ... }:
           hci-effects.runIf
-            (config.repo.branch != null && (builtins.match "v[0-9]+" config.repo.branch) != null)
+            (herculesArgs.config.repo.branch != null && (builtins.match "v[0-9]+" herculesArgs.config.repo.branch) != null)
             (hci-effects.cargoPublish
               {
                 secretName = "crates-io-token";
-                manifestPath = "./plutus-ledger-api/Cargo.toml";
+                manifestPath = "${config.packages.plutus-ledger-api-rust-src}/Cargo.toml";
                 extraPublishArgs = [ "--dry-run" ];
               })
         );
