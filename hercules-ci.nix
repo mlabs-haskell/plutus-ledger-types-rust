@@ -25,7 +25,7 @@
             (config.repo.branch != null && (builtins.match "v[0-9]+" config.repo.branch) != null)
             (hci-effects.cargoPublish
               {
-                secretName = "cargo-api-token";
+                secretName = "crates-io-token";
                 extraPublishArgs = [
                   "--manifest-path ./plutus-ledger-api/Cargo.toml"
                   "--dry-run"
