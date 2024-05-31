@@ -12750,11 +12750,11 @@
         "nixpkgs": "nixpkgs"
       },
       "locked": {
-        "lastModified": 1717080913,
-        "narHash": "sha256-myTAwmN7gSQncZdl3IH2U/4uUkKrUpt4A4LmZ1bmqfQ=",
+        "lastModified": 1717598880,
+        "narHash": "sha256-03rLBd/lKecgaKz0j5ESUf9lDn5R0SJatZTKLL5unWE=",
         "owner": "szg251",
         "repo": "hercules-ci-effects",
-        "rev": "f2df997789553aac4fb79aff5e661e299ec0fb44",
+        "rev": "b8a2c364d49be8adcd3fd8f039a1f6235a2775d3",
         "type": "github"
       },
       "original": {

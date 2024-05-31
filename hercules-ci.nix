@@ -18,22 +18,21 @@
   };
 
   herculesCI = herculesArgs: {
-    onPush.plutus-ledger-api-publish = {
+    onPush.default = {
       outputs.effects = withSystem "x86_64-linux"
         ({ hci-effects, config, ... }:
           hci-effects.runIf
             (herculesArgs.config.repo.branch != null && (builtins.match "v[0-9]+" herculesArgs.config.repo.branch) != null)
             (hci-effects.cargoPublish
               {
+                src = config.packages.plutus-ledger-api-rust-src;
                 secretName = "crates-io-token";
-                manifestPath = "${config.packages.plutus-ledger-api-rust-src}/Cargo.toml";
+                extraPublishArgs = [ "--dry-run" ];
               })
         );
     };
 
-
     ciSystems = [ "x86_64-linux" "x86_64-darwin" ];
   };
-
 }
 
