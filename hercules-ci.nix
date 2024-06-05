@@ -22,7 +22,7 @@
       outputs.effects = withSystem "x86_64-linux"
         ({ hci-effects, config, ... }:
           hci-effects.runIf
-            (herculesArgs.config.repo.branch != null && (builtins.match "v[0-9]+" herculesArgs.config.repo.branch) != null)
+            (herculesArgs.config.repo.tag != null && (builtins.match "v[0-9]+" herculesArgs.config.repo.tag) != null)
             (hci-effects.cargoPublish
               {
                 src = config.packages.plutus-ledger-api-rust-src;
