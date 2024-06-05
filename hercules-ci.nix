@@ -27,7 +27,6 @@
               {
                 src = config.packages.plutus-ledger-api-rust-src;
                 secretName = "crates-io-token";
-                extraPublishArgs = [ "--dry-run" ];
               })
         );
     };
