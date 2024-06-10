@@ -11,6 +11,10 @@ Changelog](https://keepachangelog.com/en/1.1.0).
 
 ### Removed
 
+## v1.0.0
+
+First stable release, identical to v0.2.0
+
 ## v0.2.0
 
 Start of this Changelog
