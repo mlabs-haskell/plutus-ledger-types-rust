@@ -1,4 +1,4 @@
-{ inputs, ... }: {
+{ inputs, withSystem, ... }: {
   imports = [
     inputs.hci-effects.flakeModule # Adds hercules-ci and herculesCI options
   ];
@@ -17,5 +17,21 @@
     };
   };
 
-  herculesCI.ciSystems = [ "x86_64-linux" "x86_64-darwin" ];
+  herculesCI = herculesArgs: {
+    onPush.default = {
+      outputs.effects = withSystem "x86_64-linux"
+        ({ hci-effects, config, ... }:
+          hci-effects.runIf
+            (herculesArgs.config.repo.tag != null && (builtins.match "v([0-9])+(\.[0-9]+)*(-[a-zA-Z]+)*" herculesArgs.config.repo.tag) != null)
+            (hci-effects.cargoPublish
+              {
+                src = config.packages.plutus-ledger-api-rust-src;
+                secretName = "crates-io-token";
+              })
+        );
+    };
+
+    ciSystems = [ "x86_64-linux" "x86_64-darwin" ];
+  };
 }
+
