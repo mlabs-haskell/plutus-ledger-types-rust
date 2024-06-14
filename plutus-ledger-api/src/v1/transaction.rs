@@ -11,8 +11,6 @@ use crate::plutus_data::{
     IsPlutusData, PlutusData, PlutusDataError, PlutusType,
 };
 use crate::utils::{none, singleton};
-#[cfg(feature = "lbf")]
-use lbr_prelude::json::Json;
 use num_bigint::BigInt;
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
@@ -23,7 +21,6 @@ use serde::{Deserialize, Serialize};
 /// inside the transaction
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[cfg_attr(feature = "lbf", derive(Json))]
 pub struct TransactionInput {
     pub transaction_id: TransactionHash,
     pub index: BigInt,
@@ -70,7 +67,6 @@ impl IsPlutusData for TransactionInput {
 /// Note: Plutus docs might incorrectly state that it uses SHA256.
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[cfg_attr(feature = "lbf", derive(Json))]
 pub struct TransactionHash(pub LedgerBytes);
 
 impl IsPlutusData for TransactionHash {
@@ -105,7 +101,6 @@ impl IsPlutusData for TransactionHash {
 /// tokens
 #[derive(Clone, Debug, PartialEq, Eq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[cfg_attr(feature = "lbf", derive(Json))]
 pub struct TransactionOutput {
     pub address: Address,
     pub value: Value,
@@ -152,7 +147,6 @@ impl IsPlutusData for TransactionOutput {
 /// POSIX time is measured as the number of milliseconds since 1970-01-01T00:00:00Z
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[cfg_attr(feature = "lbf", derive(Json))]
 pub struct POSIXTime(pub BigInt);
 
 impl IsPlutusData for POSIXTime {
@@ -199,7 +193,6 @@ pub type POSIXTimeRange = PlutusInterval<POSIXTime>;
 /// An input of a pending transaction.
 #[derive(Clone, Debug, PartialEq, Eq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[cfg_attr(feature = "lbf", derive(Json))]
 pub struct TxInInfo {
     pub reference: TransactionInput,
     pub output: TransactionOutput,
@@ -249,7 +242,6 @@ impl From<(TransactionInput, TransactionOutput)> for TxInInfo {
 /// Partial representation of digests of certificates on the ledger.
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[cfg_attr(feature = "lbf", derive(Json))]
 pub enum DCert {
     DelegRegKey(StakingCredential),
     DelegDeRegKey(StakingCredential),
@@ -344,7 +336,6 @@ impl IsPlutusData for DCert {
 /// The purpose of the script that's currently running.
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[cfg_attr(feature = "lbf", derive(Json))]
 pub enum ScriptPurpose {
     Minting(CurrencySymbol),
     Spending(TransactionInput),
@@ -384,7 +375,6 @@ impl IsPlutusData for ScriptPurpose {
 /// A pending transaction as seen by validator scripts, also known as TxInfo in Plutus
 #[derive(Debug, PartialEq, Eq, Clone)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[cfg_attr(feature = "lbf", derive(Json))]
 pub struct TransactionInfo {
     pub inputs: Vec<TxInInfo>,
     pub outputs: Vec<TransactionOutput>,
@@ -440,7 +430,6 @@ impl IsPlutusData for TransactionInfo {
 /// The context that is presented to the currently-executing script.
 #[derive(Debug, PartialEq, Eq, Clone)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[cfg_attr(feature = "lbf", derive(Json))]
 pub struct ScriptContext {
     pub tx_info: TransactionInfo,
     pub purpose: ScriptPurpose,

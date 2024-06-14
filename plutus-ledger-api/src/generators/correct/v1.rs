@@ -1,7 +1,6 @@
 //! Proptest strategies for Plutus V1 types
 //!
 //! These strategies always return valid values.
-use crate::feature_traits::FeatureTraits;
 use crate::generators::correct::primitive::{arb_bool, arb_bytes, arb_integer, arb_natural};
 use crate::plutus_data::PlutusData;
 use crate::v1::address::{
@@ -155,7 +154,7 @@ pub fn arb_redeemer_hash() -> impl Strategy<Value = RedeemerHash> {
 pub fn arb_extended<T>(element: T) -> impl Strategy<Value = Extended<T::Value>>
 where
     T: Strategy,
-    T::Value: FeatureTraits + Clone,
+    T::Value: Clone,
 {
     prop_oneof![
         Just(Extended::NegInf),
@@ -178,7 +177,7 @@ pub fn arb_posix_time() -> impl Strategy<Value = POSIXTime> {
 pub fn arb_upper_bound<T>(element: T) -> impl Strategy<Value = UpperBound<T::Value>>
 where
     T: Strategy,
-    T::Value: FeatureTraits + Clone,
+    T::Value: Clone,
 {
     (arb_extended(element), arb_bool()).prop_map(|(bound, closed)| UpperBound { bound, closed })
 }
@@ -187,7 +186,7 @@ where
 pub fn arb_lower_bound<T>(element: T) -> impl Strategy<Value = LowerBound<T::Value>>
 where
     T: Strategy,
-    T::Value: FeatureTraits + Clone,
+    T::Value: Clone,
 {
     (arb_extended(element), arb_bool()).prop_map(|(bound, closed)| LowerBound { bound, closed })
 }
@@ -196,7 +195,7 @@ where
 pub fn arb_interval<T>(lower_bound: T, upper_bound: T) -> impl Strategy<Value = Interval<T::Value>>
 where
     T: Strategy,
-    T::Value: FeatureTraits + Clone,
+    T::Value: Clone,
 {
     (lower_bound, upper_bound).prop_flat_map(|(lb, ub)| {
         prop_oneof![
@@ -220,7 +219,7 @@ pub fn arb_plutus_interval<T>(
 ) -> impl Strategy<Value = PlutusInterval<T::Value>>
 where
     T: Strategy,
-    T::Value: FeatureTraits + Clone,
+    T::Value: Clone,
 {
     (arb_lower_bound(lower_bound), arb_upper_bound(upper_bound))
         .prop_map(|(from, to)| PlutusInterval { from, to })

@@ -1,10 +1,7 @@
 //! Types related to PlutusInterval
-use crate::feature_traits::FeatureTraits;
 use crate::plutus_data::{
     verify_constr_fields, IsPlutusData, PlutusData, PlutusDataError, PlutusType,
 };
-#[cfg(feature = "lbf")]
-use lbr_prelude::json::Json;
 use num_bigint::BigInt;
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
@@ -23,10 +20,7 @@ pub enum Interval<T> {
     Never,
 }
 
-impl<T> From<Interval<T>> for PlutusInterval<T>
-where
-    T: FeatureTraits,
-{
+impl<T> From<Interval<T>> for PlutusInterval<T> {
     fn from(interval: Interval<T>) -> Self {
         match interval {
             Interval::Finite(start, end) => PlutusInterval {
@@ -113,7 +107,7 @@ pub enum TryFromPlutusIntervalError {
 
 impl<T> TryFrom<PlutusInterval<T>> for Interval<T>
 where
-    T: FeatureTraits + PartialOrd,
+    T: PartialOrd,
 {
     type Error = TryFromPlutusIntervalError;
 
@@ -238,19 +232,15 @@ where
 /// use `Interval`s with non-inclusive endpoints on types whose `Enum`
 /// instances have partial methods.
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
-#[cfg_attr(feature = "lbf", derive(Json))]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-pub struct PlutusInterval<T>
-where
-    T: FeatureTraits,
-{
+pub struct PlutusInterval<T> {
     pub from: LowerBound<T>,
     pub to: UpperBound<T>,
 }
 
 impl<T> IsPlutusData for PlutusInterval<T>
 where
-    T: FeatureTraits + IsPlutusData,
+    T: IsPlutusData,
 {
     fn to_plutus_data(&self) -> PlutusData {
         PlutusData::Constr(
@@ -284,19 +274,15 @@ where
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
-#[cfg_attr(feature = "lbf", derive(Json))]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-pub struct UpperBound<T>
-where
-    T: FeatureTraits,
-{
+pub struct UpperBound<T> {
     pub bound: Extended<T>,
     pub closed: bool,
 }
 
 impl<T> IsPlutusData for UpperBound<T>
 where
-    T: FeatureTraits + IsPlutusData,
+    T: IsPlutusData,
 {
     fn to_plutus_data(&self) -> PlutusData {
         PlutusData::Constr(
@@ -330,19 +316,15 @@ where
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
-#[cfg_attr(feature = "lbf", derive(Json))]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-pub struct LowerBound<T>
-where
-    T: FeatureTraits,
-{
+pub struct LowerBound<T> {
     pub bound: Extended<T>,
     pub closed: bool,
 }
 
 impl<T> IsPlutusData for LowerBound<T>
 where
-    T: FeatureTraits + IsPlutusData,
+    T: IsPlutusData,
 {
     fn to_plutus_data(&self) -> PlutusData {
         PlutusData::Constr(
@@ -377,12 +359,8 @@ where
 
 /// A set extended with a positive and negative infinity.
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
-#[cfg_attr(feature = "lbf", derive(Json))]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-pub enum Extended<T>
-where
-    T: FeatureTraits,
-{
+pub enum Extended<T> {
     NegInf,
     Finite(T),
     PosInf,
@@ -390,7 +368,7 @@ where
 
 impl<T> Ord for Extended<T>
 where
-    T: FeatureTraits + Ord,
+    T: Ord,
 {
     fn cmp(&self, other: &Self) -> cmp::Ordering {
         match (self, other) {
@@ -409,7 +387,7 @@ where
 
 impl<T> PartialOrd for Extended<T>
 where
-    T: FeatureTraits + PartialOrd,
+    T: PartialOrd,
 {
     fn partial_cmp(&self, other: &Self) -> Option<cmp::Ordering> {
         match self {
@@ -432,7 +410,7 @@ where
 
 impl<T> IsPlutusData for Extended<T>
 where
-    T: FeatureTraits + IsPlutusData,
+    T: IsPlutusData,
 {
     fn to_plutus_data(&self) -> PlutusData {
         match self {

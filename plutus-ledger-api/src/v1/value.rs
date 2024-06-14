@@ -5,14 +5,10 @@ use crate::plutus_data::{
 use crate::utils::{singleton, union_btree_maps_with};
 use crate::v1::crypto::LedgerBytes;
 use crate::v1::script::{MintingPolicyHash, ScriptHash};
-#[cfg(feature = "lbf")]
-use lbr_prelude::json::{Error, Json, JsonType};
 use num_bigint::BigInt;
 use num_traits::Zero;
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
-#[cfg(feature = "lbf")]
-use serde_json;
 use std::ops;
 use std::string::String;
 use std::{
@@ -51,37 +47,9 @@ impl IsPlutusData for CurrencySymbol {
     }
 }
 
-#[cfg(feature = "lbf")]
-impl Json for CurrencySymbol {
-    fn to_json(&self) -> serde_json::Value {
-        match self {
-            CurrencySymbol::Ada => serde_json::Value::String(String::new()),
-            CurrencySymbol::NativeToken(policy_hash) => policy_hash.to_json(),
-        }
-    }
-
-    fn from_json(value: &serde_json::Value) -> Result<Self, Error> {
-        match value.clone() {
-            serde_json::Value::String(str) => {
-                if str.is_empty() {
-                    Ok(CurrencySymbol::Ada)
-                } else {
-                    Ok(CurrencySymbol::NativeToken(Json::from_json(value)?))
-                }
-            }
-            _ => Err(Error::UnexpectedJsonType {
-                wanted: JsonType::String,
-                got: JsonType::from(value),
-                parser: "Plutus.V1.CurrencySymbol".to_owned(),
-            }),
-        }
-    }
-}
-
 /// A value that can contain multiple asset classes
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[cfg_attr(feature = "lbf", derive(Json))]
 pub struct Value(pub BTreeMap<CurrencySymbol, BTreeMap<TokenName, BigInt>>);
 
 impl Value {
@@ -309,7 +277,6 @@ impl IsPlutusData for Value {
 /// Name of a token. This can be any arbitrary bytearray
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[cfg_attr(feature = "lbf", derive(Json))]
 pub struct TokenName(pub LedgerBytes);
 
 impl TokenName {
@@ -345,7 +312,6 @@ impl IsPlutusData for TokenName {
 /// AssetClass is uniquely identifying a specific asset
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[cfg_attr(feature = "lbf", derive(Json))]
 pub struct AssetClass {
     pub currency_symbol: CurrencySymbol,
     pub token_name: TokenName,

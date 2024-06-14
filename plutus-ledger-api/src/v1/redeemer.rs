@@ -1,15 +1,12 @@
 //! Types related to Plutus Redeemers
 use crate::plutus_data::{IsPlutusData, PlutusData, PlutusDataError};
 use crate::v1::crypto::LedgerBytes;
-#[cfg(feature = "lbf")]
-use lbr_prelude::json::Json;
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
 /// Piece of information attached to a transaction when redeeming a value from a validator or a
 /// minting policy
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
-#[cfg_attr(feature = "lbf", derive(Json))]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct Redeemer(pub PlutusData);
 
@@ -25,7 +22,6 @@ impl IsPlutusData for Redeemer {
 
 /// blake2b-256 hash of a datum
 #[derive(Clone, Debug, PartialEq, Eq)]
-#[cfg_attr(feature = "lbf", derive(Json))]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct RedeemerHash(pub LedgerBytes);
 

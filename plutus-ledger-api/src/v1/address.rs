@@ -4,8 +4,6 @@ use crate::plutus_data::{
 };
 use crate::v1::crypto::Ed25519PubKeyHash;
 use crate::v1::script::ValidatorHash;
-#[cfg(feature = "lbf")]
-use lbr_prelude::json::{self, Error, Json};
 use num_bigint::BigInt;
 
 #[cfg(feature = "serde")]
@@ -18,7 +16,6 @@ use serde::{Deserialize, Serialize};
 /// For a better understanding of all the Cardano address types, read [CIP 19](https://cips.cardano.org/cips/cip19/)
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[cfg_attr(feature = "lbf", derive(Json))]
 pub struct Address {
     pub credential: Credential,
     pub staking_credential: Option<StakingCredential>,
@@ -110,51 +107,6 @@ impl IsPlutusData for Credential {
     }
 }
 
-#[cfg(feature = "lbf")]
-impl Json for Credential {
-    fn to_json(&self) -> serde_json::Value {
-        match self {
-            Credential::PubKey(pkh) => {
-                json::json_constructor("PubKeyCredential", &vec![pkh.to_json()])
-            }
-            Credential::Script(val_hash) => {
-                json::json_constructor("ScriptCredential", &vec![val_hash.to_json()])
-            }
-        }
-    }
-
-    fn from_json(value: &serde_json::Value) -> Result<Self, Error> {
-        json::case_json_constructor(
-            "Plutus.V1.Credential",
-            vec![
-                (
-                    "PubKeyCredential",
-                    Box::new(|ctor_fields| match &ctor_fields[..] {
-                        [pkh] => Ok(Credential::PubKey(Json::from_json(pkh)?)),
-                        _ => Err(Error::UnexpectedArrayLength {
-                            wanted: 1,
-                            got: ctor_fields.len(),
-                            parser: "Plutus.V1.Credential".to_owned(),
-                        }),
-                    }),
-                ),
-                (
-                    "ScriptCredential",
-                    Box::new(|ctor_fields| match &ctor_fields[..] {
-                        [val_hash] => Ok(Credential::Script(Json::from_json(val_hash)?)),
-                        _ => Err(Error::UnexpectedArrayLength {
-                            wanted: 1,
-                            got: ctor_fields.len(),
-                            parser: "Plutus.V1.Credential".to_owned(),
-                        }),
-                    }),
-                ),
-            ],
-            value,
-        )
-    }
-}
-
 /// Credential (public key hash or pointer) used for staking
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
@@ -215,51 +167,6 @@ impl IsPlutusData for StakingCredential {
     }
 }
 
-#[cfg(feature = "lbf")]
-impl Json for StakingCredential {
-    fn to_json(&self) -> serde_json::Value {
-        match self {
-            StakingCredential::Hash(pkh) => {
-                json::json_constructor("StakingHash", &vec![pkh.to_json()])
-            }
-            StakingCredential::Pointer(val_hash) => {
-                json::json_constructor("StakingPtr", &vec![val_hash.to_json()])
-            }
-        }
-    }
-
-    fn from_json(value: &serde_json::Value) -> Result<Self, Error> {
-        json::case_json_constructor(
-            "Plutus.V1.StakingCredential",
-            vec![
-                (
-                    "StakingHash",
-                    Box::new(|ctor_fields| match &ctor_fields[..] {
-                        [pkh] => Ok(StakingCredential::Hash(Json::from_json(pkh)?)),
-                        _ => Err(Error::UnexpectedArrayLength {
-                            wanted: 1,
-                            got: ctor_fields.len(),
-                            parser: "Plutus.V1.StakingCredential".to_owned(),
-                        }),
-                    }),
-                ),
-                (
-                    "StakingPtr",
-                    Box::new(|ctor_fields| match &ctor_fields[..] {
-                        [val_hash] => Ok(StakingCredential::Pointer(Json::from_json(&val_hash)?)),
-                        _ => Err(Error::UnexpectedArrayLength {
-                            wanted: 1,
-                            got: ctor_fields.len(),
-                            parser: "Plutus.V1.StakingCredential".to_owned(),
-                        }),
-                    }),
-                ),
-            ],
-            value,
-        )
-    }
-}
-
 /// In an address, a chain pointer refers to a point of the chain containing a stake key
 /// registration certificate. A point is identified by 3 coordinates:
 /// - An absolute slot number
@@ -267,7 +174,6 @@ impl Json for StakingCredential {
 /// - A (delegation) certificate index (within that transacton)
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[cfg_attr(feature = "lbf", derive(Json))]
 pub struct ChainPointer {
     pub slot_number: Slot,
     pub transaction_index: TransactionIndex,
@@ -277,7 +183,6 @@ pub struct ChainPointer {
 /// Number of slots elapsed since genesis
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[cfg_attr(feature = "lbf", derive(Json))]
 pub struct Slot(pub BigInt);
 
 impl IsPlutusData for Slot {
@@ -293,7 +198,6 @@ impl IsPlutusData for Slot {
 /// Position of the certificate in a certain transaction
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[cfg_attr(feature = "lbf", derive(Json))]
 pub struct CertificateIndex(pub BigInt);
 
 impl IsPlutusData for CertificateIndex {
@@ -310,7 +214,6 @@ impl IsPlutusData for CertificateIndex {
 /// This is not identical to the index of a `TransactionInput`
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[cfg_attr(feature = "lbf", derive(Json))]
 pub struct TransactionIndex(pub BigInt);
 
 impl IsPlutusData for TransactionIndex {

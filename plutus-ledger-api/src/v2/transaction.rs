@@ -8,8 +8,6 @@ pub use crate::v1::transaction::POSIXTimeConversionError;
 pub use crate::v1::transaction::{
     DCert, POSIXTime, POSIXTimeRange, ScriptPurpose, TransactionHash, TransactionInput,
 };
-#[cfg(feature = "lbf")]
-use lbr_prelude::json::Json;
 use num_bigint::BigInt;
 
 #[cfg(feature = "serde")]
@@ -31,7 +29,6 @@ use super::{
 /// amount of output tokens
 #[derive(Clone, Debug, PartialEq, Eq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[cfg_attr(feature = "lbf", derive(Json))]
 pub struct TransactionOutput {
     pub address: Address,
     pub value: Value,
@@ -81,7 +78,6 @@ impl IsPlutusData for TransactionOutput {
 /// An input of a pending transaction.
 #[derive(Clone, Debug, PartialEq, Eq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[cfg_attr(feature = "lbf", derive(Json))]
 pub struct TxInInfo {
     pub reference: TransactionInput,
     pub output: TransactionOutput,
@@ -131,7 +127,6 @@ impl IsPlutusData for TxInInfo {
 /// A pending transaction as seen by validator scripts, also known as TxInfo in Plutus
 #[derive(Debug, PartialEq, Eq, Clone)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[cfg_attr(feature = "lbf", derive(Json))]
 pub struct TransactionInfo {
     pub inputs: Vec<TxInInfo>,
     pub reference_inputs: Vec<TxInInfo>,
@@ -193,7 +188,6 @@ impl IsPlutusData for TransactionInfo {
 /// The context that is presented to the currently-executing script.
 #[derive(Debug, PartialEq, Eq, Clone)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[cfg_attr(feature = "lbf", derive(Json))]
 pub struct ScriptContext {
     pub tx_info: TransactionInfo,
     pub purpose: ScriptPurpose,
