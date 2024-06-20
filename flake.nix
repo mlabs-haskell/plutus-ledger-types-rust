@@ -1,19 +1,17 @@
 {
   description = "Plutus Ledger types and utilities implemented in Rust";
   inputs = {
-    lbf.url = "github:mlabs-haskell/lambda-buffers";
-
-    flake-lang.follows = "lbf/flake-lang";
-    nixpkgs.follows = "lbf/nixpkgs";
+    flake-lang.url = "github:mlabs-haskell/flake-lang.nix";
+    nixpkgs.follows = "flake-lang/nixpkgs";
 
     # Flakes as modules, using this extensively to organize the repo into modules (build.nix files)
-    flake-parts.follows = "lbf/flake-parts";
+    flake-parts.follows = "flake-lang/flake-parts";
 
     # Hercules CI effects
     hci-effects.url = "github:hercules-ci/hercules-ci-effects";
 
     # Code quality automation
-    pre-commit-hooks.follows = "lbf/pre-commit-hooks";
+    pre-commit-hooks.follows = "flake-lang/pre-commit-hooks";
   };
 
   outputs = inputs@{ flake-parts, ... }:
