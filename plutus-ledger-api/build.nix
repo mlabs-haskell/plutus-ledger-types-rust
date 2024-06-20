@@ -1,15 +1,11 @@
 { inputs, ... }: {
-  perSystem = { config, inputs', system, ... }:
+  perSystem = { config, system, ... }:
     let
       rustFlake =
         inputs.flake-lang.lib.${system}.rustFlake {
           src = ./.;
           crateName = "plutus-ledger-api";
           devShellHook = config.settings.shell.hook;
-          extraSources = [
-            inputs'.lbf.packages.lbr-prelude-rust-src
-            inputs'.lbf.packages.lbr-prelude-derive-rust-src
-          ];
           cargoNextestExtraArgs = "--all-features";
         };
     in
