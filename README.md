@@ -1,3 +1,11 @@
 # Plutus Ledger API
 
-Plutus Ledger types and utilities implemented in Rust.
+## Packages
+
+- [plutus-ledger-api](./plutus-ledger-api/) - Plutus Ledger types and utilities
+  implemented in Rust
+
+## Documents
+
+- [Contributing guideline](/CONTRIBUTING.md)
+- [License](/LICENSE)
