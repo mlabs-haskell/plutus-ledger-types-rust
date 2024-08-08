@@ -29,3 +29,7 @@ default = []
 serde = ["dep:serde", "num-bigint/serde"]
 lbf = ["dep:lbr-prelude", "dep:serde_json"]
 chrono = ["dep:chrono"]
+
+[dev-dependencies]
+goldie = "0.5.0"
+lbr-prelude = "0.1.1"
