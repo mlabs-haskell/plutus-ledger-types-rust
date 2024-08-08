@@ -1,4 +1,6 @@
 //! Types related to Cardano transactions.
+use std::fmt;
+
 use super::{
     address::{Address, StakingCredential},
     crypto::{LedgerBytes, PaymentPubKeyHash},
@@ -10,7 +12,7 @@ use crate::plutus_data::{
     parse_constr, parse_constr_with_tag, parse_fixed_len_constr_fields, verify_constr_fields,
     IsPlutusData, PlutusData, PlutusDataError, PlutusType,
 };
-use crate::utils::{none, singleton};
+use crate::utils::aux::{none, singleton};
 #[cfg(feature = "lbf")]
 use lbr_prelude::json::Json;
 use num_bigint::BigInt;
@@ -27,6 +29,12 @@ use serde::{Deserialize, Serialize};
 pub struct TransactionInput {
     pub transaction_id: TransactionHash,
     pub index: BigInt,
+}
+
+impl fmt::Display for TransactionInput {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}#{}", self.transaction_id.0, self.index)
+    }
 }
 
 impl IsPlutusData for TransactionInput {
@@ -72,6 +80,12 @@ impl IsPlutusData for TransactionInput {
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "lbf", derive(Json))]
 pub struct TransactionHash(pub LedgerBytes);
+
+impl fmt::Display for TransactionHash {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
 
 impl IsPlutusData for TransactionHash {
     fn to_plutus_data(&self) -> PlutusData {

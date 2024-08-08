@@ -2,7 +2,7 @@
 use crate::plutus_data::{
     verify_constr_fields, IsPlutusData, PlutusData, PlutusDataError, PlutusType,
 };
-use crate::utils::{singleton, union_btree_maps_with};
+use crate::utils::aux::{singleton, union_btree_maps_with};
 use crate::v1::crypto::LedgerBytes;
 use crate::v1::script::{MintingPolicyHash, ScriptHash};
 #[cfg(feature = "lbf")]
@@ -13,13 +13,13 @@ use num_traits::Zero;
 use serde::{Deserialize, Serialize};
 #[cfg(feature = "lbf")]
 use serde_json;
-use std::ops;
 use std::string::String;
 use std::{
     collections::BTreeMap,
     iter::Sum,
     ops::{Add, Mul, Neg, Not, Sub},
 };
+use std::{fmt, ops};
 
 /// Identifier of a currency, which could be either Ada (or tAda), or a native token represented by
 /// it's minting policy hash. A currency may be associated with multiple `AssetClass`es.
@@ -28,6 +28,25 @@ use std::{
 pub enum CurrencySymbol {
     Ada,
     NativeToken(MintingPolicyHash),
+}
+
+impl fmt::Display for CurrencySymbol {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let asset_class_str = match self {
+            CurrencySymbol::Ada => {
+                if f.alternate() {
+                    "lovelace".to_string()
+                } else {
+                    "".to_string()
+                }
+            }
+            CurrencySymbol::NativeToken(symbol) => {
+                format!("{}", symbol.0 .0)
+            }
+        };
+
+        write!(f, "{}", asset_class_str)
+    }
 }
 
 impl IsPlutusData for CurrencySymbol {
@@ -263,6 +282,27 @@ impl Value {
     }
 }
 
+impl fmt::Display for Value {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let value_str = self
+            .0
+            .iter()
+            .flat_map(|(currency_symbol, assets)| {
+                assets.iter().map(move |(token_name, amount)| {
+                    if token_name.is_empty() {
+                        format!("{} {}", currency_symbol, amount)
+                    } else {
+                        format!("{}.{} {}", currency_symbol, token_name, amount)
+                    }
+                })
+            })
+            .collect::<Vec<_>>()
+            .join("+");
+
+        write!(f, "{}", value_str)
+    }
+}
+
 impl Zero for Value {
     fn zero() -> Self {
         Default::default()
@@ -385,9 +425,11 @@ impl TokenName {
     pub fn ada() -> TokenName {
         TokenName(LedgerBytes(Vec::with_capacity(0)))
     }
-}
 
-impl TokenName {
+    pub fn is_empty(&self) -> bool {
+        self.0 .0.is_empty()
+    }
+
     pub fn from_bytes(bytes: Vec<u8>) -> Self {
         TokenName(LedgerBytes(bytes))
     }
@@ -411,6 +453,21 @@ impl IsPlutusData for TokenName {
     }
 }
 
+impl fmt::Display for TokenName {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        if f.alternate() {
+            let utf8_str = std::str::from_utf8(&self.0 .0);
+
+            match utf8_str {
+                Ok(str) => write!(f, "{}", str),
+                Err(_) => write!(f, "0x{}", self.0),
+            }
+        } else {
+            write!(f, "{}", self.0)
+        }
+    }
+}
+
 /// AssetClass is uniquely identifying a specific asset
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
@@ -418,6 +475,16 @@ impl IsPlutusData for TokenName {
 pub struct AssetClass {
     pub currency_symbol: CurrencySymbol,
     pub token_name: TokenName,
+}
+
+impl fmt::Display for AssetClass {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        if self.token_name.is_empty() {
+            write!(f, "{}", self.currency_symbol)
+        } else {
+            write!(f, "{}.{}", self.currency_symbol, self.token_name)
+        }
+    }
 }
 
 impl IsPlutusData for AssetClass {

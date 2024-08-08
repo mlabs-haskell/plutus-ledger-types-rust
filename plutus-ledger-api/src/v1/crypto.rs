@@ -88,6 +88,12 @@ impl std::fmt::Debug for LedgerBytes {
     }
 }
 
+impl std::fmt::Display for LedgerBytes {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", HEXLOWER.encode(&self.0))
+    }
+}
+
 impl IsPlutusData for LedgerBytes {
     fn to_plutus_data(&self) -> PlutusData {
         PlutusData::Bytes(self.0.clone())

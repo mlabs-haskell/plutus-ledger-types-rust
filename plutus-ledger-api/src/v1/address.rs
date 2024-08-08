@@ -1,7 +1,13 @@
 //! Types related to Cardano addresses
+use std::str::FromStr;
+
+use anyhow::anyhow;
+use cardano_serialization_lib as csl;
+
 use crate::plutus_data::{
     verify_constr_fields, IsPlutusData, PlutusData, PlutusDataError, PlutusType,
 };
+use crate::utils::csl_to_pla::TryToPLA;
 use crate::v1::crypto::Ed25519PubKeyHash;
 use crate::v1::script::ValidatorHash;
 #[cfg(feature = "lbf")]
@@ -39,7 +45,7 @@ impl IsPlutusData for Address {
         match data {
             PlutusData::Constr(flag, fields) => match u32::try_from(flag) {
                 Ok(0) => {
-                    verify_constr_fields(&fields, 2)?;
+                    verify_constr_fields(fields, 2)?;
                     Ok(Address {
                         credential: Credential::from_plutus_data(&fields[0])?,
                         staking_credential: <Option<StakingCredential>>::from_plutus_data(
@@ -58,6 +64,18 @@ impl IsPlutusData for Address {
                 got: PlutusType::from(data),
             }),
         }
+    }
+}
+
+impl FromStr for Address {
+    type Err = anyhow::Error;
+
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        let csl_addr = csl::address::Address::from_bech32(s)
+            .map_err(|err| anyhow!("Couldn't parse bech32 address: {}", err))?;
+        csl_addr
+            .try_to_pla()
+            .map_err(|err| anyhow!("Couldn't convert address: {}", err))
     }
 }
 
