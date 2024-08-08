@@ -1811,15 +1811,16 @@
         "rust-overlay": "rust-overlay"
       },
       "locked": {
-        "lastModified": 1718016669,
-        "narHash": "sha256-Fw9eUWeO9mfkVhWJUCvQatBluGJb56ZUupV45BYf+6Q=",
+        "lastModified": 1723121732,
+        "narHash": "sha256-Mphx2JAVgR2eoz0+gy+9fH7YhGlhjuNd38Akjqr0uK8=",
         "owner": "mlabs-haskell",
         "repo": "flake-lang.nix",
-        "rev": "0de194eaefd313c26299dad60a636835fe1ceb88",
+        "rev": "bef28a878070609aa0c177302a2db1617650c15f",
         "type": "github"
       },
       "original": {
         "owner": "mlabs-haskell",
+        "ref": "szg251/extra-rust-filters",
         "repo": "flake-lang.nix",
         "type": "github"
       }
