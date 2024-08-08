@@ -16,93 +16,75 @@ mod plutusdata_roundtrip_tests {
 
         #[test]
         fn integer() {
-            goldie::assert!(format!("{:?}", BigInt::from(123456789).to_plutus_data()))
+            goldie::assert_debug!(BigInt::from(123456789).to_plutus_data())
         }
 
         #[test]
         fn bool() {
-            goldie::assert!(format!("{:?}", true.to_plutus_data()))
+            goldie::assert_debug!(true.to_plutus_data())
         }
 
         #[test]
         fn char() {
-            goldie::assert!(format!("{:?}", '凛'.to_plutus_data()))
+            goldie::assert_debug!('凛'.to_plutus_data())
         }
 
         #[test]
         fn bytes() {
-            goldie::assert!(format!(
-                "{:?}",
-                [0u8, 1, 2, 3].repeat(10).to_vec().to_plutus_data()
-            ))
+            goldie::assert_debug!([0u8, 1, 2, 3].repeat(10).to_vec().to_plutus_data())
         }
 
         #[test]
         fn text() {
-            goldie::assert!(format!(
-                "{:?}",
-                String::from("Somethingsomething").to_plutus_data()
-            ))
+            goldie::assert_debug!(String::from("Somethingsomething").to_plutus_data())
         }
 
         #[test]
         fn maybe_some() {
-            goldie::assert!(format!("{:?}", Some(BigInt::from(1234)).to_plutus_data()))
+            goldie::assert_debug!(Some(BigInt::from(1234)).to_plutus_data())
         }
 
         #[test]
         fn maybe_none() {
-            goldie::assert!(format!("{:?}", None::<BigInt>.to_plutus_data()))
+            goldie::assert_debug!(None::<BigInt>.to_plutus_data())
         }
 
         #[test]
         fn result_ok() {
-            goldie::assert!(format!("{:?}", Ok::<bool, BigInt>(false).to_plutus_data()))
+            goldie::assert_debug!(Ok::<bool, BigInt>(false).to_plutus_data())
         }
 
         #[test]
         fn result_err() {
-            goldie::assert!(format!(
-                "{:?}",
-                Err::<bool, BigInt>(BigInt::from(1234)).to_plutus_data()
-            ))
+            goldie::assert_debug!(Err::<bool, BigInt>(BigInt::from(1234)).to_plutus_data())
         }
 
         #[test]
         fn vec() {
-            goldie::assert!(format!(
-                "{:?}",
-                [0, 1, 2, 3]
-                    .repeat(20)
-                    .into_iter()
-                    .map(BigInt::from)
-                    .collect::<Vec<BigInt>>()
-                    .to_plutus_data()
-            ))
+            goldie::assert_debug!([0, 1, 2, 3]
+                .repeat(20)
+                .into_iter()
+                .map(BigInt::from)
+                .collect::<Vec<BigInt>>()
+                .to_plutus_data())
         }
 
         #[test]
         fn set() {
-            goldie::assert!(format!(
-                "{:?}",
-                [0, 1, 2]
-                    .into_iter()
-                    .map(BigInt::from)
-                    .collect::<BTreeSet<BigInt>>()
-                    .to_plutus_data()
-            ))
+            goldie::assert_debug!([0, 1, 2]
+                .into_iter()
+                .map(BigInt::from)
+                .collect::<BTreeSet<BigInt>>()
+                .to_plutus_data())
         }
 
         #[test]
         fn map() {
-            goldie::assert!(format!(
-                "{:?}",
-                [(0, "Hey"), (1, "There"), (2, "Foo"), (3, "Bar")]
-                    .into_iter()
-                    .map(|(k, v)| (BigInt::from(k), String::from(v)))
-                    .collect::<BTreeMap<BigInt, String>>()
-                    .to_plutus_data()
-            ))
+            goldie::assert_debug!([(0, "Hey"), (1, "There"), (2, "Foo"), (3, "Bar")]
+                .into_iter()
+                .map(|(k, v)| (BigInt::from(k), String::from(v)))
+                .collect::<BTreeMap<BigInt, String>>()
+                .to_plutus_data())
         }
     }
 
@@ -300,114 +282,98 @@ mod plutusdata_roundtrip_tests {
 
         #[test]
         fn v1_asset_class() {
-            goldie::assert!(format!(
-                "{:?}",
-                AssetClass {
-                    currency_symbol: sample_currency_symbol(),
-                    token_name: sample_token_name()
-                }
-                .to_plutus_data()
-            ))
+            goldie::assert_debug!(AssetClass {
+                currency_symbol: sample_currency_symbol(),
+                token_name: sample_token_name()
+            }
+            .to_plutus_data())
         }
 
         #[test]
         fn v1_value() {
-            goldie::assert!(format!("{:?}", sample_value().to_plutus_data()))
+            goldie::assert_debug!(sample_value().to_plutus_data())
         }
 
         #[test]
         fn v1_plutus_interval() {
-            goldie::assert!(format!("{:?}", sample_plutus_interval().to_plutus_data()))
+            goldie::assert_debug!(sample_plutus_interval().to_plutus_data())
         }
 
         #[test]
         fn v1_address() {
-            goldie::assert!(format!("{:?}", sample_address().to_plutus_data()))
+            goldie::assert_debug!(sample_address().to_plutus_data())
         }
 
         #[test]
         fn v1_transaction_input() {
-            goldie::assert!(format!("{:?}", sample_transaction_input().to_plutus_data()))
+            goldie::assert_debug!(sample_transaction_input().to_plutus_data())
         }
 
         #[test]
         fn v1_transaction_output() {
-            goldie::assert!(format!(
-                "{:?}",
-                sample_transaction_output().to_plutus_data()
-            ))
+            goldie::assert_debug!(sample_transaction_output().to_plutus_data())
         }
 
         #[test]
         fn v1_tx_in_info() {
-            goldie::assert!(format!("{:?}", sample_tx_in_info().to_plutus_data()))
+            goldie::assert_debug!(sample_tx_in_info().to_plutus_data())
         }
 
         #[test]
         fn v1_redeemeer() {
-            goldie::assert!(format!("{:?}", sample_redeemer().to_plutus_data()))
+            goldie::assert_debug!(sample_redeemer().to_plutus_data())
         }
 
         #[test]
         fn v1_redeemeer_hash() {
-            goldie::assert!(format!(
-                "{:?}",
+            goldie::assert_debug!(
                 RedeemerHash(LedgerBytes([0].repeat(32).to_vec())).to_plutus_data()
-            ))
+            )
         }
 
         #[test]
         fn v1_datum_hash() {
-            goldie::assert!(format!("{:?}", sample_datum_hash().to_plutus_data()))
+            goldie::assert_debug!(sample_datum_hash().to_plutus_data())
         }
 
         #[test]
         fn v1_bigint_assoc_map() {
-            goldie::assert!(format!(
-                "{:?}",
-                AssocMap::from(
-                    [(1, 123), (0, 321), (2, 456)]
-                        .into_iter()
-                        .map(|(k, v)| (BigInt::from(k), BigInt::from(v)))
-                        .collect::<Vec<_>>()
-                )
-                .to_plutus_data()
-            ))
+            goldie::assert_debug!(AssocMap::from(
+                [(1, 123), (0, 321), (2, 456)]
+                    .into_iter()
+                    .map(|(k, v)| (BigInt::from(k), BigInt::from(v)))
+                    .collect::<Vec<_>>()
+            )
+            .to_plutus_data())
         }
 
         #[test]
         fn v1_arb_payment_pub_key_hash() {
-            goldie::assert!(format!(
-                "{:?}",
-                sample_payment_pub_key_hash().to_plutus_data()
-            ))
+            goldie::assert_debug!(sample_payment_pub_key_hash().to_plutus_data())
         }
 
         #[test]
         fn v1_d_cert() {
-            goldie::assert!(format!("{:?}", sample_dcert().to_plutus_data()))
+            goldie::assert_debug!(sample_dcert().to_plutus_data())
         }
 
         #[test]
         fn v1_script_purpose() {
-            goldie::assert!(format!("{:?}", sample_script_purpose().to_plutus_data()))
+            goldie::assert_debug!(sample_script_purpose().to_plutus_data())
         }
 
         #[test]
         fn v1_transaction_info() {
-            goldie::assert!(format!("{:?}", sample_transaction_info().to_plutus_data()))
+            goldie::assert_debug!(sample_transaction_info().to_plutus_data())
         }
 
         #[test]
         fn v1_script_context() {
-            goldie::assert!(format!(
-                "{:?}",
-                ScriptContext {
-                    tx_info: sample_transaction_info(),
-                    purpose: sample_script_purpose()
-                }
-                .to_plutus_data()
-            ))
+            goldie::assert_debug!(ScriptContext {
+                tx_info: sample_transaction_info(),
+                purpose: sample_script_purpose()
+            }
+            .to_plutus_data())
         }
     }
     mod prop_v1 {
@@ -597,30 +563,27 @@ mod plutusdata_roundtrip_tests {
 
         #[test]
         fn v2_transaction_output() {
-            goldie::assert!(format!(
-                "{:?}",
-                sample_transaction_output().to_plutus_data()
-            ))
+            goldie::assert_debug!(sample_transaction_output().to_plutus_data())
         }
 
         #[test]
         fn v2_tx_in_info() {
-            goldie::assert!(format!("{:?}", sample_tx_in_info().to_plutus_data()))
+            goldie::assert_debug!(sample_tx_in_info().to_plutus_data())
         }
 
         #[test]
         fn v2_output_datum() {
-            goldie::assert!(format!("{:?}", sample_output_datum().to_plutus_data()))
+            goldie::assert_debug!(sample_output_datum().to_plutus_data())
         }
 
         #[test]
         fn v2_transaction_info() {
-            goldie::assert!(format!("{:?}", sample_transaction_info().to_plutus_data()))
+            goldie::assert_debug!(sample_transaction_info().to_plutus_data())
         }
 
         #[test]
         fn v2_script_context() {
-            goldie::assert!(format!("{:?}", sample_script_context().to_plutus_data()))
+            goldie::assert_debug!(sample_script_context().to_plutus_data())
         }
     }
 }

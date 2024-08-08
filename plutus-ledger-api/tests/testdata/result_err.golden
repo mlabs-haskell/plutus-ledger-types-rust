@@ -1,1 +1,8 @@
-Constr(0, [Integer(1234)])
+Constr(
+    0,
+    [
+        Integer(
+            1234,
+        ),
+    ],
+)
