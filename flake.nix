@@ -1,7 +1,7 @@
 {
   description = "Plutus Ledger types and utilities implemented in Rust";
   inputs = {
-    flake-lang.url = "github:mlabs-haskell/flake-lang.nix/cargo-doc";
+    flake-lang.url = "github:mlabs-haskell/flake-lang.nix";
     nixpkgs.follows = "flake-lang/nixpkgs";
 
     # Flakes as modules, using this extensively to organize the repo into modules (build.nix files)
