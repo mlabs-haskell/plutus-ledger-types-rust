@@ -17,6 +17,12 @@
     };
   };
 
+  hercules-ci.github-pages.branch = "main";
+
+  perSystem = { config, ... }: {
+    hercules-ci.github-pages.settings.contents = config.packages.plutus-ledger-api-rust-github-pages;
+  };
+
   herculesCI = herculesArgs: {
     onPush.default = {
       outputs.effects = withSystem "x86_64-linux"
