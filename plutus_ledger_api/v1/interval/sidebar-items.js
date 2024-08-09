@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["Extended","Interval","TryFromPlutusIntervalError"],"struct":["LowerBound","PlutusInterval","UpperBound"]};

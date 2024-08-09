@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["arb_bool","arb_bytes","arb_char","arb_complicated","arb_integer","arb_natural","arb_text"]};

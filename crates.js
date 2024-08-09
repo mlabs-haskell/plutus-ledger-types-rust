@@ -1,0 +1,1 @@
+window.ALL_CRATES = ["plutus_ledger_api"];

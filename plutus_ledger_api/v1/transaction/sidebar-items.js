@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["DCert","ScriptPurpose"],"struct":["POSIXTime","ScriptContext","TransactionHash","TransactionInfo","TransactionInput","TransactionOutput","TxInInfo"],"type":["POSIXTimeRange"]};

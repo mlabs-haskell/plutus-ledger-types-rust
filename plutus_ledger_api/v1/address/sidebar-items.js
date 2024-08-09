@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["Credential","StakingCredential"],"struct":["Address","CertificateIndex","ChainPointer","Slot","TransactionIndex"]};
