@@ -156,137 +156,20 @@ mod plutusdata_roundtrip_tests {
     mod golden_v1 {
         use num_bigint::BigInt;
         use plutus_ledger_api::{
-            plutus_data::{IsPlutusData, PlutusData},
-            v1::{
-                address::{Address, Credential, StakingCredential},
-                assoc_map::AssocMap,
-                crypto::{Ed25519PubKeyHash, LedgerBytes, PaymentPubKeyHash},
-                datum::{Datum, DatumHash},
-                interval::{Interval, PlutusInterval},
-                redeemer::{Redeemer, RedeemerHash},
-                script::{MintingPolicyHash, ScriptHash, ValidatorHash},
-                transaction::{
-                    DCert, POSIXTime, ScriptContext, ScriptPurpose, TransactionHash,
-                    TransactionInfo, TransactionInput, TransactionOutput, TxInInfo,
-                },
-                value::{AssetClass, CurrencySymbol, TokenName, Value},
+            goldens::v1::{
+                sample_address, sample_asset_class, sample_datum_hash, sample_dcert,
+                sample_payment_pub_key_hash, sample_plutus_interval, sample_redeemer,
+                sample_redeemer_hash, sample_script_context, sample_script_purpose,
+                sample_transaction_info, sample_transaction_input, sample_transaction_output,
+                sample_tx_in_info, sample_value,
             },
+            plutus_data::IsPlutusData,
+            v1::assoc_map::AssocMap,
         };
-
-        pub(super) fn sample_currency_symbol() -> CurrencySymbol {
-            CurrencySymbol::NativeToken(MintingPolicyHash(ScriptHash(LedgerBytes(
-                [0].repeat(28).to_vec(),
-            ))))
-        }
-
-        pub(super) fn sample_token_name() -> TokenName {
-            TokenName::from_string("Something")
-        }
-
-        pub(super) fn sample_value() -> Value {
-            Value::token_value(
-                &sample_currency_symbol(),
-                &sample_token_name(),
-                &BigInt::from(123),
-            )
-        }
-
-        pub(super) fn sample_plutus_interval() -> PlutusInterval<POSIXTime> {
-            PlutusInterval::from(Interval::StartAt(POSIXTime(BigInt::from(1723106785))))
-        }
-
-        pub(super) fn sample_ed25519_pub_key_hash() -> Ed25519PubKeyHash {
-            Ed25519PubKeyHash(LedgerBytes([0].repeat(28).to_vec()))
-        }
-
-        pub(super) fn sample_staking_credential() -> StakingCredential {
-            StakingCredential::Hash(Credential::Script(ValidatorHash(ScriptHash(LedgerBytes(
-                [1].repeat(28).to_vec(),
-            )))))
-        }
-
-        pub(super) fn sample_address() -> Address {
-            Address {
-                credential: Credential::PubKey(sample_ed25519_pub_key_hash()),
-                staking_credential: Some(sample_staking_credential()),
-            }
-        }
-
-        pub(super) fn sample_transaction_hash() -> TransactionHash {
-            TransactionHash(LedgerBytes([0].repeat(32).to_vec()))
-        }
-
-        pub(super) fn sample_transaction_input() -> TransactionInput {
-            TransactionInput {
-                transaction_id: sample_transaction_hash(),
-                index: BigInt::from(3),
-            }
-        }
-
-        pub(super) fn sample_datum_hash() -> DatumHash {
-            DatumHash(LedgerBytes([0].repeat(32).to_vec()))
-        }
-
-        pub(super) fn sample_datum() -> Datum {
-            Datum(PlutusData::constr(
-                1,
-                vec![PlutusData::bytes("Something".as_bytes().to_vec())],
-            ))
-        }
-
-        pub(super) fn sample_redeemer() -> Redeemer {
-            Redeemer(PlutusData::Integer(BigInt::from(144)))
-        }
-
-        pub(super) fn sample_tx_in_info() -> TxInInfo {
-            TxInInfo {
-                reference: sample_transaction_input(),
-                output: sample_transaction_output(),
-            }
-        }
-
-        pub(super) fn sample_transaction_output() -> TransactionOutput {
-            TransactionOutput {
-                address: sample_address(),
-                value: sample_value(),
-                datum_hash: Some(sample_datum_hash()),
-            }
-        }
-
-        pub(super) fn sample_payment_pub_key_hash() -> PaymentPubKeyHash {
-            PaymentPubKeyHash(sample_ed25519_pub_key_hash())
-        }
-
-        pub(super) fn sample_script_purpose() -> ScriptPurpose {
-            ScriptPurpose::Minting(sample_currency_symbol())
-        }
-
-        pub(super) fn sample_dcert() -> DCert {
-            DCert::DelegDelegate(sample_staking_credential(), sample_payment_pub_key_hash())
-        }
-
-        pub(super) fn sample_transaction_info() -> TransactionInfo {
-            TransactionInfo {
-                inputs: vec![sample_tx_in_info()],
-                outputs: vec![sample_transaction_output()],
-                fee: sample_value(),
-                mint: sample_value(),
-                d_cert: vec![sample_dcert()],
-                wdrl: vec![(sample_staking_credential(), BigInt::from(12))],
-                valid_range: sample_plutus_interval(),
-                signatories: vec![sample_payment_pub_key_hash()],
-                datums: vec![(sample_datum_hash(), sample_datum())],
-                id: sample_transaction_hash(),
-            }
-        }
 
         #[test]
         fn v1_asset_class() {
-            goldie::assert_debug!(AssetClass {
-                currency_symbol: sample_currency_symbol(),
-                token_name: sample_token_name()
-            }
-            .to_plutus_data())
+            goldie::assert_debug!(sample_asset_class().to_plutus_data())
         }
 
         #[test]
@@ -326,9 +209,7 @@ mod plutusdata_roundtrip_tests {
 
         #[test]
         fn v1_redeemeer_hash() {
-            goldie::assert_debug!(
-                RedeemerHash(LedgerBytes([0].repeat(32).to_vec())).to_plutus_data()
-            )
+            goldie::assert_debug!(sample_redeemer_hash().to_plutus_data())
         }
 
         #[test]
@@ -369,11 +250,7 @@ mod plutusdata_roundtrip_tests {
 
         #[test]
         fn v1_script_context() {
-            goldie::assert_debug!(ScriptContext {
-                tx_info: sample_transaction_info(),
-                purpose: sample_script_purpose()
-            }
-            .to_plutus_data())
+            goldie::assert_debug!(sample_script_context().to_plutus_data())
         }
     }
     mod prop_v1 {
@@ -464,6 +341,40 @@ mod plutusdata_roundtrip_tests {
         }
     }
     mod golden_v2 {
+        use plutus_ledger_api::{
+            goldens::v2::{
+                sample_output_datum, sample_script_context, sample_transaction_info,
+                sample_transaction_output, sample_tx_in_info,
+            },
+            plutus_data::IsPlutusData,
+        };
+
+        #[test]
+        fn v2_transaction_output() {
+            goldie::assert_debug!(sample_transaction_output().to_plutus_data())
+        }
+
+        #[test]
+        fn v2_tx_in_info() {
+            goldie::assert_debug!(sample_tx_in_info().to_plutus_data())
+        }
+
+        #[test]
+        fn v2_output_datum() {
+            goldie::assert_debug!(sample_output_datum().to_plutus_data())
+        }
+
+        #[test]
+        fn v2_transaction_info() {
+            goldie::assert_debug!(sample_transaction_info().to_plutus_data())
+        }
+
+        #[test]
+        fn v2_script_context() {
+            goldie::assert_debug!(sample_script_context().to_plutus_data())
+        }
+    }
+    mod prop_v2 {
         use super::from_to_plutus_data;
         use plutus_ledger_api::generators::correct::v2::*;
         use proptest::prelude::*;
@@ -493,97 +404,6 @@ mod plutusdata_roundtrip_tests {
             fn v2_script_context(val in arb_script_context()) {
                 assert_eq!(val, from_to_plutus_data(&val)?)
             }
-        }
-    }
-    mod prop_v2 {
-        use num_bigint::BigInt;
-        use plutus_ledger_api::{
-            plutus_data::IsPlutusData,
-            v2::{
-                assoc_map::AssocMap,
-                crypto::LedgerBytes,
-                datum::OutputDatum,
-                script::ScriptHash,
-                transaction::{ScriptContext, TransactionInfo, TransactionOutput, TxInInfo},
-            },
-        };
-
-        fn sample_output_datum() -> OutputDatum {
-            OutputDatum::InlineDatum(super::golden_v1::sample_datum())
-        }
-
-        fn sample_transaction_output() -> TransactionOutput {
-            TransactionOutput {
-                address: super::golden_v1::sample_address(),
-                value: super::golden_v1::sample_value(),
-                datum: sample_output_datum(),
-                reference_script: Some(ScriptHash(LedgerBytes([0].repeat(28).to_vec()))),
-            }
-        }
-
-        pub fn sample_tx_in_info() -> TxInInfo {
-            TxInInfo {
-                reference: super::golden_v1::sample_transaction_input(),
-                output: sample_transaction_output(),
-            }
-        }
-
-        pub fn sample_transaction_info() -> TransactionInfo {
-            TransactionInfo {
-                inputs: vec![sample_tx_in_info()],
-                outputs: vec![sample_transaction_output()],
-                fee: super::golden_v1::sample_value(),
-                mint: super::golden_v1::sample_value(),
-                d_cert: vec![super::golden_v1::sample_dcert()],
-                wdrl: AssocMap::from([(
-                    super::golden_v1::sample_staking_credential(),
-                    BigInt::from(12),
-                )]),
-                valid_range: super::golden_v1::sample_plutus_interval(),
-                signatories: vec![super::golden_v1::sample_payment_pub_key_hash()],
-                datums: AssocMap::from([(
-                    super::golden_v1::sample_datum_hash(),
-                    super::golden_v1::sample_datum(),
-                )]),
-                redeemers: AssocMap::from([(
-                    super::golden_v1::sample_script_purpose(),
-                    super::golden_v1::sample_redeemer(),
-                )]),
-                id: super::golden_v1::sample_transaction_hash(),
-                reference_inputs: vec![sample_tx_in_info()],
-            }
-        }
-
-        pub fn sample_script_context() -> ScriptContext {
-            ScriptContext {
-                tx_info: sample_transaction_info(),
-                purpose: super::golden_v1::sample_script_purpose(),
-            }
-        }
-
-        #[test]
-        fn v2_transaction_output() {
-            goldie::assert_debug!(sample_transaction_output().to_plutus_data())
-        }
-
-        #[test]
-        fn v2_tx_in_info() {
-            goldie::assert_debug!(sample_tx_in_info().to_plutus_data())
-        }
-
-        #[test]
-        fn v2_output_datum() {
-            goldie::assert_debug!(sample_output_datum().to_plutus_data())
-        }
-
-        #[test]
-        fn v2_transaction_info() {
-            goldie::assert_debug!(sample_transaction_info().to_plutus_data())
-        }
-
-        #[test]
-        fn v2_script_context() {
-            goldie::assert_debug!(sample_script_context().to_plutus_data())
         }
     }
 }

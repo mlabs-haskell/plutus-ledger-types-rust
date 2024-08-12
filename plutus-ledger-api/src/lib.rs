@@ -1,5 +1,6 @@
 pub(crate) mod feature_traits;
 pub mod generators;
+pub mod goldens;
 #[cfg(feature = "lbf")]
 pub mod lamval;
 pub mod plutus_data;
