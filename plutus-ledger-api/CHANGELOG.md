@@ -7,6 +7,8 @@ Changelog](https://keepachangelog.com/en/1.1.0).
 
 ### Added
 
+- Added golden tests ([#45](https://github.com/mlabs-haskell/plutus-ledger-api-rust/pull/45))
+
 ### Changed
 
 ### Removed
