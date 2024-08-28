@@ -14,13 +14,16 @@ use crate::{
         },
         value::{AssetClass, CurrencySymbol, TokenName, Value},
     },
+    v2::address::{CertificateIndex, ChainPointer, Slot, TransactionIndex},
 };
 use num_bigint::BigInt;
 
+pub fn sample_script_hash() -> ScriptHash {
+    ScriptHash(LedgerBytes([1].repeat(28).to_vec()))
+}
+
 pub fn sample_currency_symbol() -> CurrencySymbol {
-    CurrencySymbol::NativeToken(MintingPolicyHash(ScriptHash(LedgerBytes(
-        [0].repeat(28).to_vec(),
-    ))))
+    CurrencySymbol::NativeToken(MintingPolicyHash(sample_script_hash()))
 }
 
 pub fn sample_token_name() -> TokenName {
@@ -50,10 +53,20 @@ pub fn sample_ed25519_pub_key_hash() -> Ed25519PubKeyHash {
     Ed25519PubKeyHash(LedgerBytes([0].repeat(28).to_vec()))
 }
 
+pub fn sample_credential() -> Credential {
+    Credential::Script(ValidatorHash(sample_script_hash()))
+}
+
 pub fn sample_staking_credential() -> StakingCredential {
-    StakingCredential::Hash(Credential::Script(ValidatorHash(ScriptHash(LedgerBytes(
-        [1].repeat(28).to_vec(),
-    )))))
+    StakingCredential::Hash(sample_credential())
+}
+
+pub fn sample_chain_pointer() -> ChainPointer {
+    ChainPointer {
+        slot_number: Slot(134561.into()),
+        transaction_index: TransactionIndex(4.into()),
+        certificate_index: CertificateIndex(10.into()),
+    }
 }
 
 pub fn sample_address() -> Address {
@@ -78,11 +91,12 @@ pub fn sample_datum_hash() -> DatumHash {
     DatumHash(LedgerBytes([0].repeat(32).to_vec()))
 }
 
+pub fn sample_plutus_data() -> PlutusData {
+    PlutusData::constr(1, vec![PlutusData::bytes("Something".as_bytes().to_vec())])
+}
+
 pub fn sample_datum() -> Datum {
-    Datum(PlutusData::constr(
-        1,
-        vec![PlutusData::bytes("Something".as_bytes().to_vec())],
-    ))
+    Datum(sample_plutus_data())
 }
 
 pub fn sample_redeemer_hash() -> RedeemerHash {
