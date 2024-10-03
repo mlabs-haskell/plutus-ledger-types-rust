@@ -1,12 +1,11 @@
 #[cfg(test)]
-#[cfg(feature = "lbf")]
-mod json_roundtrip_tests {
-    use lbr_prelude::json::{Error, Json};
-    fn from_to_json<T>(val: &T) -> Result<T, Error>
+#[cfg(feature = "serde")]
+mod serde_roundtrip_tests {
+    fn from_to_json<T>(val: &T) -> Result<T, serde_json::Error>
     where
-        T: Json + PartialEq,
+        T: serde::Serialize + for<'a> serde::Deserialize<'a> + PartialEq,
     {
-        T::from_json(&val.to_json())
+        serde_json::from_str(&serde_json::to_string(&val)?)
     }
 
     mod v1 {

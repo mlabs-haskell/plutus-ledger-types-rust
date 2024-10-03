@@ -39,13 +39,11 @@ impl IsPlutusData for CurrencySymbol {
     }
 
     fn from_plutus_data(data: &PlutusData) -> Result<Self, PlutusDataError> {
-        IsPlutusData::from_plutus_data(data).and_then(|bytes: LedgerBytes| {
+        IsPlutusData::from_plutus_data(data).map(|bytes: LedgerBytes| {
             if bytes.0.is_empty() {
-                Ok(CurrencySymbol::Ada)
+                CurrencySymbol::Ada
             } else {
-                Ok(CurrencySymbol::NativeToken(MintingPolicyHash(ScriptHash(
-                    bytes,
-                ))))
+                CurrencySymbol::NativeToken(MintingPolicyHash(ScriptHash(bytes)))
             }
         })
     }
@@ -79,10 +77,67 @@ impl Json for CurrencySymbol {
 }
 
 /// A value that can contain multiple asset classes
-#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
 #[cfg_attr(feature = "lbf", derive(Json))]
 pub struct Value(pub BTreeMap<CurrencySymbol, BTreeMap<TokenName, BigInt>>);
+
+#[cfg(feature = "serde")]
+mod value_serde {
+    use std::collections::BTreeMap;
+
+    use num_bigint::BigInt;
+    use serde::{de::Deserializer, ser::Serializer, Deserialize, Serialize};
+
+    use super::{CurrencySymbol, TokenName, Value};
+
+    struct Assets(BTreeMap<TokenName, BigInt>);
+
+    impl Serialize for Value {
+        fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            serializer.collect_seq(
+                self.0
+                    .iter()
+                    .map(|(cur_sym, assets)| (cur_sym, Assets(assets.to_owned()))),
+            )
+        }
+    }
+
+    impl<'de> Deserialize<'de> for Value {
+        fn deserialize<D>(deserializer: D) -> Result<Value, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            let vec: Vec<(CurrencySymbol, Assets)> = Vec::deserialize(deserializer)?;
+
+            Ok(Value(
+                vec.into_iter().map(|(cs, assets)| (cs, assets.0)).collect(),
+            ))
+        }
+    }
+
+    impl Serialize for Assets {
+        fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            serializer.collect_seq(self.0.iter())
+        }
+    }
+
+    impl<'de, 'a> Deserialize<'de> for Assets {
+        fn deserialize<D>(deserializer: D) -> Result<Assets, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            let vec: Vec<(TokenName, BigInt)> = Vec::deserialize(deserializer)?;
+
+            Ok(Assets(vec.into_iter().collect()))
+        }
+    }
+}
 
 impl Value {
     pub fn new() -> Self {
@@ -105,7 +160,7 @@ impl Value {
     pub fn get_token_amount(&self, cs: &CurrencySymbol, tn: &TokenName) -> BigInt {
         self.0
             .get(cs)
-            .and_then(|tn_map| tn_map.get(&tn))
+            .and_then(|tn_map| tn_map.get(tn))
             .map_or(BigInt::zero(), Clone::clone)
     }
 
@@ -124,7 +179,7 @@ impl Value {
                 tn_map
                     .entry(tn.clone())
                     .and_modify(|old_a| {
-                        *old_a = a.clone();
+                        old_a.clone_from(a);
                     })
                     .or_insert_with(|| a.clone());
             })
@@ -141,6 +196,26 @@ impl Value {
     /// Remove all tokens whose quantity is zero.
     pub fn normalize(self) -> Self {
         self.filter(|_, _, a| a.is_zero().not())
+    }
+
+    pub fn is_subset(&self, b: &Value) -> bool {
+        (b - self)
+            .clone()
+            .normalize()
+            // Has negative entries?
+            .filter(|_, _, amount| amount < &BigInt::from(0u32))
+            .is_empty()
+    }
+
+    pub fn is_pure_ada(self) -> bool {
+        let inner = self.normalize().0;
+        let inner: Vec<_> = inner.into_iter().collect();
+
+        match inner.as_slice() {
+            [] => true,
+            [(cs, _)] => cs == &CurrencySymbol::Ada,
+            _ => false,
+        }
     }
 
     /// Apply a function to each token of the value, and use its result as the new amount.
@@ -185,12 +260,6 @@ impl Value {
                 })
                 .collect(),
         )
-    }
-}
-
-impl Default for Value {
-    fn default() -> Self {
-        Self(BTreeMap::new())
     }
 }
 
