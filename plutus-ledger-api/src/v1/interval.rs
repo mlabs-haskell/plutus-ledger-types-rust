@@ -271,7 +271,7 @@ where
         match data {
             PlutusData::Constr(flag, fields) => match u32::try_from(flag) {
                 Ok(0) => {
-                    verify_constr_fields(&fields, 2)?;
+                    verify_constr_fields(fields, 2)?;
                     Ok(PlutusInterval {
                         from: <LowerBound<T>>::from_plutus_data(&fields[0])?,
                         to: <UpperBound<T>>::from_plutus_data(&fields[1])?,
@@ -321,7 +321,7 @@ where
         match data {
             PlutusData::Constr(flag, fields) => match u32::try_from(flag) {
                 Ok(0) => {
-                    verify_constr_fields(&fields, 2)?;
+                    verify_constr_fields(fields, 2)?;
                     Ok(UpperBound {
                         bound: <Extended<T>>::from_plutus_data(&fields[0])?,
                         closed: bool::from_plutus_data(&fields[1])?,
@@ -371,7 +371,7 @@ where
         match data {
             PlutusData::Constr(flag, fields) => match u32::try_from(flag) {
                 Ok(0) => {
-                    verify_constr_fields(&fields, 2)?;
+                    verify_constr_fields(fields, 2)?;
                     Ok(LowerBound {
                         bound: <Extended<T>>::from_plutus_data(&fields[0])?,
                         closed: bool::from_plutus_data(&fields[1])?,
@@ -468,17 +468,17 @@ where
         match data {
             PlutusData::Constr(flag, fields) => match u32::try_from(flag) {
                 Ok(0) => {
-                    verify_constr_fields(&fields, 0)?;
+                    verify_constr_fields(fields, 0)?;
                     Ok(Extended::NegInf)
                 }
                 Ok(1) => {
-                    verify_constr_fields(&fields, 1)?;
+                    verify_constr_fields(fields, 1)?;
                     Ok(Extended::Finite(IsPlutusData::from_plutus_data(
                         &fields[0],
                     )?))
                 }
                 Ok(2) => {
-                    verify_constr_fields(&fields, 0)?;
+                    verify_constr_fields(fields, 0)?;
                     Ok(Extended::PosInf)
                 }
                 _ => Err(PlutusDataError::UnexpectedPlutusInvariant {

@@ -67,7 +67,7 @@ impl IsPlutusData for TransactionOutput {
         match data {
             PlutusData::Constr(flag, fields) => match u32::try_from(flag) {
                 Ok(0) => {
-                    verify_constr_fields(&fields, 4)?;
+                    verify_constr_fields(fields, 4)?;
                     Ok(TransactionOutput {
                         address: Address::from_plutus_data(&fields[0])?,
                         value: Value::from_plutus_data(&fields[1])?,
@@ -234,7 +234,7 @@ impl IsPlutusData for TxInInfo {
         match data {
             PlutusData::Constr(flag, fields) => match u32::try_from(flag) {
                 Ok(0) => {
-                    verify_constr_fields(&fields, 2)?;
+                    verify_constr_fields(fields, 2)?;
                     Ok(TxInInfo {
                         reference: TransactionInput::from_plutus_data(&fields[0])?,
                         output: TransactionOutput::from_plutus_data(&fields[1])?,

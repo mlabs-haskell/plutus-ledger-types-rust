@@ -65,7 +65,7 @@ impl IsPlutusData for TransactionInput {
         match data {
             PlutusData::Constr(flag, fields) => match u32::try_from(flag) {
                 Ok(0) => {
-                    verify_constr_fields(&fields, 2)?;
+                    verify_constr_fields(fields, 2)?;
                     Ok(TransactionInput {
                         transaction_id: TransactionHash::from_plutus_data(&fields[0])?,
                         index: BigInt::from_plutus_data(&fields[1])?,
@@ -149,7 +149,7 @@ impl IsPlutusData for TransactionHash {
         match data {
             PlutusData::Constr(flag, fields) => match u32::try_from(flag) {
                 Ok(0) => {
-                    verify_constr_fields(&fields, 1)?;
+                    verify_constr_fields(fields, 1)?;
                     Ok(TransactionHash(IsPlutusData::from_plutus_data(&fields[0])?))
                 }
                 _ => Err(PlutusDataError::UnexpectedPlutusInvariant {
@@ -212,7 +212,7 @@ impl IsPlutusData for TransactionOutput {
         match data {
             PlutusData::Constr(flag, fields) => match u32::try_from(flag) {
                 Ok(0) => {
-                    verify_constr_fields(&fields, 3)?;
+                    verify_constr_fields(fields, 3)?;
                     Ok(TransactionOutput {
                         address: Address::from_plutus_data(&fields[0])?,
                         value: Value::from_plutus_data(&fields[1])?,
@@ -275,10 +275,10 @@ impl TryFrom<POSIXTime> for chrono::DateTime<chrono::Utc> {
 
     fn try_from(posix_time: POSIXTime) -> Result<chrono::DateTime<chrono::Utc>, Self::Error> {
         let POSIXTime(millis) = posix_time;
-        Ok(chrono::DateTime::from_timestamp_millis(
+        chrono::DateTime::from_timestamp_millis(
             <i64>::try_from(millis).map_err(POSIXTimeConversionError::TryFromBigIntError)?,
         )
-        .ok_or(POSIXTimeConversionError::OutOfBoundsError)?)
+        .ok_or(POSIXTimeConversionError::OutOfBoundsError)
     }
 }
 
@@ -316,7 +316,7 @@ impl IsPlutusData for TxInInfo {
         match data {
             PlutusData::Constr(flag, fields) => match u32::try_from(flag) {
                 Ok(0) => {
-                    verify_constr_fields(&fields, 2)?;
+                    verify_constr_fields(fields, 2)?;
                     Ok(TxInInfo {
                         reference: TransactionInput::from_plutus_data(&fields[0])?,
                         output: TransactionOutput::from_plutus_data(&fields[1])?,
@@ -479,7 +479,7 @@ impl IsPlutusData for ScriptPurpose {
             3 => IsPlutusData::from_plutus_data(field).map(Self::Certifying),
             bad_tag => Err(PlutusDataError::UnexpectedPlutusInvariant {
                 got: bad_tag.to_string(),
-                wanted: format!("Constr tag to be 0, 1, 2 or 3"),
+                wanted: "Constr tag to be 0, 1, 2 or 3".to_string(),
             }),
         }
     }

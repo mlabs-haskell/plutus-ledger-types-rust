@@ -175,10 +175,10 @@ pub fn case_plutus_data<'a, T>(
     pd: &'a PlutusData,
 ) -> T {
     match pd {
-        PlutusData::Constr(tag, args) => ctor_case(&tag)(&args),
-        PlutusData::List(args) => list_case(&args),
-        PlutusData::Integer(i) => int_case(&i),
-        other => other_case(&other),
+        PlutusData::Constr(tag, args) => ctor_case(tag)(args),
+        PlutusData::List(args) => list_case(args),
+        PlutusData::Integer(i) => int_case(i),
+        other => other_case(other),
     }
 }
 
@@ -252,11 +252,11 @@ impl IsPlutusData for bool {
         match plutus_data {
             PlutusData::Constr(flag, fields) => match u32::try_from(flag) {
                 Ok(0) => {
-                    verify_constr_fields(&fields, 0)?;
+                    verify_constr_fields(fields, 0)?;
                     Ok(false)
                 }
                 Ok(1) => {
-                    verify_constr_fields(&fields, 0)?;
+                    verify_constr_fields(fields, 0)?;
                     Ok(true)
                 }
                 _ => Err(PlutusDataError::UnexpectedPlutusInvariant {
@@ -346,11 +346,11 @@ where
         match plutus_data {
             PlutusData::Constr(flag, fields) => match u32::try_from(flag) {
                 Ok(0) => {
-                    verify_constr_fields(&fields, 1)?;
+                    verify_constr_fields(fields, 1)?;
                     Ok(Some(T::from_plutus_data(&fields[0])?))
                 }
                 Ok(1) => {
-                    verify_constr_fields(&fields, 0)?;
+                    verify_constr_fields(fields, 0)?;
                     Ok(None)
                 }
                 _ => Err(PlutusDataError::UnexpectedPlutusInvariant {
@@ -383,11 +383,11 @@ where
         match plutus_data {
             PlutusData::Constr(flag, fields) => match u32::try_from(flag) {
                 Ok(0) => {
-                    verify_constr_fields(&fields, 1)?;
+                    verify_constr_fields(fields, 1)?;
                     Ok(Err(E::from_plutus_data(&fields[0])?))
                 }
                 Ok(1) => {
-                    verify_constr_fields(&fields, 1)?;
+                    verify_constr_fields(fields, 1)?;
                     Ok(Ok(T::from_plutus_data(&fields[0])?))
                 }
                 _ => Err(PlutusDataError::UnexpectedPlutusInvariant {
@@ -447,7 +447,7 @@ where
     fn from_plutus_data(plutus_data: &PlutusData) -> Result<Self, PlutusDataError> {
         match plutus_data {
             PlutusData::List(vec) => vec
-                .into_iter()
+                .iter()
                 .map(|val| T::from_plutus_data(val))
                 .collect::<Result<Self, PlutusDataError>>(),
             _ => Err(PlutusDataError::UnexpectedPlutusType {
@@ -475,7 +475,7 @@ where
     fn from_plutus_data(plutus_data: &PlutusData) -> Result<Self, PlutusDataError> {
         match plutus_data {
             PlutusData::Map(dict) => dict
-                .into_iter()
+                .iter()
                 .map(|(key, val)| Ok((K::from_plutus_data(key)?, V::from_plutus_data(val)?)))
                 .collect::<Result<Self, PlutusDataError>>(),
             _ => Err(PlutusDataError::UnexpectedPlutusType {
@@ -495,7 +495,7 @@ impl IsPlutusData for () {
         match plutus_data {
             PlutusData::Constr(flag, fields) => match u32::try_from(flag) {
                 Ok(0) => {
-                    verify_constr_fields(&fields, 0)?;
+                    verify_constr_fields(fields, 0)?;
                     Ok(())
                 }
                 _ => Err(PlutusDataError::UnexpectedPlutusInvariant {
@@ -538,7 +538,7 @@ where
         match plutus_data {
             PlutusData::Constr(flag, fields) => match u32::try_from(flag) {
                 Ok(0) => {
-                    verify_constr_fields(&fields, 2)?;
+                    verify_constr_fields(fields, 2)?;
                     Ok((
                         A::from_plutus_data(&fields[0])?,
                         B::from_plutus_data(&fields[1])?,
@@ -653,9 +653,9 @@ pub fn verify_constr_fields(
 
 /// Given a vector of PlutusData, parse it as an array whose length is known at
 /// compile time.
-pub fn parse_fixed_len_constr_fields<'a, const LEN: usize>(
-    v: &'a [PlutusData],
-) -> Result<&'a [PlutusData; LEN], PlutusDataError> {
+pub fn parse_fixed_len_constr_fields<const LEN: usize>(
+    v: &[PlutusData],
+) -> Result<&[PlutusData; LEN], PlutusDataError> {
     v.try_into()
         .map_err(|_| PlutusDataError::UnexpectedListLength {
             got: v.len(),
@@ -665,9 +665,7 @@ pub fn parse_fixed_len_constr_fields<'a, const LEN: usize>(
 
 /// Given a PlutusData, parse it as PlutusData::Constr and its tag as u32. Return
 /// the u32 tag and fields.
-pub fn parse_constr<'a>(
-    data: &'a PlutusData,
-) -> Result<(u32, &'a Vec<PlutusData>), PlutusDataError> {
+pub fn parse_constr(data: &PlutusData) -> Result<(u32, &Vec<PlutusData>), PlutusDataError> {
     match data {
         PlutusData::Constr(tag, fields) => u32::try_from(tag)
             .map_err(|err| PlutusDataError::UnexpectedPlutusInvariant {
@@ -683,10 +681,10 @@ pub fn parse_constr<'a>(
 }
 
 /// Given a PlutusData, parse it as PlutusData::Constr and verify its tag.
-pub fn parse_constr_with_tag<'a>(
-    data: &'a PlutusData,
+pub fn parse_constr_with_tag(
+    data: &PlutusData,
     expected_tag: u32,
-) -> Result<&'a Vec<PlutusData>, PlutusDataError> {
+) -> Result<&Vec<PlutusData>, PlutusDataError> {
     let (tag, fields) = parse_constr(data)?;
 
     if tag != expected_tag {

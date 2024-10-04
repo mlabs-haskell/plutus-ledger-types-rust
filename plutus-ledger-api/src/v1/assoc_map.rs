@@ -12,7 +12,7 @@ use crate::plutus_data::{IsPlutusData, PlutusData, PlutusDataError, PlutusType};
 // AssocMap //
 //////////////
 
-#[derive(Debug, PartialEq, Eq, Clone)]
+#[derive(Debug, PartialEq, Eq, Clone, Default)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct AssocMap<K, V>(pub Vec<(K, V)>);
 
@@ -30,9 +30,7 @@ impl<K, V> AssocMap<K, V> {
     where
         K: PartialEq,
     {
-        let vec = &mut self.0;
-
-        let old_value = vec.into_iter().find(|(k, _v)| k == &key);
+        let old_value = self.0.iter_mut().find(|(k, _v)| k == &key);
         match old_value {
             None => {
                 self.0.push((key, value));
@@ -72,8 +70,8 @@ impl<K, V> AssocMap<K, V> {
 impl<K: IsPlutusData, V: IsPlutusData> IsPlutusData for AssocMap<K, V> {
     fn to_plutus_data(&self) -> PlutusData {
         PlutusData::Map(
-            (&self.0)
-                .into_iter()
+            self.0
+                .iter()
                 .map(|(k, v)| (k.to_plutus_data(), v.to_plutus_data()))
                 .collect(),
         )
@@ -82,7 +80,7 @@ impl<K: IsPlutusData, V: IsPlutusData> IsPlutusData for AssocMap<K, V> {
     fn from_plutus_data(plutus_data: &PlutusData) -> Result<Self, PlutusDataError> {
         match plutus_data {
             PlutusData::Map(pairs) => pairs
-                .into_iter()
+                .iter()
                 .map(|(k, v)| Ok((K::from_plutus_data(k)?, V::from_plutus_data(v)?)))
                 .collect::<Result<Vec<(K, V)>, PlutusDataError>>()
                 .map(Self),
@@ -128,8 +126,8 @@ impl<K: Hash + Eq, V> From<LinkedHashMap<K, V>> for AssocMap<K, V> {
 impl<K: Json, V: Json> Json for AssocMap<K, V> {
     fn to_json(&self) -> serde_json::Value {
         json_array(
-            (&self.0)
-                .into_iter()
+            self.0
+                .iter()
                 .map(|(k, v)| json_array(vec![k.to_json(), v.to_json()]))
                 .collect(),
         )

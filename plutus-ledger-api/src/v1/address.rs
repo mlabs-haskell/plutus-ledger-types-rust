@@ -186,13 +186,13 @@ impl IsPlutusData for Credential {
         match data {
             PlutusData::Constr(flag, fields) => match u32::try_from(flag) {
                 Ok(0) => {
-                    verify_constr_fields(&fields, 1)?;
+                    verify_constr_fields(fields, 1)?;
                     Ok(Credential::PubKey(Ed25519PubKeyHash::from_plutus_data(
                         &fields[0],
                     )?))
                 }
                 Ok(1) => {
-                    verify_constr_fields(&fields, 1)?;
+                    verify_constr_fields(fields, 1)?;
                     Ok(Credential::Script(ValidatorHash::from_plutus_data(
                         &fields[0],
                     )?))
@@ -216,10 +216,10 @@ impl Json for Credential {
     fn to_json(&self) -> serde_json::Value {
         match self {
             Credential::PubKey(pkh) => {
-                json::json_constructor("PubKeyCredential", &vec![pkh.to_json()])
+                json::json_constructor("PubKeyCredential", vec![pkh.to_json()])
             }
             Credential::Script(val_hash) => {
-                json::json_constructor("ScriptCredential", &vec![val_hash.to_json()])
+                json::json_constructor("ScriptCredential", vec![val_hash.to_json()])
             }
         }
     }
@@ -319,13 +319,13 @@ impl IsPlutusData for StakingCredential {
         match data {
             PlutusData::Constr(flag, fields) => match u32::try_from(flag) {
                 Ok(0) => {
-                    verify_constr_fields(&fields, 1)?;
+                    verify_constr_fields(fields, 1)?;
                     Ok(StakingCredential::Hash(Credential::from_plutus_data(
                         &fields[0],
                     )?))
                 }
                 Ok(1) => {
-                    verify_constr_fields(&fields, 3)?;
+                    verify_constr_fields(fields, 3)?;
                     Ok(StakingCredential::Pointer(ChainPointer {
                         slot_number: Slot::from_plutus_data(&fields[0])?,
                         transaction_index: TransactionIndex::from_plutus_data(&fields[1])?,
@@ -351,10 +351,10 @@ impl Json for StakingCredential {
     fn to_json(&self) -> serde_json::Value {
         match self {
             StakingCredential::Hash(pkh) => {
-                json::json_constructor("StakingHash", &vec![pkh.to_json()])
+                json::json_constructor("StakingHash", vec![pkh.to_json()])
             }
             StakingCredential::Pointer(val_hash) => {
-                json::json_constructor("StakingPtr", &vec![val_hash.to_json()])
+                json::json_constructor("StakingPtr", vec![val_hash.to_json()])
             }
         }
     }
@@ -377,7 +377,7 @@ impl Json for StakingCredential {
                 (
                     "StakingPtr",
                     Box::new(|ctor_fields| match &ctor_fields[..] {
-                        [val_hash] => Ok(StakingCredential::Pointer(Json::from_json(&val_hash)?)),
+                        [val_hash] => Ok(StakingCredential::Pointer(Json::from_json(val_hash)?)),
                         _ => Err(Error::UnexpectedArrayLength {
                             wanted: 1,
                             got: ctor_fields.len(),

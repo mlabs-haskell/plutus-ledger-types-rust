@@ -51,7 +51,7 @@ pub fn arb_natural(n: usize) -> impl Strategy<Value = BigInt> {
 /// Helper function to generate a well typed arbitrary natural number
 /// Generating `n` vectors of random u32 values, which gives a max bound of u32::MAX ^ n
 fn arb_biguint(n: usize) -> impl Strategy<Value = BigUint> {
-    vec(any::<u32>(), n).prop_map(|value| BigUint::new(value))
+    vec(any::<u32>(), n).prop_map(BigUint::new)
 }
 
 /// Strategy to generate an arbitrary character

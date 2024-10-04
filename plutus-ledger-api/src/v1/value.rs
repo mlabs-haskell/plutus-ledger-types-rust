@@ -160,7 +160,7 @@ mod value_serde {
         }
     }
 
-    impl<'de, 'a> Deserialize<'de> for Assets {
+    impl<'de> Deserialize<'de> for Assets {
         fn deserialize<D>(deserializer: D) -> Result<Assets, D::Error>
         where
             D: Deserializer<'de>,
@@ -391,15 +391,12 @@ impl Mul<&BigInt> for &Value {
 
     fn mul(self, rhs: &BigInt) -> Self::Output {
         Value(
-            (&self.0)
-                .into_iter()
+            self.0
+                .iter()
                 .map(|(cs, tn_map)| {
                     (
                         cs.clone(),
-                        tn_map
-                            .into_iter()
-                            .map(|(tn, q)| (tn.clone(), q * rhs))
-                            .collect(),
+                        tn_map.iter().map(|(tn, q)| (tn.clone(), q * rhs)).collect(),
                     )
                 })
                 .collect(),
@@ -678,7 +675,7 @@ impl IsPlutusData for AssetClass {
         match data {
             PlutusData::Constr(flag, fields) => match u32::try_from(flag) {
                 Ok(0) => {
-                    verify_constr_fields(&fields, 2)?;
+                    verify_constr_fields(fields, 2)?;
                     Ok(AssetClass {
                         currency_symbol: CurrencySymbol::from_plutus_data(&fields[0])?,
                         token_name: TokenName::from_plutus_data(&fields[1])?,
