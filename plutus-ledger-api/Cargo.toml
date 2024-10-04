@@ -1,6 +1,6 @@
 [package]
 name = "plutus-ledger-api"
-version = "1.0.0"
+version = "2.0.0-beta.1"
 edition = "2021"
 license = "Apache-2.0"
 description = "Plutus Ledger types and utilities implemented in Rust"

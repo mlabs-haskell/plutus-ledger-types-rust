@@ -12,6 +12,17 @@ Changelog](https://keepachangelog.com/en/1.1.0).
 
 ### Removed
 
+## v2.0.0
+
+### Added
+
+- Added cardano-serialization-lib conversion traits (`ToCSL` and `FromCSL`)
+
+### Changed
+
+- Fixed `serde` serialization of Plutus `Value`s
+- Updated cardano-serialization-lib to Conway compatible 12.1.0
+
 ## v1.0.0
 
 ### Added
