@@ -21,7 +21,7 @@ linked-hash-map = "~0.5.6"
 num-traits = "~0.2.17"
 impl_ops = "0.1.1"
 chrono = { version = "0.4.34", optional = true }
-cardano-serialization-lib = "11.5.0"
+cardano-serialization-lib = "12.1.0"
 anyhow = "1.0.86"
 
 [features]

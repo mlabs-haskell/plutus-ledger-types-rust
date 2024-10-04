@@ -5,10 +5,10 @@ use num_traits::sign::Signed;
 #[derive(Debug, thiserror::Error)]
 pub enum TryFromPLAError {
     #[error("{0}")]
-    CSLDeserializeError(csl::error::DeserializeError),
+    CSLDeserializeError(csl::DeserializeError),
 
     #[error("{0}")]
-    CSLJsError(csl::error::JsError),
+    CSLJsError(csl::JsError),
 
     #[error("Unable to cast BigInt {0} into type {1}: value is out of bound")]
     BigIntOutOfRange(BigInt, String),
@@ -48,15 +48,15 @@ where
     }
 }
 
-impl TryFromPLA<u64> for csl::utils::BigNum {
+impl TryFromPLA<u64> for csl::BigNum {
     fn try_from_pla(val: &u64) -> Result<Self, TryFromPLAError> {
         // BigNum(s) are u64 under the hood.
 
-        Ok(csl::utils::BigNum::from(*val))
+        Ok(csl::BigNum::from(*val))
     }
 }
 
-impl TryFromPLA<BigInt> for csl::utils::BigNum {
+impl TryFromPLA<BigInt> for csl::BigNum {
     fn try_from_pla(val: &BigInt) -> Result<Self, TryFromPLAError> {
         // BigNum(s) are u64 under the hood.
         let x: u64 = val
@@ -70,30 +70,30 @@ impl TryFromPLA<BigInt> for csl::utils::BigNum {
     }
 }
 
-impl TryFromPLA<BigInt> for csl::utils::BigInt {
+impl TryFromPLA<BigInt> for csl::BigInt {
     fn try_from_pla(val: &BigInt) -> Result<Self, TryFromPLAError> {
         Ok(val.to_owned().into())
     }
 }
 
-impl TryFromPLA<BigInt> for csl::utils::Int {
+impl TryFromPLA<BigInt> for csl::Int {
     fn try_from_pla(val: &BigInt) -> Result<Self, TryFromPLAError> {
         if val.is_negative() {
-            Ok(csl::utils::Int::new_negative(&(val.abs()).try_to_csl()?))
+            Ok(csl::Int::new_negative(&(val.abs()).try_to_csl()?))
         } else {
-            Ok(csl::utils::Int::new(&val.try_to_csl()?))
+            Ok(csl::Int::new(&val.try_to_csl()?))
         }
     }
 }
 
-impl TryFromPLA<i64> for csl::utils::Int {
+impl TryFromPLA<i64> for csl::Int {
     fn try_from_pla(val: &i64) -> Result<Self, TryFromPLAError> {
         if val.is_negative() {
-            Ok(csl::utils::Int::new_negative(&csl::utils::to_bignum(
+            Ok(csl::Int::new_negative(&csl::BigNum::from(
                 val.unsigned_abs(),
             )))
         } else {
-            Ok(csl::utils::Int::new(&csl::utils::to_bignum(*val as u64)))
+            Ok(csl::Int::new(&csl::BigNum::from(*val as u64)))
         }
     }
 }

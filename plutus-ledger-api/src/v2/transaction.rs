@@ -127,14 +127,14 @@ impl TryFromCSL<csl::TransactionOutputs> for Vec<TransactionOutput> {
 #[derive(Clone, Debug)]
 pub struct TransactionOutputWithExtraInfo<'a> {
     pub transaction_output: &'a TransactionOutput,
-    pub scripts: &'a BTreeMap<ScriptHash, csl::plutus::PlutusScript>,
+    pub scripts: &'a BTreeMap<ScriptHash, csl::PlutusScript>,
     pub network_id: u8,
     pub data_cost: &'a csl::DataCost,
 }
 
 impl TryFromPLA<TransactionOutputWithExtraInfo<'_>> for csl::TransactionOutput {
     fn try_from_pla(val: &TransactionOutputWithExtraInfo<'_>) -> Result<Self, TryFromPLAError> {
-        let mut output_builder = csl::output_builder::TransactionOutputBuilder::new().with_address(
+        let mut output_builder = csl::TransactionOutputBuilder::new().with_address(
             &AddressWithExtraInfo {
                 address: &val.transaction_output.address,
                 network_tag: val.network_id,
@@ -167,7 +167,7 @@ impl TryFromPLA<TransactionOutputWithExtraInfo<'_>> for csl::TransactionOutput {
 
         let value_without_min_utxo = val.transaction_output.value.try_to_csl()?;
 
-        let mut calc = csl::utils::MinOutputAdaCalculator::new_empty(val.data_cost)
+        let mut calc = csl::MinOutputAdaCalculator::new_empty(val.data_cost)
             .map_err(TryFromPLAError::CSLJsError)?;
         calc.set_amount(&value_without_min_utxo);
         match &val.transaction_output.datum {
@@ -187,8 +187,8 @@ impl TryFromPLA<TransactionOutputWithExtraInfo<'_>> for csl::TransactionOutput {
         let coin = std::cmp::max(value_without_min_utxo.coin(), required_coin);
 
         let value = match value_without_min_utxo.multiasset() {
-            Some(multiasset) => csl::utils::Value::new_with_assets(&coin, &multiasset),
-            None => csl::utils::Value::new(&coin),
+            Some(multiasset) => csl::Value::new_with_assets(&coin, &multiasset),
+            None => csl::Value::new(&coin),
         };
 
         output_builder
@@ -322,8 +322,8 @@ impl IsPlutusData for TransactionInfo {
 
 #[derive(Clone, Debug)]
 pub struct WithdrawalsWithExtraInfo<'a> {
-    withdrawals: &'a AssocMap<StakingCredential, BigInt>,
-    network_tag: u8,
+    pub withdrawals: &'a AssocMap<StakingCredential, BigInt>,
+    pub network_tag: u8,
 }
 
 impl TryFromPLA<WithdrawalsWithExtraInfo<'_>> for csl::Withdrawals {

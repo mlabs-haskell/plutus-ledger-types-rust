@@ -43,15 +43,15 @@ impl IsPlutusData for Ed25519PubKeyHash {
     }
 }
 
-impl FromCSL<csl::crypto::Ed25519KeyHash> for Ed25519PubKeyHash {
-    fn from_csl(value: &csl::crypto::Ed25519KeyHash) -> Self {
+impl FromCSL<csl::Ed25519KeyHash> for Ed25519PubKeyHash {
+    fn from_csl(value: &csl::Ed25519KeyHash) -> Self {
         Ed25519PubKeyHash(LedgerBytes(value.to_bytes()))
     }
 }
 
-impl TryFromPLA<Ed25519PubKeyHash> for csl::crypto::Ed25519KeyHash {
+impl TryFromPLA<Ed25519PubKeyHash> for csl::Ed25519KeyHash {
     fn try_from_pla(val: &Ed25519PubKeyHash) -> Result<Self, TryFromPLAError> {
-        csl::crypto::Ed25519KeyHash::from_bytes(val.0 .0.to_owned())
+        csl::Ed25519KeyHash::from_bytes(val.0 .0.to_owned())
             .map_err(TryFromPLAError::CSLDeserializeError)
     }
 }

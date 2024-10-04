@@ -468,8 +468,8 @@ impl FromCSL<csl::MultiAsset> for Value {
     }
 }
 
-impl FromCSL<csl::utils::Value> for Value {
-    fn from_csl(value: &csl::utils::Value) -> Self {
+impl FromCSL<csl::Value> for Value {
+    fn from_csl(value: &csl::Value) -> Self {
         let lovelaces = BigInt::from_csl(&value.coin());
         let mut pla_value = Value::ada_value(&lovelaces);
         if let Some(multi_asset) = value.multiasset() {
@@ -479,13 +479,13 @@ impl FromCSL<csl::utils::Value> for Value {
     }
 }
 
-impl TryFromPLA<Value> for csl::utils::Value {
+impl TryFromPLA<Value> for csl::Value {
     fn try_from_pla(val: &Value) -> Result<Self, TryFromPLAError> {
-        let coin: csl::utils::Coin = val
+        let coin: csl::Coin = val
             .0
             .get(&CurrencySymbol::Ada)
             .and_then(|m| m.get(&TokenName::ada()))
-            .map_or(Ok(csl::utils::BigNum::zero()), TryToCSL::try_to_csl)?;
+            .map_or(Ok(csl::BigNum::zero()), TryToCSL::try_to_csl)?;
 
         let m_ass = val
             .0
@@ -499,7 +499,7 @@ impl TryFromPLA<Value> for csl::utils::Value {
                 Ok(acc)
             })?;
 
-        let mut v = csl::utils::Value::new(&coin);
+        let mut v = csl::Value::new(&coin);
 
         v.set_multiasset(&m_ass);
 
@@ -544,7 +544,8 @@ impl TryFromPLA<BTreeMap<TokenName, BigInt>> for csl::MintAssets {
     fn try_from_pla(val: &BTreeMap<TokenName, BigInt>) -> Result<Self, TryFromPLAError> {
         val.iter()
             .try_fold(csl::MintAssets::new(), |mut acc, (k, v)| {
-                acc.insert(&k.try_to_csl()?, v.try_to_csl()?);
+                acc.insert(&k.try_to_csl()?, &v.try_to_csl()?)
+                    .map_err(TryFromPLAError::CSLJsError)?;
                 Ok(acc)
             })
     }
@@ -557,7 +558,7 @@ impl FromCSL<csl::Mint> for Value {
             (0..keys.len())
                 .map(|idx| {
                     let sh = keys.get(idx);
-                    let ass = mint.get_all(&sh).unwrap_or(csl::MintsAssets::new());
+                    let ass = mint.get(&sh).unwrap_or(csl::MintsAssets::new());
                     (
                         CurrencySymbol::NativeToken(MintingPolicyHash::from_csl(&sh)),
                         BTreeMap::from_csl(&ass),

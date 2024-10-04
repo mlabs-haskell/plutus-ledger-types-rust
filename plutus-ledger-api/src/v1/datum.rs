@@ -32,16 +32,15 @@ impl IsPlutusData for DatumHash {
     }
 }
 
-impl FromCSL<csl::crypto::DataHash> for DatumHash {
-    fn from_csl(value: &csl::crypto::DataHash) -> Self {
+impl FromCSL<csl::DataHash> for DatumHash {
+    fn from_csl(value: &csl::DataHash) -> Self {
         DatumHash(LedgerBytes(value.to_bytes()))
     }
 }
 
-impl TryFromPLA<DatumHash> for csl::crypto::DataHash {
+impl TryFromPLA<DatumHash> for csl::DataHash {
     fn try_from_pla(val: &DatumHash) -> Result<Self, TryFromPLAError> {
-        csl::crypto::DataHash::from_bytes(val.0 .0.to_owned())
-            .map_err(TryFromPLAError::CSLDeserializeError)
+        csl::DataHash::from_bytes(val.0 .0.to_owned()).map_err(TryFromPLAError::CSLDeserializeError)
     }
 }
 
@@ -65,7 +64,7 @@ impl IsPlutusData for Datum {
     }
 }
 
-impl TryFromPLA<Datum> for csl::plutus::PlutusData {
+impl TryFromPLA<Datum> for csl::PlutusData {
     fn try_from_pla(val: &Datum) -> Result<Self, TryFromPLAError> {
         val.0.try_to_csl()
     }

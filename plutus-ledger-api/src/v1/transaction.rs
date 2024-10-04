@@ -166,15 +166,15 @@ impl IsPlutusData for TransactionHash {
     }
 }
 
-impl FromCSL<csl::crypto::TransactionHash> for TransactionHash {
-    fn from_csl(value: &csl::crypto::TransactionHash) -> Self {
+impl FromCSL<csl::TransactionHash> for TransactionHash {
+    fn from_csl(value: &csl::TransactionHash) -> Self {
         TransactionHash(LedgerBytes(value.to_bytes()))
     }
 }
 
-impl TryFromPLA<TransactionHash> for csl::crypto::TransactionHash {
+impl TryFromPLA<TransactionHash> for csl::TransactionHash {
     fn try_from_pla(val: &TransactionHash) -> Result<Self, TryFromPLAError> {
-        csl::crypto::TransactionHash::from_bytes(val.0 .0.to_owned())
+        csl::TransactionHash::from_bytes(val.0 .0.to_owned())
             .map_err(TryFromPLAError::CSLDeserializeError)
     }
 }

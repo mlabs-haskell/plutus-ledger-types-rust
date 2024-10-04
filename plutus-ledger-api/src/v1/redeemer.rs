@@ -33,22 +33,20 @@ impl IsPlutusData for Redeemer {
 }
 
 #[derive(Clone, Debug)]
-struct RedeemerWithExtraInfo<'a> {
-    redeemer: &'a Redeemer,
-    tag: &'a csl::plutus::RedeemerTag,
-    index: u64,
+pub struct RedeemerWithExtraInfo<'a> {
+    pub redeemer: &'a Redeemer,
+    pub tag: &'a csl::RedeemerTag,
+    pub index: u64,
 }
 
-impl TryFromPLA<RedeemerWithExtraInfo<'_>> for csl::plutus::Redeemer {
-    fn try_from_pla<'a>(
-        val: &RedeemerWithExtraInfo<'_>,
-    ) -> Result<csl::plutus::Redeemer, TryFromPLAError> {
+impl TryFromPLA<RedeemerWithExtraInfo<'_>> for csl::Redeemer {
+    fn try_from_pla<'a>(val: &RedeemerWithExtraInfo<'_>) -> Result<csl::Redeemer, TryFromPLAError> {
         let Redeemer(plutus_data) = val.redeemer;
-        Ok(csl::plutus::Redeemer::new(
+        Ok(csl::Redeemer::new(
             val.tag,
             &val.index.try_to_csl()?,
             &plutus_data.try_to_csl()?,
-            &csl::plutus::ExUnits::new(&csl::utils::to_bignum(0), &csl::utils::to_bignum(0)),
+            &csl::ExUnits::new(&csl::BigNum::from(0u64), &csl::BigNum::from(0u64)),
         ))
     }
 }

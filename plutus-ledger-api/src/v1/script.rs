@@ -32,8 +32,8 @@ impl IsPlutusData for ValidatorHash {
     }
 }
 
-impl FromCSL<csl::crypto::ScriptHash> for ValidatorHash {
-    fn from_csl(value: &csl::crypto::ScriptHash) -> Self {
+impl FromCSL<csl::ScriptHash> for ValidatorHash {
+    fn from_csl(value: &csl::ScriptHash) -> Self {
         ValidatorHash(ScriptHash::from_csl(value))
     }
 }
@@ -90,15 +90,15 @@ impl IsPlutusData for ScriptHash {
     }
 }
 
-impl FromCSL<csl::crypto::ScriptHash> for ScriptHash {
-    fn from_csl(value: &csl::crypto::ScriptHash) -> Self {
+impl FromCSL<csl::ScriptHash> for ScriptHash {
+    fn from_csl(value: &csl::ScriptHash) -> Self {
         ScriptHash(LedgerBytes(value.to_bytes()))
     }
 }
 
-impl TryFromPLA<ScriptHash> for csl::crypto::ScriptHash {
+impl TryFromPLA<ScriptHash> for csl::ScriptHash {
     fn try_from_pla(val: &ScriptHash) -> Result<Self, TryFromPLAError> {
-        csl::crypto::ScriptHash::from_bytes(val.0 .0.to_owned())
+        csl::ScriptHash::from_bytes(val.0 .0.to_owned())
             .map_err(TryFromPLAError::CSLDeserializeError)
     }
 }

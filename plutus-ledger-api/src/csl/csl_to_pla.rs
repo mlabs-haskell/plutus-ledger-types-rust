@@ -52,8 +52,8 @@ where
     }
 }
 
-impl FromCSL<csl::utils::BigNum> for BigInt {
-    fn from_csl(value: &csl::utils::BigNum) -> Self {
+impl FromCSL<csl::BigNum> for BigInt {
+    fn from_csl(value: &csl::BigNum) -> Self {
         let x: u64 = From::from(*value);
         BigInt::from(x)
     }
@@ -65,30 +65,18 @@ impl FromCSL<u32> for BigInt {
     }
 }
 
-impl TryFromCSL<csl::utils::BigInt> for BigInt {
-    fn try_from_csl(value: &csl::utils::BigInt) -> Result<Self, TryFromCSLError> {
+impl TryFromCSL<csl::BigInt> for BigInt {
+    fn try_from_csl(value: &csl::BigInt) -> Result<Self, TryFromCSLError> {
         BigInt::from_str(&value.to_str()).map_err(TryFromCSLError::InvalidBigInt)
     }
 }
 
-impl FromCSL<csl::utils::Int> for BigInt {
-    fn from_csl(value: &csl::utils::Int) -> Self {
+impl FromCSL<csl::Int> for BigInt {
+    fn from_csl(value: &csl::Int) -> Self {
         if value.is_positive() {
             BigInt::from_csl(&value.as_positive().unwrap())
         } else {
             BigInt::from_csl(&value.as_negative().unwrap()).neg()
         }
-    }
-}
-
-impl FromCSL<csl::NativeScripts> for Vec<csl::NativeScript> {
-    fn from_csl(value: &csl::NativeScripts) -> Self {
-        (0..value.len()).map(|idx| value.get(idx)).collect()
-    }
-}
-
-impl FromCSL<csl::plutus::PlutusScripts> for Vec<csl::plutus::PlutusScript> {
-    fn from_csl(value: &csl::plutus::PlutusScripts) -> Self {
-        (0..value.len()).map(|idx| value.get(idx)).collect()
     }
 }
