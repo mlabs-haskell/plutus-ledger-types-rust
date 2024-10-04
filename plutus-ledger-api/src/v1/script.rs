@@ -1,10 +1,20 @@
 //! Types related to Plutus scripts
-use crate::plutus_data::{IsPlutusData, PlutusData, PlutusDataError};
-use crate::v1::crypto::LedgerBytes;
+
+use cardano_serialization_lib as csl;
+
 #[cfg(feature = "lbf")]
 use lbr_prelude::json::Json;
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
+
+use crate::csl::csl_to_pla::FromCSL;
+use crate::csl::pla_to_csl::{TryFromPLA, TryFromPLAError, TryToCSL};
+use crate::plutus_data::{IsPlutusData, PlutusData, PlutusDataError};
+use crate::v1::crypto::LedgerBytes;
+
+///////////////////
+// ValidatorHash //
+///////////////////
 
 /// Identifier of a validator script
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -22,6 +32,16 @@ impl IsPlutusData for ValidatorHash {
     }
 }
 
+impl FromCSL<csl::crypto::ScriptHash> for ValidatorHash {
+    fn from_csl(value: &csl::crypto::ScriptHash) -> Self {
+        ValidatorHash(ScriptHash::from_csl(value))
+    }
+}
+
+///////////////////////
+// MintingPolicyHash //
+///////////////////////
+
 /// Hash of a minting policy script
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
@@ -38,6 +58,22 @@ impl IsPlutusData for MintingPolicyHash {
     }
 }
 
+impl FromCSL<csl::PolicyID> for MintingPolicyHash {
+    fn from_csl(value: &csl::PolicyID) -> Self {
+        MintingPolicyHash(ScriptHash(LedgerBytes(value.to_bytes())))
+    }
+}
+
+impl TryFromPLA<MintingPolicyHash> for csl::PolicyID {
+    fn try_from_pla(val: &MintingPolicyHash) -> Result<Self, TryFromPLAError> {
+        val.0.try_to_csl()
+    }
+}
+
+////////////////
+// ScriptHash //
+////////////////
+
 /// Hash of a Plutus script
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
@@ -51,5 +87,18 @@ impl IsPlutusData for ScriptHash {
 
     fn from_plutus_data(data: &PlutusData) -> Result<Self, PlutusDataError> {
         IsPlutusData::from_plutus_data(data).map(Self)
+    }
+}
+
+impl FromCSL<csl::crypto::ScriptHash> for ScriptHash {
+    fn from_csl(value: &csl::crypto::ScriptHash) -> Self {
+        ScriptHash(LedgerBytes(value.to_bytes()))
+    }
+}
+
+impl TryFromPLA<ScriptHash> for csl::crypto::ScriptHash {
+    fn try_from_pla(val: &ScriptHash) -> Result<Self, TryFromPLAError> {
+        csl::crypto::ScriptHash::from_bytes(val.0 .0.to_owned())
+            .map_err(TryFromPLAError::CSLDeserializeError)
     }
 }

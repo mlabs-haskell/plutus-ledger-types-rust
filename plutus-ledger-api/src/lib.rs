@@ -8,6 +8,7 @@ pub mod v1;
 pub mod v2;
 #[cfg(feature = "lbf")]
 pub use lbr_prelude::json;
+pub mod csl;
 pub mod utils;
 
 #[macro_use]

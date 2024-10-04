@@ -1,6 +1,13 @@
 //! Types related to Cardano transactions.
 use std::fmt;
 
+use cardano_serialization_lib as csl;
+#[cfg(feature = "lbf")]
+use lbr_prelude::json::Json;
+use num_bigint::BigInt;
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Serialize};
+
 use super::{
     address::{Address, StakingCredential},
     crypto::{LedgerBytes, PaymentPubKeyHash},
@@ -8,16 +15,22 @@ use super::{
     interval::PlutusInterval,
     value::{CurrencySymbol, Value},
 };
-use crate::plutus_data::{
-    parse_constr, parse_constr_with_tag, parse_fixed_len_constr_fields, verify_constr_fields,
-    IsPlutusData, PlutusData, PlutusDataError, PlutusType,
+
+use crate::{
+    csl::pla_to_csl::{TryFromPLAError, TryToCSL},
+    plutus_data::{
+        parse_constr, parse_constr_with_tag, parse_fixed_len_constr_fields, verify_constr_fields,
+        IsPlutusData, PlutusData, PlutusDataError, PlutusType,
+    },
 };
-use crate::utils::aux::{none, singleton};
-#[cfg(feature = "lbf")]
-use lbr_prelude::json::Json;
-use num_bigint::BigInt;
-#[cfg(feature = "serde")]
-use serde::{Deserialize, Serialize};
+use crate::{
+    csl::{csl_to_pla::FromCSL, pla_to_csl::TryFromPLA},
+    utils::aux::{none, singleton},
+};
+
+//////////////////////
+// TransactionInput //
+//////////////////////
 
 /// An input of a transaction
 ///
@@ -72,6 +85,46 @@ impl IsPlutusData for TransactionInput {
     }
 }
 
+impl FromCSL<csl::TransactionInput> for TransactionInput {
+    fn from_csl(value: &csl::TransactionInput) -> Self {
+        TransactionInput {
+            transaction_id: TransactionHash::from_csl(&value.transaction_id()),
+            index: BigInt::from_csl(&value.index()),
+        }
+    }
+}
+
+impl TryFromPLA<TransactionInput> for csl::TransactionInput {
+    fn try_from_pla(val: &TransactionInput) -> Result<Self, TryFromPLAError> {
+        Ok(csl::TransactionInput::new(
+            &val.transaction_id.try_to_csl()?,
+            val.index.try_to_csl()?,
+        ))
+    }
+}
+
+impl FromCSL<csl::TransactionInputs> for Vec<TransactionInput> {
+    fn from_csl(value: &csl::TransactionInputs) -> Self {
+        (0..value.len())
+            .map(|idx| TransactionInput::from_csl(&value.get(idx)))
+            .collect()
+    }
+}
+
+impl TryFromPLA<Vec<TransactionInput>> for csl::TransactionInputs {
+    fn try_from_pla(val: &Vec<TransactionInput>) -> Result<Self, TryFromPLAError> {
+        val.iter()
+            .try_fold(csl::TransactionInputs::new(), |mut acc, input| {
+                acc.add(&input.try_to_csl()?);
+                Ok(acc)
+            })
+    }
+}
+
+/////////////////////
+// TransactionHash //
+/////////////////////
+
 /// 32-bytes blake2b256 hash of a transaction body.
 ///
 /// Also known as Transaction ID or `TxID`.
@@ -112,6 +165,23 @@ impl IsPlutusData for TransactionHash {
         }
     }
 }
+
+impl FromCSL<csl::crypto::TransactionHash> for TransactionHash {
+    fn from_csl(value: &csl::crypto::TransactionHash) -> Self {
+        TransactionHash(LedgerBytes(value.to_bytes()))
+    }
+}
+
+impl TryFromPLA<TransactionHash> for csl::crypto::TransactionHash {
+    fn try_from_pla(val: &TransactionHash) -> Result<Self, TryFromPLAError> {
+        csl::crypto::TransactionHash::from_bytes(val.0 .0.to_owned())
+            .map_err(TryFromPLAError::CSLDeserializeError)
+    }
+}
+
+///////////////////////
+// TransactionOutput //
+///////////////////////
 
 /// An output of a transaction
 ///
@@ -163,6 +233,10 @@ impl IsPlutusData for TransactionOutput {
     }
 }
 
+///////////////
+// POSIXTime //
+///////////////
+
 /// POSIX time is measured as the number of milliseconds since 1970-01-01T00:00:00Z
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
@@ -208,7 +282,15 @@ impl TryFrom<POSIXTime> for chrono::DateTime<chrono::Utc> {
     }
 }
 
+////////////////////
+// POSIXTimeRange //
+////////////////////
+
 pub type POSIXTimeRange = PlutusInterval<POSIXTime>;
+
+//////////////
+// TxInInfo //
+//////////////
 
 /// An input of a pending transaction.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -259,6 +341,10 @@ impl From<(TransactionInput, TransactionOutput)> for TxInInfo {
         TxInInfo { reference, output }
     }
 }
+
+///////////
+// DCert //
+///////////
 
 /// Partial representation of digests of certificates on the ledger.
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Hash)]
@@ -355,6 +441,10 @@ impl IsPlutusData for DCert {
     }
 }
 
+///////////////////
+// ScriptPurpose //
+///////////////////
+
 /// The purpose of the script that's currently running.
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
@@ -394,6 +484,10 @@ impl IsPlutusData for ScriptPurpose {
         }
     }
 }
+
+/////////////////////
+// TransactionInfo //
+/////////////////////
 
 /// A pending transaction as seen by validator scripts, also known as TxInfo in Plutus
 #[derive(Debug, PartialEq, Eq, Clone)]
@@ -450,6 +544,10 @@ impl IsPlutusData for TransactionInfo {
         })
     }
 }
+
+///////////////////
+// ScriptContext //
+///////////////////
 
 /// The context that is presented to the currently-executing script.
 #[derive(Debug, PartialEq, Eq, Clone)]

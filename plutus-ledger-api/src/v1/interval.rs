@@ -10,6 +10,10 @@ use num_bigint::BigInt;
 use serde::{Deserialize, Serialize};
 use std::cmp;
 
+//////////////
+// Interval //
+//////////////
+
 /// An abstraction over `PlutusInterval`, allowing valid values only
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
@@ -223,6 +227,10 @@ where
     }
 }
 
+////////////////////
+// PlutusInterval //
+////////////////////
+
 /// An interval of `T`s.
 ///
 /// The interval may be either closed or open at either end, meaning
@@ -283,6 +291,10 @@ where
     }
 }
 
+////////////////
+// UpperBound //
+////////////////
+
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[cfg_attr(feature = "lbf", derive(Json))]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
@@ -329,6 +341,10 @@ where
     }
 }
 
+////////////////
+// LowerBound //
+////////////////
+
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[cfg_attr(feature = "lbf", derive(Json))]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
@@ -374,6 +390,10 @@ where
         }
     }
 }
+
+//////////////
+// Extended //
+//////////////
 
 /// A set extended with a positive and negative infinity.
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]

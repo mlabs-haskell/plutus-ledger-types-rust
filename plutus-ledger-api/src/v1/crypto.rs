@@ -1,10 +1,22 @@
 //! Types for cryptographic primitives, and other lower level building blocks
-use crate::plutus_data::{IsPlutusData, PlutusData, PlutusDataError, PlutusType};
+use cardano_serialization_lib as csl;
 use data_encoding::HEXLOWER;
 #[cfg(feature = "lbf")]
 use lbr_prelude::json::{Error, Json};
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
+
+use crate::{
+    csl::{
+        csl_to_pla::FromCSL,
+        pla_to_csl::{TryFromPLA, TryFromPLAError},
+    },
+    plutus_data::{IsPlutusData, PlutusData, PlutusDataError, PlutusType},
+};
+
+///////////////////////
+// Ed25519PubKeyHash //
+///////////////////////
 
 /// ED25519 public key hash
 /// This is the standard cryptography in Cardano, commonly referred to as `PubKeyHash` in Plutus
@@ -31,6 +43,31 @@ impl IsPlutusData for Ed25519PubKeyHash {
     }
 }
 
+impl FromCSL<csl::crypto::Ed25519KeyHash> for Ed25519PubKeyHash {
+    fn from_csl(value: &csl::crypto::Ed25519KeyHash) -> Self {
+        Ed25519PubKeyHash(LedgerBytes(value.to_bytes()))
+    }
+}
+
+impl TryFromPLA<Ed25519PubKeyHash> for csl::crypto::Ed25519KeyHash {
+    fn try_from_pla(val: &Ed25519PubKeyHash) -> Result<Self, TryFromPLAError> {
+        csl::crypto::Ed25519KeyHash::from_bytes(val.0 .0.to_owned())
+            .map_err(TryFromPLAError::CSLDeserializeError)
+    }
+}
+
+impl FromCSL<csl::RequiredSigners> for Vec<Ed25519PubKeyHash> {
+    fn from_csl(value: &csl::RequiredSigners) -> Self {
+        (0..value.len())
+            .map(|idx| Ed25519PubKeyHash::from_csl(&value.get(idx)))
+            .collect()
+    }
+}
+
+///////////////////////
+// PaymentPubKeyHash //
+///////////////////////
+
 /// Standard public key hash used to verify a transaction witness
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
@@ -54,6 +91,10 @@ impl IsPlutusData for PaymentPubKeyHash {
     }
 }
 
+/////////////////////
+// StakePubKeyHash //
+/////////////////////
+
 /// Standard public key hash used to verify a staking
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
@@ -76,6 +117,10 @@ impl IsPlutusData for StakePubKeyHash {
         }
     }
 }
+
+/////////////////
+// LedgerBytes //
+/////////////////
 
 /// A bytestring in the Cardano ledger context
 #[derive(Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]

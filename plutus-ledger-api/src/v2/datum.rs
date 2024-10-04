@@ -1,14 +1,25 @@
 //! Types related to Plutus Datums
-use crate::plutus_data::{
-    verify_constr_fields, IsPlutusData, PlutusData, PlutusDataError, PlutusType,
-};
-pub use crate::v1::datum::{Datum, DatumHash};
+
+use cardano_serialization_lib as csl;
 #[cfg(feature = "lbf")]
 use lbr_prelude::json::{self, Error, Json};
 use num_bigint::BigInt;
 
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
+
+pub use crate::v1::datum::{Datum, DatumHash};
+use crate::{
+    csl::{
+        csl_to_pla::{FromCSL, TryFromCSL, TryFromCSLError, TryToPLA},
+        pla_to_csl::{TryFromPLA, TryFromPLAError, TryToCSL},
+    },
+    plutus_data::{verify_constr_fields, IsPlutusData, PlutusData, PlutusDataError, PlutusType},
+};
+
+/////////////////
+// OutputDatum //
+/////////////////
 
 /// Optional datum of a transaction
 ///
@@ -123,5 +134,31 @@ impl Json for OutputDatum {
             ],
             value,
         )
+    }
+}
+
+impl TryFromCSL<csl::OutputDatum> for OutputDatum {
+    fn try_from_csl(value: &csl::OutputDatum) -> Result<Self, TryFromCSLError> {
+        Ok(if let Some(d) = value.data() {
+            OutputDatum::InlineDatum(Datum(d.try_to_pla()?))
+        } else if let Some(h) = value.data_hash() {
+            OutputDatum::DatumHash(DatumHash::from_csl(&h))
+        } else {
+            OutputDatum::None
+        })
+    }
+}
+
+impl TryFromPLA<OutputDatum> for Option<csl::OutputDatum> {
+    fn try_from_pla(
+        pla_output_datum: &OutputDatum,
+    ) -> Result<Option<csl::OutputDatum>, TryFromPLAError> {
+        Ok(match pla_output_datum {
+            OutputDatum::None => None,
+            OutputDatum::InlineDatum(Datum(d)) => {
+                Some(csl::OutputDatum::new_data(&d.try_to_csl()?))
+            }
+            OutputDatum::DatumHash(dh) => Some(csl::OutputDatum::new_data_hash(&dh.try_to_csl()?)),
+        })
     }
 }

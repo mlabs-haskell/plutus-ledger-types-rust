@@ -1,4 +1,5 @@
 //! Plutus Data related types and traits
+use cardano_serialization_lib as csl;
 #[cfg(feature = "lbf")]
 use data_encoding::HEXLOWER;
 #[cfg(feature = "lbf")]
@@ -12,6 +13,9 @@ use std::collections::{BTreeMap, BTreeSet};
 
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
+
+use crate::csl::csl_to_pla::{FromCSL, TryFromCSL, TryFromCSLError, TryToPLA};
+use crate::csl::pla_to_csl::{TryFromPLA, TryFromPLAError, TryToCSL};
 
 /// Data representation of on-chain data such as Datums and Redeemers
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -551,6 +555,84 @@ where
                 got: PlutusType::from(plutus_data),
             }),
         }
+    }
+}
+
+impl TryFromCSL<csl::plutus::PlutusData> for PlutusData {
+    fn try_from_csl(value: &csl::plutus::PlutusData) -> Result<Self, TryFromCSLError> {
+        Ok(match value.kind() {
+            csl::plutus::PlutusDataKind::ConstrPlutusData => {
+                let constr_data = value.as_constr_plutus_data().unwrap();
+                let tag = BigInt::from_csl(&constr_data.alternative());
+                let args = constr_data.data().try_to_pla()?;
+                PlutusData::Constr(tag, args)
+            }
+            csl::plutus::PlutusDataKind::Map => {
+                PlutusData::Map(value.as_map().unwrap().try_to_pla()?)
+            }
+            csl::plutus::PlutusDataKind::List => {
+                PlutusData::List(value.as_list().unwrap().try_to_pla()?)
+            }
+            csl::plutus::PlutusDataKind::Integer => {
+                PlutusData::Integer(value.as_integer().unwrap().try_to_pla()?)
+            }
+            csl::plutus::PlutusDataKind::Bytes => PlutusData::Bytes(value.as_bytes().unwrap()),
+        })
+    }
+}
+
+impl TryFromCSL<csl::plutus::PlutusList> for Vec<PlutusData> {
+    fn try_from_csl(value: &csl::plutus::PlutusList) -> Result<Self, TryFromCSLError> {
+        (0..value.len())
+            .map(|idx| value.get(idx).try_to_pla())
+            .collect()
+    }
+}
+
+impl TryFromCSL<csl::plutus::PlutusMap> for Vec<(PlutusData, PlutusData)> {
+    fn try_from_csl(c_map: &csl::plutus::PlutusMap) -> Result<Self, TryFromCSLError> {
+        let keys = c_map.keys();
+        (0..keys.len())
+            .map(|idx| {
+                let key = keys.get(idx);
+                let value = c_map.get(&key).unwrap();
+                Ok((key.try_to_pla()?, value.try_to_pla()?))
+            })
+            .collect()
+    }
+}
+
+impl TryFromPLA<PlutusData> for csl::plutus::PlutusData {
+    fn try_from_pla(val: &PlutusData) -> Result<Self, TryFromPLAError> {
+        match val {
+            PlutusData::Constr(tag, args) => Ok(csl::plutus::PlutusData::new_constr_plutus_data(
+                &csl::plutus::ConstrPlutusData::new(&tag.try_to_csl()?, &args.try_to_csl()?),
+            )),
+            PlutusData::Map(l) => Ok(csl::plutus::PlutusData::new_map(&l.try_to_csl()?)),
+            PlutusData::List(l) => Ok(csl::plutus::PlutusData::new_list(&l.try_to_csl()?)),
+            PlutusData::Integer(i) => Ok(csl::plutus::PlutusData::new_integer(&i.try_to_csl()?)),
+            PlutusData::Bytes(b) => Ok(csl::plutus::PlutusData::new_bytes(b.to_owned())),
+        }
+    }
+}
+
+impl TryFromPLA<Vec<PlutusData>> for csl::plutus::PlutusList {
+    fn try_from_pla(val: &Vec<PlutusData>) -> Result<Self, TryFromPLAError> {
+        val.iter()
+            // traverse
+            .map(|x| x.try_to_csl())
+            .collect::<Result<Vec<csl::plutus::PlutusData>, TryFromPLAError>>()
+            .map(|x| x.into())
+    }
+}
+
+impl TryFromPLA<Vec<(PlutusData, PlutusData)>> for csl::plutus::PlutusMap {
+    fn try_from_pla(val: &Vec<(PlutusData, PlutusData)>) -> Result<Self, TryFromPLAError> {
+        val.iter()
+            .try_fold(csl::plutus::PlutusMap::new(), |mut acc, (k, v)| {
+                acc.insert(&k.try_to_csl()?, &v.try_to_csl()?);
+                Ok(acc)
+            })
     }
 }
 

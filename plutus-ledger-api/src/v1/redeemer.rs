@@ -1,10 +1,19 @@
 //! Types related to Plutus Redeemers
-use crate::plutus_data::{IsPlutusData, PlutusData, PlutusDataError};
-use crate::v1::crypto::LedgerBytes;
+
+use cardano_serialization_lib as csl;
+
 #[cfg(feature = "lbf")]
 use lbr_prelude::json::Json;
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
+
+use crate::csl::pla_to_csl::{TryFromPLA, TryFromPLAError, TryToCSL};
+use crate::plutus_data::{IsPlutusData, PlutusData, PlutusDataError};
+use crate::v1::crypto::LedgerBytes;
+
+//////////////
+// Redeemer //
+//////////////
 
 /// Piece of information attached to a transaction when redeeming a value from a validator or a
 /// minting policy
@@ -22,6 +31,31 @@ impl IsPlutusData for Redeemer {
         IsPlutusData::from_plutus_data(data).map(Self)
     }
 }
+
+#[derive(Clone, Debug)]
+struct RedeemerWithExtraInfo<'a> {
+    redeemer: &'a Redeemer,
+    tag: &'a csl::plutus::RedeemerTag,
+    index: u64,
+}
+
+impl TryFromPLA<RedeemerWithExtraInfo<'_>> for csl::plutus::Redeemer {
+    fn try_from_pla<'a>(
+        val: &RedeemerWithExtraInfo<'_>,
+    ) -> Result<csl::plutus::Redeemer, TryFromPLAError> {
+        let Redeemer(plutus_data) = val.redeemer;
+        Ok(csl::plutus::Redeemer::new(
+            val.tag,
+            &val.index.try_to_csl()?,
+            &plutus_data.try_to_csl()?,
+            &csl::plutus::ExUnits::new(&csl::utils::to_bignum(0), &csl::utils::to_bignum(0)),
+        ))
+    }
+}
+
+//////////////////
+// RedeemerHash //
+//////////////////
 
 /// blake2b-256 hash of a datum
 #[derive(Clone, Debug, PartialEq, Eq)]

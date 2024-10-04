@@ -1,10 +1,14 @@
 //! Types related to Cardano values, such as Ada and native tokens.
-use crate::plutus_data::{
-    verify_constr_fields, IsPlutusData, PlutusData, PlutusDataError, PlutusType,
+
+use std::string::String;
+use std::{
+    collections::BTreeMap,
+    iter::Sum,
+    ops::{Add, Mul, Neg, Not, Sub},
 };
-use crate::utils::aux::{singleton, union_btree_maps_with};
-use crate::v1::crypto::LedgerBytes;
-use crate::v1::script::{MintingPolicyHash, ScriptHash};
+use std::{fmt, ops};
+
+use cardano_serialization_lib as csl;
 #[cfg(feature = "lbf")]
 use lbr_prelude::json::{Error, Json, JsonType};
 use num_bigint::BigInt;
@@ -13,13 +17,19 @@ use num_traits::Zero;
 use serde::{Deserialize, Serialize};
 #[cfg(feature = "lbf")]
 use serde_json;
-use std::string::String;
-use std::{
-    collections::BTreeMap,
-    iter::Sum,
-    ops::{Add, Mul, Neg, Not, Sub},
+
+use crate::csl::csl_to_pla::FromCSL;
+use crate::csl::pla_to_csl::{TryFromPLA, TryFromPLAError, TryToCSL};
+use crate::plutus_data::{
+    verify_constr_fields, IsPlutusData, PlutusData, PlutusDataError, PlutusType,
 };
-use std::{fmt, ops};
+use crate::utils::aux::{singleton, union_b_tree_maps_with, union_btree_maps_with};
+use crate::v1::crypto::LedgerBytes;
+use crate::v1::script::{MintingPolicyHash, ScriptHash};
+
+////////////////////
+// CurrencySymbol //
+////////////////////
 
 /// Identifier of a currency, which could be either Ada (or tAda), or a native token represented by
 /// it's minting policy hash. A currency may be associated with multiple `AssetClass`es.
@@ -94,6 +104,10 @@ impl Json for CurrencySymbol {
         }
     }
 }
+
+///////////
+// Value //
+///////////
 
 /// A value that can contain multiple asset classes
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
@@ -415,6 +429,152 @@ impl IsPlutusData for Value {
     }
 }
 
+impl FromCSL<csl::Assets> for BTreeMap<TokenName, BigInt> {
+    fn from_csl(value: &csl::Assets) -> Self {
+        let keys = value.keys();
+        (0..keys.len()).fold(BTreeMap::new(), |mut acc, idx| {
+            let asset_name = keys.get(idx);
+            if let Some(quantity) = value.get(&asset_name) {
+                acc.insert(
+                    TokenName::from_csl(&asset_name),
+                    BigInt::from_csl(&quantity),
+                );
+            }
+            acc
+        })
+    }
+}
+
+impl TryFromPLA<BTreeMap<TokenName, BigInt>> for csl::Assets {
+    fn try_from_pla(val: &BTreeMap<TokenName, BigInt>) -> Result<Self, TryFromPLAError> {
+        val.iter().try_fold(csl::Assets::new(), |mut acc, (k, v)| {
+            acc.insert(&k.try_to_csl()?, &v.try_to_csl()?);
+            Ok(acc)
+        })
+    }
+}
+
+impl FromCSL<csl::MultiAsset> for Value {
+    fn from_csl(value: &csl::MultiAsset) -> Self {
+        let keys = value.keys();
+        Value((0..keys.len()).fold(BTreeMap::new(), |mut acc, idx| {
+            let script_hash = keys.get(idx);
+            if let Some(assets) = value.get(&script_hash) {
+                let assets = BTreeMap::from_csl(&assets);
+                acc.insert(
+                    CurrencySymbol::NativeToken(MintingPolicyHash::from_csl(&script_hash)),
+                    assets,
+                );
+            }
+            acc
+        }))
+    }
+}
+
+impl FromCSL<csl::utils::Value> for Value {
+    fn from_csl(value: &csl::utils::Value) -> Self {
+        let lovelaces = BigInt::from_csl(&value.coin());
+        let mut pla_value = Value::ada_value(&lovelaces);
+        if let Some(multi_asset) = value.multiasset() {
+            pla_value = &pla_value + &Value::from_csl(&multi_asset)
+        }
+        pla_value
+    }
+}
+
+impl TryFromPLA<Value> for csl::utils::Value {
+    fn try_from_pla(val: &Value) -> Result<Self, TryFromPLAError> {
+        let coin: csl::utils::Coin = val
+            .0
+            .get(&CurrencySymbol::Ada)
+            .and_then(|m| m.get(&TokenName::ada()))
+            .map_or(Ok(csl::utils::BigNum::zero()), TryToCSL::try_to_csl)?;
+
+        let m_ass = val
+            .0
+            .iter()
+            .filter_map(|(cs, tn_map)| match &cs {
+                CurrencySymbol::Ada => None,
+                CurrencySymbol::NativeToken(h) => Some((h, tn_map)),
+            })
+            .try_fold(csl::MultiAsset::new(), |mut acc, (cs, ass)| {
+                acc.insert(&cs.try_to_csl()?, &ass.try_to_csl()?);
+                Ok(acc)
+            })?;
+
+        let mut v = csl::utils::Value::new(&coin);
+
+        v.set_multiasset(&m_ass);
+
+        Ok(v)
+    }
+}
+
+impl FromCSL<csl::MintAssets> for BTreeMap<TokenName, BigInt> {
+    fn from_csl(m_ass: &csl::MintAssets) -> Self {
+        let keys = m_ass.keys();
+        (0..keys.len())
+            .map(|idx| {
+                let key = keys.get(idx);
+                let value = m_ass.get(&key).unwrap();
+                (TokenName::from_csl(&key), BigInt::from_csl(&value))
+            })
+            .collect()
+    }
+}
+
+impl FromCSL<csl::MintsAssets> for BTreeMap<TokenName, BigInt> {
+    fn from_csl(value: &csl::MintsAssets) -> Self {
+        let mut m_ass_vec = Vec::new();
+
+        // This is so stupid. `MintsAssets` doesn't have a `len` method for some reason.
+        for idx in 0.. {
+            if let Some(m_ass) = value.get(idx) {
+                m_ass_vec.push(m_ass);
+            } else {
+                break;
+            }
+        }
+
+        m_ass_vec.into_iter().fold(BTreeMap::new(), |acc, m| {
+            let ass = BTreeMap::from_csl(&m);
+            union_b_tree_maps_with(|l, r| l + r, [&acc, &ass])
+        })
+    }
+}
+
+impl TryFromPLA<BTreeMap<TokenName, BigInt>> for csl::MintAssets {
+    fn try_from_pla(val: &BTreeMap<TokenName, BigInt>) -> Result<Self, TryFromPLAError> {
+        val.iter()
+            .try_fold(csl::MintAssets::new(), |mut acc, (k, v)| {
+                acc.insert(&k.try_to_csl()?, v.try_to_csl()?);
+                Ok(acc)
+            })
+    }
+}
+
+impl FromCSL<csl::Mint> for Value {
+    fn from_csl(mint: &csl::Mint) -> Self {
+        let keys = mint.keys();
+        Value(
+            (0..keys.len())
+                .map(|idx| {
+                    let sh = keys.get(idx);
+                    let ass = mint.get_all(&sh).unwrap_or(csl::MintsAssets::new());
+                    (
+                        CurrencySymbol::NativeToken(MintingPolicyHash::from_csl(&sh)),
+                        BTreeMap::from_csl(&ass),
+                    )
+                })
+                .collect::<BTreeMap<CurrencySymbol, BTreeMap<TokenName, BigInt>>>(),
+        )
+    }
+}
+
+///////////////
+// TokenName //
+///////////////
+
 /// Name of a token. This can be any arbitrary bytearray
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
@@ -467,6 +627,22 @@ impl fmt::Display for TokenName {
         }
     }
 }
+
+impl FromCSL<csl::AssetName> for TokenName {
+    fn from_csl(value: &csl::AssetName) -> Self {
+        TokenName(LedgerBytes(value.name()))
+    }
+}
+
+impl TryFromPLA<TokenName> for csl::AssetName {
+    fn try_from_pla(val: &TokenName) -> Result<Self, TryFromPLAError> {
+        csl::AssetName::new(val.0 .0.to_owned()).map_err(TryFromPLAError::CSLJsError)
+    }
+}
+
+////////////////
+// AssetClass //
+////////////////
 
 /// AssetClass is uniquely identifying a specific asset
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
