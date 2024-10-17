@@ -647,7 +647,7 @@ fn data_with_named_fields_from_list_of_plutus_data(
 
     parse_quote!(
         {
-            let [ #(#unparsed_field_idents),* ] = parse_fixed_len_plutus_data_list::<#field_count>(#plutus_data_list_var)?;
+            let [ #(#unparsed_field_idents),* ] = plutus_data::is_plutus_data::aux::parse_fixed_len_constr_fields::<#field_count>(#plutus_data_list_var)?;
             #(#field_decoded_stmts)*
             Ok(#constructor{ #(#field_idents),* })
         }
@@ -677,7 +677,7 @@ fn data_with_unnamed_fields_from_list_of_plutus_data(
         });
 
     parse_quote!({
-        let [ #(#unparsed_field_idents),* ] = parse_fixed_len_plutus_data_list::<#field_count>(#plutus_data_list_var)?;
+        let [ #(#unparsed_field_idents),* ] = plutus_data::is_plutus_data::aux::parse_fixed_len_constr_fields::<#field_count>(#plutus_data_list_var)?;
         #(#field_decoded_stmts)*
         Ok(#constructor(#(#parsed_field_idents),*))
     })
@@ -688,7 +688,7 @@ fn data_with_no_fields_from_list_of_plutus_data(
     list_of_plutus_data_var: &Ident,
 ) -> Block {
     parse_quote!({
-        let [ ] = parse_fixed_len_plutus_data_list::<0>(#list_of_plutus_data_var)?;
+        let [ ] = plutus_data::is_plutus_data::aux::parse_fixed_len_constr_fields::<0>(#list_of_plutus_data_var)?;
         Ok(#constructor)
     })
 }
