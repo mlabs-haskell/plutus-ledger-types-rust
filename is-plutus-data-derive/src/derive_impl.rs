@@ -96,7 +96,7 @@ fn try_parse_derive_strategy(attr: &Attribute) -> Option<Result<DeriveStrategy>>
     let value = match &attr.meta {
         Meta::NameValue(name_value) => name_value
             .path
-            .is_ident("plutus_data_derive_strategy")
+            .is_ident("is_plutus_data_derive_strategy")
             .then_some(&name_value.value),
         _ => None,
     }?;
