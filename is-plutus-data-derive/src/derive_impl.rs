@@ -5,8 +5,8 @@ use syn::{
     parse::{Parse, ParseStream},
     parse_quote,
     spanned::Spanned,
-    Arm, Attribute, Block, Data, DataEnum, DataStruct, DeriveInput, Error, Expr, Fields,
-    FieldsNamed, FieldsUnnamed, Ident, Index, ItemImpl, Meta, Path, Result, Stmt,
+    Arm, Attribute, Block, Data, DataEnum, DataStruct, DeriveInput, Error, Expr, ExprLit, Fields,
+    FieldsNamed, FieldsUnnamed, Ident, Index, ItemImpl, Lit, Meta, Path, Result, Stmt,
 };
 
 pub(crate) fn get_is_plutus_data_instance(input: DeriveInput) -> Result<ItemImpl> {
@@ -56,7 +56,7 @@ enum DeriveStrategy {
 enum DeriveStrategyError {
     #[error("Unknown strategy {0}. Should be one of Newtype, List and Constr.")]
     UnknownStrategy(String),
-    #[error("Unable to parse strategy. Should be an Ident.")]
+    #[error("Unable to parse strategy. Should be a string literal Newtype, Constr or List.")]
     UnexpectedToken,
     #[error("More than one strategies specified.")]
     MoreThanOneSpecified,
@@ -102,10 +102,11 @@ fn try_parse_derive_strategy(attr: &Attribute) -> Option<Result<DeriveStrategy>>
     }?;
 
     Some(match &value {
-        Expr::Path(path) => (|| -> Result<DeriveStrategy> {
-            let ident = path.path.require_ident()?;
-            DeriveStrategy::from_str(&ident.to_string())
-                .map_err(|err| Error::new(ident.span(), err))
+        Expr::Lit(ExprLit {
+            lit: Lit::Str(str_lit),
+            ..
+        }) => (|| -> Result<DeriveStrategy> {
+            DeriveStrategy::from_str(&str_lit.value()).map_err(|err| Error::new(attr.span(), err))
         })(),
         _ => Err(Error::new(
             value.span(),
