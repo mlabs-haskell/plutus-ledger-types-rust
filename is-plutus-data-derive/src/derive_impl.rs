@@ -24,22 +24,20 @@ pub(crate) fn get_is_plutus_data_instance(input: DeriveInput) -> Result<ItemImpl
 
     let mut generics = input.generics;
 
-    // TODO(chfanghr): Do we care about type role?
+    // TODO(chfanghr): Do we care about type role? Can we determine it?
     generics.type_params_mut().for_each(|param| {
-        param
-            .bounds
-            .push(parse_quote!(plutus_ledger_api::plutus_Data::IsPlutusData));
+        param.bounds.push(parse_quote!(plutus_data::IsPlutusData));
     });
 
     let (impl_generics, type_generics, where_clause) = generics.split_for_impl();
 
     Ok(parse_quote!(
-        impl #impl_generics plutus_ledger_api::plutus_data::IsPlutusData for #type_name #type_generics #where_clause {
-            fn to_plutus_data(&self) -> plutus_ledger_api::plutus_data::PlutusData {
+        impl #impl_generics plutus_data::IsPlutusData for #type_name #type_generics #where_clause {
+            fn to_plutus_data(&self) -> plutus_data::PlutusData {
                 #encoder
             }
 
-            fn from_plutus_data(plutus_data: &plutus_ledger_api::plutus_data::PlutusData) -> Result<Self, plutus_ledger_api::plutus_data::PlutusDataError>
+            fn from_plutus_data(plutus_data: &plutus_data::PlutusData) -> Result<Self, plutus_data::PlutusDataError>
                 where Self: Sized {
                 #decoder
             }
@@ -171,15 +169,15 @@ fn get_newtype_encoder_decoder(input: &DeriveInput) -> Result<(Block, Block)> {
         Some(field_name) => {
             parse_quote!({
                 Ok(Self {
-                    #field_name: plutus_ledger_api::plutus_data::IsPlutusData::from_plutus_data(plutus_data)?
+                    #field_name: plutus_data::IsPlutusData::from_plutus_data(plutus_data)?
                 })
             })
         }
         None => {
             parse_quote!({
-                Ok(Self(
-                    plutus_ledger_api::plutus_data::IsPlutusData::from_plutus_data(plutus_data)?,
-                ))
+                Ok(Self(plutus_data::IsPlutusData::from_plutus_data(
+                    plutus_data,
+                )?))
             })
         }
     };
@@ -311,11 +309,11 @@ fn enum_from_plutus_data_constr(e: &DataEnum, plutus_data_input_var: &Ident) -> 
 
     parse_quote!(
         {
-            let (tag, #plutus_data_list_var) = plutus_ledger_api::plutus_data::parse_constr(#plutus_data_input_var)?;
+            let (tag, #plutus_data_list_var) = plutus_data::is_plutus_data::aux::parse_constr(#plutus_data_input_var)?;
 
             match tag {
                 #(#arms),*
-                tag => Err(plutus_ledger_api::plutus_data::PlutusDataError::UnexpectedPlutusInvariant {
+                tag => Err(plutus_data::PlutusDataError::UnexpectedPlutusInvariant {
                     wanted: format!(#expected_tags_str),
                     got: tag.to_string(),
                 }),
@@ -381,7 +379,7 @@ fn variant_with_named_fields_to_plutus_data(
     let plutus_data_list = data_fields_to_list_of_plutus_data(&field_accessors);
 
     parse_quote!(
-        #constructor{ #(#field_names),* } => plutus_ledger_api::plutus_data::PlutusData::Constr(#tag.into(), #plutus_data_list)
+        #constructor{ #(#field_names),* } => plutus_data::PlutusData::Constr(#tag.into(), #plutus_data_list)
     )
 }
 
@@ -408,7 +406,7 @@ fn variant_with_unnamed_field_to_plutus_data(
     let plutus_data_list = data_fields_to_list_of_plutus_data(&field_accessors);
 
     parse_quote!(
-        #constructor(#(#field_names),*) => plutus_ledger_api::plutus_data::PlutusData::Constr(#tag.into(), #plutus_data_list)
+        #constructor(#(#field_names),*) => plutus_data::PlutusData::Constr(#tag.into(), #plutus_data_list)
     )
 }
 
@@ -426,7 +424,7 @@ fn variant_with_unnamed_fields_from_plutus_data_list(
 
 fn variant_with_no_field_to_plutus_data(constructor: &Path, tag: usize) -> Arm {
     parse_quote!(
-        #constructor => plutus_ledger_api::plutus_data::PlutusData::Constr(#tag.into(), vec![])
+        #constructor => plutus_data::PlutusData::Constr(#tag.into(), vec![])
     )
 }
 
@@ -464,7 +462,7 @@ fn struct_with_named_fields_to_plutus_data_list(fields: &FieldsNamed) -> Block {
     let to_list_of_plutus_data = struct_with_named_fields_to_list_of_plutus_data(fields);
 
     parse_quote!({
-        plutus_ledger_api::plutus_data::PlutusData::List(#to_list_of_plutus_data)
+        plutus_data::PlutusData::List(#to_list_of_plutus_data)
     })
 }
 
@@ -478,7 +476,7 @@ fn struct_with_named_fields_from_plutus_data_list(
         struct_with_named_fields_from_list_of_plutus_data(fields, &list_of_plutus_data_var);
 
     parse_quote!({
-        let #list_of_plutus_data_var = plutus_ledger_api::plutus_data::parse_list(#plutus_data_input_var)?;
+        let #list_of_plutus_data_var = plutus_data::is_plutus_data::aux::parse_list(#plutus_data_input_var)?;
 
         #from_list_of_plutus_data
     })
@@ -488,7 +486,7 @@ fn struct_with_named_fields_to_plutus_data_constr(fields: &FieldsNamed) -> Block
     let to_list_of_plutus_data = struct_with_named_fields_to_list_of_plutus_data(fields);
 
     parse_quote!({
-        plutus_ledger_api::plutus_data::PlutusData::Constr(0.into(), #to_list_of_plutus_data)
+        plutus_data::PlutusData::Constr(0.into(), #to_list_of_plutus_data)
     })
 }
 
@@ -502,7 +500,7 @@ fn struct_with_named_fields_from_plutus_data_constr(
         struct_with_named_fields_from_list_of_plutus_data(fields, &plutus_data_list_var);
 
     parse_quote!({
-        let #plutus_data_list_var = plutus_ledger_api::plutus_data::parse_constr_with_tag(#plutus_data_input_var, 0)?;
+        let #plutus_data_list_var = plutus_data::is_plutus_data::aux::parse_constr_with_tag(#plutus_data_input_var, 0)?;
 
         #from_plutus_data_list
     })
@@ -538,7 +536,7 @@ fn struct_with_unnamed_fields_to_plutus_data_list(fields: &FieldsUnnamed) -> Blo
     let to_list_of_plutus_data = struct_with_unnamed_fields_to_list_of_plutus_data(fields);
 
     parse_quote!({
-       plutus_ledger_api::plutus_data::PlutusData::List(#to_list_of_plutus_data)
+        plutus_data::PlutusData::List(#to_list_of_plutus_data)
     })
 }
 
@@ -552,7 +550,7 @@ fn struct_with_unnamed_fields_from_plutus_data_list(
         struct_with_unnamed_fields_from_list_of_plutus_data(fields, &list_of_plutus_data_var);
 
     parse_quote!({
-        let #list_of_plutus_data_var = plutus_ledger_api::plutus_data::parse_list(#plutus_data_input_var)?;
+        let #list_of_plutus_data_var = plutus_data::is_plutus_data::aux::parse_list(#plutus_data_input_var)?;
 
         #from_list_of_plutus_data
     })
@@ -562,7 +560,7 @@ fn struct_with_unnamed_fields_to_plutus_data_constr(fields: &FieldsUnnamed) -> B
     let to_list_of_plutus_data = struct_with_unnamed_fields_to_list_of_plutus_data(fields);
 
     parse_quote!({
-       plutus_ledger_api::plutus_data::PlutusData::Constr(0.into(), #to_list_of_plutus_data)
+        plutus_data::PlutusData::Constr(0.into(), #to_list_of_plutus_data)
     })
 }
 
@@ -570,23 +568,19 @@ fn struct_with_unnamed_fields_from_plutus_data_constr(
     fields: &FieldsUnnamed,
     plutus_data_input_var: &Ident,
 ) -> Block {
-    let plutus_data_list_var: Ident = parse_quote!(plutus_data_list);
+    let fields_var: Ident = parse_quote!(fields);
 
-    let from_list_of_plutus_data =
-        struct_with_unnamed_fields_from_list_of_plutus_data(fields, &plutus_data_list_var);
+    let from_fields = struct_with_unnamed_fields_from_list_of_plutus_data(fields, &fields_var);
 
     parse_quote!({
-        let #plutus_data_list_var = plutus_ledger_api::plutus_data::parse_constr_with_tag(#plutus_data_input_var, 0)?;
+        let #fields_var = plutus_data::is_plutus_data::aux::parse_constr_with_tag(#plutus_data_input_var, 0)?;
 
-        #from_list_of_plutus_data
+        #from_fields
     })
 }
 
 fn struct_with_no_field_to_plutus_data_list() -> Block {
-    parse_quote!(plutus_ledger_api::plutus_data::PlutusData::Constr(
-        0.into(),
-        vec![]
-    ))
+    parse_quote!(plutus_data::PlutusData::Constr(0.into(), vec![]))
 }
 
 fn struct_with_no_field_from_plutus_data_list(plutus_data_input_var: &Ident) -> Block {
@@ -596,32 +590,26 @@ fn struct_with_no_field_from_plutus_data_list(plutus_data_input_var: &Ident) -> 
         data_with_no_fields_from_list_of_plutus_data(&parse_quote!(Self), &list_of_plutus_data_var);
 
     parse_quote!({
-        let #list_of_plutus_data_var = plutus_ledger_api::plutus_data::parse_list(#plutus_data_input_var)?;
-
-
-
+        let #list_of_plutus_data_var = plutus_data::is_plutus_data::aux::parse_list(#plutus_data_input_var)?;
 
         #from_list_of_plutus_data
     })
 }
 
 fn struct_with_no_field_to_plutus_data_constr() -> Block {
-    parse_quote!(plutus_ledger_api::plutus_data::PlutusData::Constr(
-        0.into(),
-        vec![]
-    ))
+    parse_quote!(plutus_data::PlutusData::Constr(0.into(), vec![]))
 }
 
 fn struct_with_no_field_from_plutus_data_constr(plutus_data_input_var: &Ident) -> Block {
-    let list_of_plutus_data_var: Ident = parse_quote!(list_of_plutus_data);
+    let fields_var: Ident = parse_quote!(fields);
 
-    let from_list_of_plutus_data =
-        data_with_no_fields_from_list_of_plutus_data(&parse_quote!(Self), &list_of_plutus_data_var);
+    let from_fields =
+        data_with_no_fields_from_list_of_plutus_data(&parse_quote!(Self), &fields_var);
 
     parse_quote!({
-        let #list_of_plutus_data_var = plutus_ledger_api::plutus_data::parse_constr_with_tag(#plutus_data_input_var, 0)?;
+        let #fields_var = plutus_data::is_plutus_data::aux::parse_constr_with_tag(#plutus_data_input_var, 0)?;
 
-        #from_list_of_plutus_data
+        #from_fields
     })
 }
 
@@ -652,7 +640,7 @@ fn data_with_named_fields_from_list_of_plutus_data(
     let field_decoded_stmts = field_idents.clone().zip(unparsed_field_idents.clone()).map(
         |(field_ident, unparsed_field_ident)| -> Stmt {
             parse_quote!(
-                let #field_ident = plutus_ledger_api::plutus_data::IsPlutusData::from_plutus_data(#unparsed_field_ident)?;
+                let #field_ident = plutus_data::IsPlutusData::from_plutus_data(#unparsed_field_ident)?;
             )
         },
     );
