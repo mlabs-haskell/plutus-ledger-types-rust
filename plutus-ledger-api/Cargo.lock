@@ -399,6 +399,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "is-plutus-data-derive"
+version = "0.1.0"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn",
+ "thiserror",
+]
+
+[[package]]
 name = "itertools"
 version = "0.10.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -599,6 +609,19 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c08d65885ee38876c4f86fa503fb49d7b507c2b62552df7c70b2fce627e06381"
 
 [[package]]
+name = "plutus-data"
+version = "0.1.0"
+dependencies = [
+ "data-encoding",
+ "is-plutus-data-derive",
+ "lbr-prelude",
+ "num-bigint",
+ "serde",
+ "serde_json",
+ "thiserror",
+]
+
+[[package]]
 name = "plutus-ledger-api"
 version = "2.0.0-beta.1"
 dependencies = [
@@ -612,6 +635,7 @@ dependencies = [
  "linked-hash-map",
  "num-bigint",
  "num-traits",
+ "plutus-data",
  "proptest",
  "serde",
  "serde_json",

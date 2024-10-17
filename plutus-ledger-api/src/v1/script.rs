@@ -9,7 +9,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::csl::csl_to_pla::FromCSL;
 use crate::csl::pla_to_csl::{TryFromPLA, TryFromPLAError, TryToCSL};
-use crate::plutus_data::{IsPlutusData, PlutusData, PlutusDataError};
+use crate::plutus_data::IsPlutusData;
 use crate::v1::crypto::LedgerBytes;
 
 ///////////////////
@@ -17,20 +17,11 @@ use crate::v1::crypto::LedgerBytes;
 ///////////////////
 
 /// Identifier of a validator script
-#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, IsPlutusData)]
+#[is_plutus_data_derive_strategy = "Newtype"]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "lbf", derive(Json))]
 pub struct ValidatorHash(pub ScriptHash);
-
-impl IsPlutusData for ValidatorHash {
-    fn to_plutus_data(&self) -> PlutusData {
-        self.0.to_plutus_data()
-    }
-
-    fn from_plutus_data(data: &PlutusData) -> Result<Self, PlutusDataError> {
-        IsPlutusData::from_plutus_data(data).map(Self)
-    }
-}
 
 impl FromCSL<csl::ScriptHash> for ValidatorHash {
     fn from_csl(value: &csl::ScriptHash) -> Self {
@@ -43,20 +34,11 @@ impl FromCSL<csl::ScriptHash> for ValidatorHash {
 ///////////////////////
 
 /// Hash of a minting policy script
-#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, IsPlutusData)]
+#[is_plutus_data_derive_strategy = "Newtype"]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "lbf", derive(Json))]
 pub struct MintingPolicyHash(pub ScriptHash);
-
-impl IsPlutusData for MintingPolicyHash {
-    fn to_plutus_data(&self) -> PlutusData {
-        self.0.to_plutus_data()
-    }
-
-    fn from_plutus_data(data: &PlutusData) -> Result<Self, PlutusDataError> {
-        IsPlutusData::from_plutus_data(data).map(Self)
-    }
-}
 
 impl FromCSL<csl::PolicyID> for MintingPolicyHash {
     fn from_csl(value: &csl::PolicyID) -> Self {
@@ -75,20 +57,11 @@ impl TryFromPLA<MintingPolicyHash> for csl::PolicyID {
 ////////////////
 
 /// Hash of a Plutus script
-#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, IsPlutusData)]
+#[is_plutus_data_derive_strategy = "Newtype"]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "lbf", derive(Json))]
 pub struct ScriptHash(pub LedgerBytes);
-
-impl IsPlutusData for ScriptHash {
-    fn to_plutus_data(&self) -> PlutusData {
-        self.0.to_plutus_data()
-    }
-
-    fn from_plutus_data(data: &PlutusData) -> Result<Self, PlutusDataError> {
-        IsPlutusData::from_plutus_data(data).map(Self)
-    }
-}
 
 impl FromCSL<csl::ScriptHash> for ScriptHash {
     fn from_csl(value: &csl::ScriptHash) -> Self {

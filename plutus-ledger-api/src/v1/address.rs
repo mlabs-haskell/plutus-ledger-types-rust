@@ -3,12 +3,11 @@ use std::str::FromStr;
 
 use anyhow::anyhow;
 use cardano_serialization_lib as csl;
+use plutus_data::is_plutus_data::aux::{parse_constr, parse_fixed_len_constr_fields};
 
 use crate::csl::csl_to_pla::{FromCSL, TryFromCSL, TryFromCSLError, TryToPLA};
 use crate::csl::pla_to_csl::{TryFromPLA, TryFromPLAError, TryToCSL};
-use crate::plutus_data::{
-    verify_constr_fields, IsPlutusData, PlutusData, PlutusDataError, PlutusType,
-};
+use crate::plutus_data::{IsPlutusData, PlutusData, PlutusDataError};
 use crate::v1::crypto::Ed25519PubKeyHash;
 use crate::v1::script::ValidatorHash;
 #[cfg(feature = "lbf")]
@@ -27,7 +26,7 @@ use serde::{Deserialize, Serialize};
 /// An address consists of a payment part (credential) and a delegation part (staking_credential).
 /// In order to serialize an address to `bech32`, the network kind must be known.
 /// For a better understanding of all the Cardano address types, read [CIP 19](https://cips.cardano.org/cips/cip19/)
-#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, IsPlutusData)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "lbf", derive(Json))]
 pub struct Address {
@@ -40,43 +39,6 @@ impl Address {
         AddressWithExtraInfo {
             address: self,
             network_tag,
-        }
-    }
-}
-
-impl IsPlutusData for Address {
-    fn to_plutus_data(&self) -> PlutusData {
-        PlutusData::Constr(
-            BigInt::from(0),
-            vec![
-                self.credential.to_plutus_data(),
-                self.staking_credential.to_plutus_data(),
-            ],
-        )
-    }
-
-    fn from_plutus_data(data: &PlutusData) -> Result<Self, PlutusDataError> {
-        match data {
-            PlutusData::Constr(flag, fields) => match u32::try_from(flag) {
-                Ok(0) => {
-                    verify_constr_fields(fields, 2)?;
-                    Ok(Address {
-                        credential: Credential::from_plutus_data(&fields[0])?,
-                        staking_credential: <Option<StakingCredential>>::from_plutus_data(
-                            &fields[1],
-                        )?,
-                    })
-                }
-                _ => Err(PlutusDataError::UnexpectedPlutusInvariant {
-                    wanted: "Constr field to be 0".to_owned(),
-                    got: flag.to_string(),
-                }),
-            },
-
-            _ => Err(PlutusDataError::UnexpectedPlutusType {
-                wanted: PlutusType::Constr,
-                got: PlutusType::from(data),
-            }),
         }
     }
 }
@@ -162,52 +124,11 @@ impl std::fmt::Display for AddressWithExtraInfo<'_> {
 ////////////////
 
 /// A public key hash or validator hash credential (used as a payment or a staking credential)
-#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, IsPlutusData)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub enum Credential {
     PubKey(Ed25519PubKeyHash),
     Script(ValidatorHash),
-}
-
-impl IsPlutusData for Credential {
-    fn to_plutus_data(&self) -> PlutusData {
-        match self {
-            Credential::PubKey(pkh) => {
-                PlutusData::Constr(BigInt::from(0), vec![pkh.to_plutus_data()])
-            }
-            Credential::Script(val_hash) => {
-                PlutusData::Constr(BigInt::from(1), vec![val_hash.to_plutus_data()])
-            }
-        }
-    }
-
-    fn from_plutus_data(data: &PlutusData) -> Result<Self, PlutusDataError> {
-        match data {
-            PlutusData::Constr(flag, fields) => match u32::try_from(flag) {
-                Ok(0) => {
-                    verify_constr_fields(fields, 1)?;
-                    Ok(Credential::PubKey(Ed25519PubKeyHash::from_plutus_data(
-                        &fields[0],
-                    )?))
-                }
-                Ok(1) => {
-                    verify_constr_fields(fields, 1)?;
-                    Ok(Credential::Script(ValidatorHash::from_plutus_data(
-                        &fields[0],
-                    )?))
-                }
-                _ => Err(PlutusDataError::UnexpectedPlutusInvariant {
-                    wanted: "Constr field between 0 and 1".to_owned(),
-                    got: flag.to_string(),
-                }),
-            },
-
-            _ => Err(PlutusDataError::UnexpectedPlutusType {
-                wanted: PlutusType::Constr,
-                got: PlutusType::from(data),
-            }),
-        }
-    }
 }
 
 #[cfg(feature = "lbf")]
@@ -289,6 +210,7 @@ pub enum StakingCredential {
     Pointer(ChainPointer),
 }
 
+// NOTE(chfanghr): ChainPointer doesn't have a IsPlutusData instance so derive doesn't work here.
 impl IsPlutusData for StakingCredential {
     fn to_plutus_data(&self) -> PlutusData {
         match self {
@@ -311,31 +233,23 @@ impl IsPlutusData for StakingCredential {
     }
 
     fn from_plutus_data(data: &PlutusData) -> Result<Self, PlutusDataError> {
-        match data {
-            PlutusData::Constr(flag, fields) => match u32::try_from(flag) {
-                Ok(0) => {
-                    verify_constr_fields(fields, 1)?;
-                    Ok(StakingCredential::Hash(Credential::from_plutus_data(
-                        &fields[0],
-                    )?))
-                }
-                Ok(1) => {
-                    verify_constr_fields(fields, 3)?;
-                    Ok(StakingCredential::Pointer(ChainPointer {
-                        slot_number: Slot::from_plutus_data(&fields[0])?,
-                        transaction_index: TransactionIndex::from_plutus_data(&fields[1])?,
-                        certificate_index: CertificateIndex::from_plutus_data(&fields[2])?,
-                    }))
-                }
-                _ => Err(PlutusDataError::UnexpectedPlutusInvariant {
-                    wanted: "Constr field between 0 and 1".to_owned(),
-                    got: flag.to_string(),
-                }),
-            },
-
-            _ => Err(PlutusDataError::UnexpectedPlutusType {
-                wanted: PlutusType::Constr,
-                got: PlutusType::from(data),
+        let (tag, fields) = parse_constr(data)?;
+        match tag {
+            0 => {
+                let [field] = parse_fixed_len_constr_fields::<1>(fields)?;
+                Ok(Self::Hash(Credential::from_plutus_data(field)?))
+            }
+            1 => {
+                let [field_0, field_1, field_2] = parse_fixed_len_constr_fields::<3>(fields)?;
+                Ok(Self::Pointer(ChainPointer {
+                    slot_number: Slot::from_plutus_data(field_0)?,
+                    transaction_index: TransactionIndex::from_plutus_data(field_1)?,
+                    certificate_index: CertificateIndex::from_plutus_data(field_2)?,
+                }))
+            }
+            _ => Err(PlutusDataError::UnexpectedPlutusInvariant {
+                wanted: "Constr with tag 0 or 1".to_owned(),
+                got: tag.to_string(),
             }),
         }
     }
@@ -467,20 +381,11 @@ impl TryFromPLA<ChainPointer> for csl::Pointer {
 //////////
 
 /// Number of slots elapsed since genesis
-#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, IsPlutusData)]
+#[is_plutus_data_derive_strategy = "Newtype"]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "lbf", derive(Json))]
 pub struct Slot(pub BigInt);
-
-impl IsPlutusData for Slot {
-    fn to_plutus_data(&self) -> PlutusData {
-        self.0.to_plutus_data()
-    }
-
-    fn from_plutus_data(data: &PlutusData) -> Result<Self, PlutusDataError> {
-        IsPlutusData::from_plutus_data(data).map(Self)
-    }
-}
 
 impl FromCSL<csl::BigNum> for Slot {
     fn from_csl(value: &csl::BigNum) -> Self {
@@ -499,20 +404,11 @@ impl TryFromPLA<Slot> for csl::BigNum {
 //////////////////////
 
 /// Position of the certificate in a certain transaction
-#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, IsPlutusData)]
+#[is_plutus_data_derive_strategy = "Newtype"]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "lbf", derive(Json))]
 pub struct CertificateIndex(pub BigInt);
-
-impl IsPlutusData for CertificateIndex {
-    fn to_plutus_data(&self) -> PlutusData {
-        self.0.to_plutus_data()
-    }
-
-    fn from_plutus_data(data: &PlutusData) -> Result<Self, PlutusDataError> {
-        IsPlutusData::from_plutus_data(data).map(Self)
-    }
-}
 
 impl FromCSL<csl::BigNum> for CertificateIndex {
     fn from_csl(value: &csl::BigNum) -> Self {
@@ -532,20 +428,11 @@ impl TryFromPLA<CertificateIndex> for csl::BigNum {
 
 /// Position of a transaction in a given slot
 /// This is not identical to the index of a `TransactionInput`
-#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, IsPlutusData)]
+#[is_plutus_data_derive_strategy = "Newtype"]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "lbf", derive(Json))]
 pub struct TransactionIndex(pub BigInt);
-
-impl IsPlutusData for TransactionIndex {
-    fn to_plutus_data(&self) -> PlutusData {
-        self.0.to_plutus_data()
-    }
-
-    fn from_plutus_data(data: &PlutusData) -> Result<Self, PlutusDataError> {
-        IsPlutusData::from_plutus_data(data).map(Self)
-    }
-}
 
 impl FromCSL<csl::BigNum> for TransactionIndex {
     fn from_csl(value: &csl::BigNum) -> Self {

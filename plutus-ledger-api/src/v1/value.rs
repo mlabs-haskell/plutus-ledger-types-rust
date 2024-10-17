@@ -20,9 +20,7 @@ use serde_json;
 
 use crate::csl::csl_to_pla::FromCSL;
 use crate::csl::pla_to_csl::{TryFromPLA, TryFromPLAError, TryToCSL};
-use crate::plutus_data::{
-    verify_constr_fields, IsPlutusData, PlutusData, PlutusDataError, PlutusType,
-};
+use crate::plutus_data::{IsPlutusData, PlutusData, PlutusDataError};
 use crate::utils::aux::{singleton, union_b_tree_maps_with, union_btree_maps_with};
 use crate::v1::crypto::LedgerBytes;
 use crate::v1::script::{MintingPolicyHash, ScriptHash};
@@ -643,7 +641,7 @@ impl TryFromPLA<TokenName> for csl::AssetName {
 ////////////////
 
 /// AssetClass is uniquely identifying a specific asset
-#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, IsPlutusData)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "lbf", derive(Json))]
 pub struct AssetClass {
@@ -657,41 +655,6 @@ impl fmt::Display for AssetClass {
             write!(f, "{}", self.currency_symbol)
         } else {
             write!(f, "{}.{}", self.currency_symbol, self.token_name)
-        }
-    }
-}
-
-impl IsPlutusData for AssetClass {
-    fn to_plutus_data(&self) -> PlutusData {
-        PlutusData::Constr(
-            BigInt::from(0),
-            vec![
-                self.currency_symbol.to_plutus_data(),
-                self.token_name.to_plutus_data(),
-            ],
-        )
-    }
-
-    fn from_plutus_data(data: &PlutusData) -> Result<Self, PlutusDataError> {
-        match data {
-            PlutusData::Constr(flag, fields) => match u32::try_from(flag) {
-                Ok(0) => {
-                    verify_constr_fields(fields, 2)?;
-                    Ok(AssetClass {
-                        currency_symbol: CurrencySymbol::from_plutus_data(&fields[0])?,
-                        token_name: TokenName::from_plutus_data(&fields[1])?,
-                    })
-                }
-                _ => Err(PlutusDataError::UnexpectedPlutusInvariant {
-                    wanted: "Constr field between 0 and 1".to_owned(),
-                    got: flag.to_string(),
-                }),
-            },
-
-            _ => Err(PlutusDataError::UnexpectedPlutusType {
-                wanted: PlutusType::Constr,
-                got: PlutusType::from(data),
-            }),
         }
     }
 }

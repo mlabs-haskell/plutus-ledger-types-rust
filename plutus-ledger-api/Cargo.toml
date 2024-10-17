@@ -23,11 +23,12 @@ impl_ops = "0.1.1"
 chrono = { version = "0.4.34", optional = true }
 cardano-serialization-lib = "12.1.0"
 anyhow = "1.0.86"
+plutus-data = { path = ".extras/plutus-data-0", features = [ "derive" ]}
 
 [features]
 default = []
-serde = ["dep:serde", "num-bigint/serde", "dep:serde_json"]
-lbf = ["dep:lbr-prelude", "dep:serde_json"]
+serde = ["dep:serde", "num-bigint/serde", "dep:serde_json", "plutus-data/serde"]
+lbf = ["dep:lbr-prelude", "dep:serde_json", "plutus-data/lbf"]
 chrono = ["dep:chrono"]
 
 [dev-dependencies]
