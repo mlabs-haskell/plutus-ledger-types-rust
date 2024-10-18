@@ -672,3 +672,13 @@ mod test {
         assert_eq!(token_name.try_into_string().unwrap(), name);
     }
 }
+
+////////////////
+// Lovelace //
+////////////////
+
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, IsPlutusData)]
+#[is_plutus_data_derive_strategy = "Newtype"]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "lbf", derive(Json))]
+pub struct Lovelace(pub BigInt);
