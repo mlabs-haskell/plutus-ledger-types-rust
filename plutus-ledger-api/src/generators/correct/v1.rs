@@ -8,7 +8,7 @@ use crate::v1::address::{
     Address, CertificateIndex, ChainPointer, Credential, Slot, StakingCredential, TransactionIndex,
 };
 use crate::v1::assoc_map::AssocMap;
-use crate::v1::crypto::{Ed25519PubKeyHash, LedgerBytes, PaymentPubKeyHash};
+use crate::v1::crypto::{Ed25519PubKeyHash, LedgerBytes, PaymentPubKeyHash, StakePubKeyHash};
 use crate::v1::datum::{Datum, DatumHash};
 use crate::v1::interval::{Extended, Interval, LowerBound, PlutusInterval, UpperBound};
 use crate::v1::redeemer::{Redeemer, RedeemerHash};
@@ -17,6 +17,7 @@ use crate::v1::transaction::{
     DCert, POSIXTime, ScriptContext, ScriptPurpose, TransactionHash, TransactionInfo,
     TransactionInput, TransactionOutput, TxInInfo,
 };
+use crate::v1::value::Lovelace;
 use crate::v2::value::{AssetClass, CurrencySymbol, TokenName, Value};
 use num_bigint::BigInt;
 use proptest::collection::btree_map;
@@ -401,4 +402,12 @@ pub fn arb_transaction_info() -> impl Strategy<Value = TransactionInfo> {
 pub fn arb_script_context() -> impl Strategy<Value = ScriptContext> {
     (arb_script_purpose(), arb_transaction_info())
         .prop_map(|(purpose, tx_info)| ScriptContext { purpose, tx_info })
+}
+
+pub fn arb_lovelace() -> impl Strategy<Value = Lovelace> {
+    arb_natural(1).prop_map(Lovelace)
+}
+
+pub fn arb_stake_pub_key_hash() -> impl Strategy<Value = StakePubKeyHash> {
+    arb_ed25519_pub_key_hash().prop_map(StakePubKeyHash)
 }
