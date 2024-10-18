@@ -1,4 +1,3 @@
-use lbr_prelude::generators::correct::arb_integer;
 use proptest::{
     collection::vec,
     option,
@@ -7,9 +6,12 @@ use proptest::{
 };
 
 use crate::{
-    generators::correct::v1::{
-        arb_currency_symbol, arb_datum, arb_lovelace, arb_payment_pub_key_hash,
-        arb_stake_pub_key_hash, arb_staking_credential, arb_transaction_input,
+    generators::correct::{
+        primitive::arb_integer,
+        v1::{
+            arb_currency_symbol, arb_datum, arb_lovelace, arb_payment_pub_key_hash,
+            arb_stake_pub_key_hash, arb_staking_credential, arb_transaction_input,
+        },
     },
     v3::{
         ratio::Rational,
