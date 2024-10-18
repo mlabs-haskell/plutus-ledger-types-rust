@@ -38,6 +38,7 @@ use super::{
 /// This must include the target address, an optional datum, an optional reference script, and the
 /// amount of output tokens
 #[derive(Clone, Debug, PartialEq, Eq, IsPlutusData)]
+#[is_plutus_data_derive_strategy = "Constr"]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "lbf", derive(Json))]
 pub struct TransactionOutput {
@@ -164,6 +165,7 @@ impl TryFromPLA<TransactionOutputWithExtraInfo<'_>> for csl::TransactionOutput {
 
 /// An input of a pending transaction.
 #[derive(Clone, Debug, PartialEq, Eq, IsPlutusData)]
+#[is_plutus_data_derive_strategy = "Constr"]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "lbf", derive(Json))]
 pub struct TxInInfo {
@@ -182,6 +184,7 @@ impl From<(TransactionInput, TransactionOutput)> for TxInInfo {
 
 /// A pending transaction as seen by validator scripts, also known as TxInfo in Plutus
 #[derive(Debug, PartialEq, Eq, Clone, IsPlutusData)]
+#[is_plutus_data_derive_strategy = "Constr"]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "lbf", derive(Json))]
 pub struct TransactionInfo {
@@ -230,6 +233,7 @@ impl TryFromPLA<WithdrawalsWithExtraInfo<'_>> for csl::Withdrawals {
 
 /// The context that is presented to the currently-executing script.
 #[derive(Debug, PartialEq, Eq, Clone, IsPlutusData)]
+#[is_plutus_data_derive_strategy = "Constr"]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "lbf", derive(Json))]
 pub struct ScriptContext {

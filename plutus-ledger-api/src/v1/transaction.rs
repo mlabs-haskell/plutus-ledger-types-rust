@@ -31,6 +31,7 @@ use crate::{
 /// Also know as `TxOutRef` from Plutus, this identifies a UTxO by its transacton hash and index
 /// inside the transaction
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, IsPlutusData)]
+#[is_plutus_data_derive_strategy = "Constr"]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "lbf", derive(Json))]
 pub struct TransactionInput {
@@ -89,6 +90,7 @@ impl TryFromPLA<Vec<TransactionInput>> for csl::TransactionInputs {
 /// Also known as Transaction ID or `TxID`.
 /// Note: Plutus docs might incorrectly state that it uses SHA256.
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, IsPlutusData)]
+#[is_plutus_data_derive_strategy = "Constr"]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "lbf", derive(Json))]
 pub struct TransactionHash(pub LedgerBytes);
@@ -121,6 +123,7 @@ impl TryFromPLA<TransactionHash> for csl::TransactionHash {
 /// This must include the target address, the hash of the datum attached, and the amount of output
 /// tokens
 #[derive(Clone, Debug, PartialEq, Eq, IsPlutusData)]
+#[is_plutus_data_derive_strategy = "Constr"]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "lbf", derive(Json))]
 pub struct TransactionOutput {
@@ -181,6 +184,7 @@ pub type POSIXTimeRange = PlutusInterval<POSIXTime>;
 
 /// An input of a pending transaction.
 #[derive(Clone, Debug, PartialEq, Eq, IsPlutusData)]
+#[is_plutus_data_derive_strategy = "Constr"]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "lbf", derive(Json))]
 pub struct TxInInfo {
@@ -200,6 +204,7 @@ impl From<(TransactionInput, TransactionOutput)> for TxInInfo {
 
 /// Partial representation of digests of certificates on the ledger.
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Hash, IsPlutusData)]
+#[is_plutus_data_derive_strategy = "Constr"]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "lbf", derive(Json))]
 pub enum DCert {
@@ -233,6 +238,7 @@ pub enum DCert {
 
 /// The purpose of the script that's currently running.
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Hash, IsPlutusData)]
+#[is_plutus_data_derive_strategy = "Constr"]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "lbf", derive(Json))]
 pub enum ScriptPurpose {
@@ -248,6 +254,7 @@ pub enum ScriptPurpose {
 
 /// A pending transaction as seen by validator scripts, also known as TxInfo in Plutus
 #[derive(Debug, PartialEq, Eq, Clone, IsPlutusData)]
+#[is_plutus_data_derive_strategy = "Constr"]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "lbf", derive(Json))]
 pub struct TransactionInfo {
@@ -269,6 +276,7 @@ pub struct TransactionInfo {
 
 /// The context that is presented to the currently-executing script.
 #[derive(Debug, PartialEq, Eq, Clone, IsPlutusData)]
+#[is_plutus_data_derive_strategy = "Constr"]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "lbf", derive(Json))]
 pub struct ScriptContext {

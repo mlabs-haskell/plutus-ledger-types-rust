@@ -26,6 +26,7 @@ use crate::{
 /// directly retrieved. In case of a datum hash, an off-chain indexer is required to find the
 /// associated datum by its hash.
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, IsPlutusData)]
+#[is_plutus_data_derive_strategy = "Constr"]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub enum OutputDatum {
     None,

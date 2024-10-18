@@ -13,13 +13,12 @@ use crate::v1::script::ValidatorHash;
 #[cfg(feature = "lbf")]
 use lbr_prelude::json::{self, Error, Json};
 use num_bigint::BigInt;
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Serialize};
 
 /////////////
 // Address //
 /////////////
-
-#[cfg(feature = "serde")]
-use serde::{Deserialize, Serialize};
 
 /// Shelley Address for wallets or validators
 ///
@@ -27,6 +26,7 @@ use serde::{Deserialize, Serialize};
 /// In order to serialize an address to `bech32`, the network kind must be known.
 /// For a better understanding of all the Cardano address types, read [CIP 19](https://cips.cardano.org/cips/cip19/)
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, IsPlutusData)]
+#[is_plutus_data_derive_strategy = "Constr"]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "lbf", derive(Json))]
 pub struct Address {
@@ -125,6 +125,7 @@ impl std::fmt::Display for AddressWithExtraInfo<'_> {
 
 /// A public key hash or validator hash credential (used as a payment or a staking credential)
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, IsPlutusData)]
+#[is_plutus_data_derive_strategy = "Constr"]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub enum Credential {
     PubKey(Ed25519PubKeyHash),
