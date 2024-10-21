@@ -11,7 +11,12 @@ use crate::plutus_data::{IsPlutusData, PlutusData, PlutusDataError};
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "lbf", derive(Json))]
-pub struct Rational(pub BigInt, pub BigInt);
+pub struct Rational(
+    /// numerator
+    pub BigInt,
+    /// denominator
+    pub BigInt,
+);
 
 impl IsPlutusData for Rational {
     fn to_plutus_data(&self) -> PlutusData {

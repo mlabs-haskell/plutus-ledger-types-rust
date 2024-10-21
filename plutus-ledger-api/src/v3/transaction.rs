@@ -65,15 +65,30 @@ pub enum Delegatee {
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "lbf", derive(Json))]
 pub enum TxCert {
+    /// Register staking credential with an optional deposit amount
     RegStaking(StakingCredential, Option<Lovelace>),
+    /// Un-Register staking credential with an optional refund amount
     UnRegStaking(StakingCredential, Option<Lovelace>),
+    /// Delegate staking credential to a Delegatee
     DelegStaking(StakingCredential, Delegatee),
+    /// Register and delegate staking credential to a Delegatee in one certificate. Note that deposit is mandatory.
     RegDeleg(StakingCredential, Delegatee, Lovelace),
+    /// Register a DRep with a deposit value. The optional anchor is omitted.
     RegDRep(DRepCredential, Lovelace),
+    /// Update a DRep. The optional anchor is omitted.
     UpdateDRep(DRepCredential),
+    /// UnRegister a DRep with mandatory refund value
     UnRegDRep(DRepCredential, Lovelace),
-    PoolRegister(PaymentPubKeyHash, PaymentPubKeyHash),
+    /// A digest of the PoolParams
+    PoolRegister(
+        /// pool id
+        PaymentPubKeyHash,
+        // pool vrf
+        PaymentPubKeyHash,
+    ),
+    /// The retirement certificate and the Epoch in which the retirement will take place
     PoolRetire(PaymentPubKeyHash, BigInt),
+    /// Authorize a Hot credential for a specific Committee member's cold credential
     AuthHotCommittee(ColdCommitteeCredential, HotCommitteeCredential),
     ResignColdCommittee(ColdCommitteeCredential),
 }
@@ -98,6 +113,7 @@ pub enum Vote {
     Abstain,
 }
 
+/// Similar to TransactionInput, but for GovernanceAction.
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, IsPlutusData)]
 #[is_plutus_data_derive_strategy = "Constr"]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
@@ -112,7 +128,9 @@ pub struct GovernanceActionId {
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "lbf", derive(Json))]
 pub struct Committee {
+    /// Committee members with epoch number when each of them expires
     pub members: AssocMap<ColdCommitteeCredential, BigInt>,
+    /// Quorum of the committee that is necessary for a successful vote
     pub quorum: Rational,
 }
 
@@ -121,6 +139,7 @@ pub struct Committee {
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "lbf", derive(Json))]
 pub struct Constitution {
+    /// Optional guardrail script
     pub constitution_script: Option<ScriptHash>,
 }
 
@@ -134,6 +153,7 @@ pub struct ProtocolVersion {
 }
 
 // TODO(chfanghr): check invariant according to https://github.com/IntersectMBO/plutus/blob/bb33f082d26f8b6576d3f0d423be53eddfb6abd8/plutus-ledger-api/src/PlutusLedgerApi/V3/Contexts.hs#L338-L364
+/// A Plutus Data object containing proposed parameter changes.
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, IsPlutusData)]
 #[is_plutus_data_derive_strategy = "Newtype"]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
@@ -145,19 +165,34 @@ pub struct ChangeParameters(pub PlutusData);
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "lbf", derive(Json))]
 pub enum GovernanceAction {
+    /// Propose to change the protocol parameters
     ParameterChange(
         Option<GovernanceActionId>,
         ChangeParameters,
+        // The hash of the constitution script
         Option<ScriptHash>,
     ),
+    /// Propose to update protocol version
     HardForkInitiation(Option<GovernanceActionId>, ProtocolVersion),
-    TreasuryWithdrawals(AssocMap<Credential, Lovelace>, Option<ScriptHash>),
+    /// Propose to withdraw from the cardano treasury
+    TreasuryWithdrawals(
+        AssocMap<Credential, Lovelace>,
+        // The hash of the constitution script
+        Option<ScriptHash>,
+    ),
+    /// Propose to create a state of no-confidence in the current constitutional committee
     NoConfidence(Option<GovernanceActionId>),
+    /// Propose to update the members of the constitutional committee and/or its signature threshold and/or terms
     UpdateCommittee(
         Option<GovernanceActionId>,
+        /// Committee members to be removed
         Vec<ColdCommitteeCredential>,
+        /// Committee members to be added
         AssocMap<ColdCommitteeCredential, BigInt>,
+        /// New quorum
+        Rational,
     ),
+    /// Propose to modify the constitution or its guardrail script
     NewConstitution(Option<GovernanceActionId>, Constitution),
     InfoAction,
 }
@@ -180,9 +215,17 @@ pub enum ScriptPurpose {
     Minting(CurrencySymbol),
     Spending(TransactionInput),
     Rewarding(Credential),
-    Certifying(BigInt, TxCert),
+    Certifying(
+        /// 0-based index of the given `TxCert` in `the `tx_certs` field of the `TransactionInfo`
+        BigInt,
+        TxCert,
+    ),
     Voting(Voter),
-    Proposing(BigInt, ProtocolProcedure),
+    Proposing(
+        /// 0-based index of the given `ProposalProcedure` in `protocol_procedures` field of the `TransactionInfo`
+        BigInt,
+        ProtocolProcedure,
+    ),
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, IsPlutusData)]

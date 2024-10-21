@@ -153,9 +153,10 @@ pub fn arb_governance_action() -> impl Strategy<Value = GovernanceAction> {
         (
             option::of(arb_governance_action_id()),
             vec(arb_cold_committee_credential(), 5),
-            arb_assoc_map(arb_cold_committee_credential(), arb_integer())
+            arb_assoc_map(arb_cold_committee_credential(), arb_integer()),
+            arb_rational()
         )
-            .prop_map(|(g, c, cm)| GovernanceAction::UpdateCommittee(g, c, cm)),
+            .prop_map(|(g, c, cm, q)| GovernanceAction::UpdateCommittee(g, c, cm, q)),
         (option::of(arb_governance_action_id()), arb_constitution())
             .prop_map(|(g, c)| GovernanceAction::NewConstitution(g, c)),
         Just(GovernanceAction::InfoAction)
