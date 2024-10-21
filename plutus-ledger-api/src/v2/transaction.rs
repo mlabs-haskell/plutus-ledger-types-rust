@@ -9,6 +9,7 @@ use num_bigint::BigInt;
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
+use crate as plutus_ledger_api;
 use crate::csl::csl_to_pla::{FromCSL, TryFromCSL, TryFromCSLError, TryToPLA};
 use crate::csl::pla_to_csl::{TryFromPLA, TryFromPLAError, TryToCSL};
 use crate::plutus_data::IsPlutusData;

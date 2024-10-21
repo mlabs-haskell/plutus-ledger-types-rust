@@ -1,4 +1,6 @@
-use crate::plutus_data::{self, PlutusData, PlutusDataError};
+use crate::plutus_data::PlutusDataError;
+use crate::plutus_data::{self, PlutusData};
+
 use num_bigint::BigInt;
 
 pub fn case_plutus_data<'a, T: 'a>(

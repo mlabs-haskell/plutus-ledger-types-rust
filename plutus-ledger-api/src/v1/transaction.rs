@@ -16,6 +16,7 @@ use super::{
     value::{CurrencySymbol, Value},
 };
 
+use crate as plutus_ledger_api;
 use crate::csl::{csl_to_pla::FromCSL, pla_to_csl::TryFromPLA};
 use crate::{
     csl::pla_to_csl::{TryFromPLAError, TryToCSL},

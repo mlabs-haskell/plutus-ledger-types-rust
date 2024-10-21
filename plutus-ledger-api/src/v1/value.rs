@@ -18,6 +18,7 @@ use serde::{Deserialize, Serialize};
 #[cfg(feature = "lbf")]
 use serde_json;
 
+use crate as plutus_ledger_api;
 use crate::csl::csl_to_pla::FromCSL;
 use crate::csl::pla_to_csl::{TryFromPLA, TryFromPLAError, TryToCSL};
 use crate::plutus_data::{IsPlutusData, PlutusData, PlutusDataError};

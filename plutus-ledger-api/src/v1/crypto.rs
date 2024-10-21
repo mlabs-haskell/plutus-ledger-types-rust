@@ -3,13 +3,16 @@ use cardano_serialization_lib as csl;
 use data_encoding::HEXLOWER;
 #[cfg(feature = "lbf")]
 use lbr_prelude::json::{Error, Json};
-use plutus_data::IsPlutusData;
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
-use crate::csl::{
-    csl_to_pla::FromCSL,
-    pla_to_csl::{TryFromPLA, TryFromPLAError},
+use crate as plutus_ledger_api;
+use crate::{
+    csl::{
+        csl_to_pla::FromCSL,
+        pla_to_csl::{TryFromPLA, TryFromPLAError},
+    },
+    plutus_data::IsPlutusData,
 };
 
 ///////////////////////

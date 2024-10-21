@@ -7,6 +7,7 @@ use lbr_prelude::json::{self, Error, Json};
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
+use crate as plutus_ledger_api;
 pub use crate::v1::datum::{Datum, DatumHash};
 use crate::{
     csl::{
@@ -16,6 +17,7 @@ use crate::{
     plutus_data::IsPlutusData,
 };
 
+// use crate as plutus_data/
 /////////////////
 // OutputDatum //
 /////////////////

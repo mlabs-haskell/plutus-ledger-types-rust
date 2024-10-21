@@ -1,12 +1,13 @@
 //! Types related to PlutusInterval
+
 use crate::feature_traits::FeatureTraits;
-use crate::plutus_data::{IsPlutusData, PlutusData, PlutusDataError};
+use crate::plutus_data::{
+    parse_constr, parse_constr_with_tag, parse_fixed_len_constr_fields, IsPlutusData, PlutusData,
+    PlutusDataError,
+};
 #[cfg(feature = "lbf")]
 use lbr_prelude::json::Json;
 use num_bigint::BigInt;
-use plutus_data::is_plutus_data::aux::{
-    parse_constr, parse_constr_with_tag, parse_fixed_len_constr_fields,
-};
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 use std::cmp;
