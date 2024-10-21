@@ -1,3 +1,7 @@
+//! Proptest strategies for Plutus V3 types
+//!
+//! These strategies always return valid values.
+
 use proptest::{
     collection::vec,
     option,

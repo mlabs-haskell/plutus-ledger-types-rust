@@ -1,3 +1,5 @@
+//! Types related to Cardano transactions.
+
 #[cfg(feature = "lbf")]
 use lbr_prelude::json::Json;
 use num_bigint::BigInt;

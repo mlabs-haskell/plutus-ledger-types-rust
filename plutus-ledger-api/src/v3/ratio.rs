@@ -1,3 +1,5 @@
+//! Types related to rational values
+
 #[cfg(feature = "lbf")]
 use lbr_prelude::json::Json;
 use num_bigint::BigInt;
