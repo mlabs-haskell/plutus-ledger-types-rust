@@ -13,7 +13,6 @@
           ];
           extraSources = [
             config.packages.is-plutus-data-derive-rust-src
-            config.packages.plutus-data-rust-src
           ];
         };
 
