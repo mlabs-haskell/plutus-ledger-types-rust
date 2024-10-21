@@ -34,18 +34,22 @@ use super::{
     v2::{arb_transaction_output, arb_tx_in_info},
 };
 
+/// Strategy to generate cold committee credentials
 pub fn arb_cold_committee_credential() -> impl Strategy<Value = ColdCommitteeCredential> {
     arb_credential().prop_map(ColdCommitteeCredential)
 }
 
+/// Strategy to generate hot committee credentials
 pub fn arb_hot_committee_credential() -> impl Strategy<Value = HotCommitteeCredential> {
     arb_credential().prop_map(HotCommitteeCredential)
 }
 
+/// Strategy to generate DRep credentials
 pub fn arb_d_rep_credential() -> impl Strategy<Value = DRepCredential> {
     arb_credential().prop_map(DRepCredential)
 }
 
+/// Strategy to generate DReps
 pub fn arb_d_rep() -> impl Strategy<Value = DRep> {
     prop_oneof![
         arb_d_rep_credential().prop_map(DRep::DRep),
@@ -54,6 +58,7 @@ pub fn arb_d_rep() -> impl Strategy<Value = DRep> {
     ]
 }
 
+/// Strategy to generate delegatees
 pub fn arb_delegatee() -> impl Strategy<Value = Delegatee> {
     prop_oneof![
         arb_stake_pub_key_hash().prop_map(Delegatee::Stake),
@@ -62,6 +67,7 @@ pub fn arb_delegatee() -> impl Strategy<Value = Delegatee> {
     ]
 }
 
+/// Strategy to generate tx certs
 pub fn arb_tx_cert() -> impl Strategy<Value = TxCert> {
     prop_oneof![
         (arb_staking_credential(), option::of(arb_lovelace()))
@@ -86,6 +92,7 @@ pub fn arb_tx_cert() -> impl Strategy<Value = TxCert> {
     ]
 }
 
+/// Strategy to generate voters
 pub fn arb_voter() -> impl Strategy<Value = Voter> {
     prop_oneof![
         arb_hot_committee_credential().prop_map(Voter::CommitteeVoter),
@@ -94,10 +101,12 @@ pub fn arb_voter() -> impl Strategy<Value = Voter> {
     ]
 }
 
+/// Strategy to generate votes
 pub fn arb_vote() -> impl Strategy<Value = Vote> {
     prop_oneof![Just(Vote::VoteNo), Just(Vote::VoteYes), Just(Vote::Abstain)]
 }
 
+/// Strategy to generate governance action ids
 pub fn arb_governance_action_id() -> impl Strategy<Value = GovernanceActionId> {
     (arb_transaction_hash(), arb_integer()).prop_map(|(tx_id, gov_action_id)| GovernanceActionId {
         tx_id,
@@ -105,6 +114,7 @@ pub fn arb_governance_action_id() -> impl Strategy<Value = GovernanceActionId> {
     })
 }
 
+/// Strategy to generate committees
 pub fn arb_committee() -> impl Strategy<Value = Committee> {
     (
         arb_assoc_map(arb_cold_committee_credential(), arb_integer()),
@@ -113,24 +123,29 @@ pub fn arb_committee() -> impl Strategy<Value = Committee> {
         .prop_map(|(members, quorum)| Committee { members, quorum })
 }
 
+/// Strategy to generate rationals
 pub fn arb_rational() -> impl Strategy<Value = Rational> {
     (arb_integer(), arb_integer()).prop_map(|(n, d)| Rational(n, d))
 }
 
+/// Strategy to generate constitutions
 pub fn arb_constitution() -> impl Strategy<Value = Constitution> {
     option::of(arb_script_hash()).prop_map(|constitution_script| Constitution {
         constitution_script,
     })
 }
 
+/// Strategy to generate protocol versions
 pub fn arb_protocol_version() -> impl Strategy<Value = ProtocolVersion> {
-    (arb_integer(), arb_integer()).prop_map(|(major, minor)| ProtocolVersion { major, minor })
+    (arb_natural(1), arb_natural(1)).prop_map(|(major, minor)| ProtocolVersion { major, minor })
 }
 
+/// Strategy to generate change parameters
 pub fn arb_change_parameters() -> impl Strategy<Value = ChangeParameters> {
     arb_plutus_data().prop_map(ChangeParameters)
 }
 
+/// Strategy to generate governance actions
 pub fn arb_governance_action() -> impl Strategy<Value = GovernanceAction> {
     prop_oneof![
         (
@@ -163,6 +178,7 @@ pub fn arb_governance_action() -> impl Strategy<Value = GovernanceAction> {
     ]
 }
 
+/// Strategy to generate protocol procedures
 pub fn arb_protocol_procedure() -> impl Strategy<Value = ProtocolProcedure> {
     (arb_lovelace(), arb_credential(), arb_governance_action()).prop_map(|(l, c, g)| {
         ProtocolProcedure {
@@ -173,6 +189,7 @@ pub fn arb_protocol_procedure() -> impl Strategy<Value = ProtocolProcedure> {
     })
 }
 
+/// Strategy to generate script purposes
 pub fn arb_script_purpose() -> impl Strategy<Value = ScriptPurpose> {
     prop_oneof![
         arb_currency_symbol().prop_map(ScriptPurpose::Minting),
@@ -184,6 +201,7 @@ pub fn arb_script_purpose() -> impl Strategy<Value = ScriptPurpose> {
     ]
 }
 
+/// Strategy to generate script info
 pub fn arb_script_info() -> impl Strategy<Value = ScriptInfo> {
     prop_oneof![
         arb_currency_symbol().prop_map(ScriptInfo::Minting),
@@ -196,6 +214,7 @@ pub fn arb_script_info() -> impl Strategy<Value = ScriptInfo> {
     ]
 }
 
+/// Strategy to generate transaction info
 pub fn arb_transaction_info() -> impl Strategy<Value = TransactionInfo> {
     (
         vec(arb_tx_in_info(), 5),
@@ -258,6 +277,7 @@ pub fn arb_transaction_info() -> impl Strategy<Value = TransactionInfo> {
         )
 }
 
+/// Strategy to generate script contexts
 pub fn arb_script_context() -> impl Strategy<Value = ScriptContext> {
     (arb_transaction_info(), arb_redeemer(), arb_script_info()).prop_map(
         |(tx_info, redeemer, script_info)| ScriptContext {
