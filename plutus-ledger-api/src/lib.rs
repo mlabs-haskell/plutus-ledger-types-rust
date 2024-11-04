@@ -6,6 +6,7 @@ pub mod lamval;
 pub mod plutus_data;
 pub mod v1;
 pub mod v2;
+pub mod v3;
 #[cfg(feature = "lbf")]
 pub use lbr_prelude::json;
 pub mod csl;

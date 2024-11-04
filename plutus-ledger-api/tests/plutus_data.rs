@@ -338,6 +338,12 @@ mod plutusdata_roundtrip_tests {
             fn v1_script_context(val in arb_script_context()) {
                 assert_eq!(val, from_to_plutus_data(&val)?)
             }
+
+
+            #[test]
+            fn v1_lovelace(val in arb_lovelace()) {
+                assert_eq!(val, from_to_plutus_data(&val)?)
+            }
         }
     }
     mod golden_v2 {
@@ -403,6 +409,124 @@ mod plutusdata_roundtrip_tests {
             #[test]
             fn v2_script_context(val in arb_script_context()) {
                 assert_eq!(val, from_to_plutus_data(&val)?)
+            }
+        }
+    }
+
+    mod prop_v3 {
+        use super::from_to_plutus_data;
+        use plutus_ledger_api::generators::correct::v3::*;
+        use proptest::prelude::*;
+
+        proptest! {
+            #[test]
+            fn v3_cold_committee_credential(val in arb_cold_committee_credential()) {
+                assert_eq!(val, from_to_plutus_data(&val)?);
+            }
+
+            #[test]
+            fn v3_hot_committee_credential(val in arb_hot_committee_credential()) {
+                assert_eq!(val, from_to_plutus_data(&val)?);
+            }
+
+            #[test]
+            fn v3_d_rep_credential(val in arb_d_rep_credential()) {
+                assert_eq!(val, from_to_plutus_data(&val)?);
+            }
+
+
+            #[test]
+            fn v3_d_rep(val in arb_d_rep()) {
+                assert_eq!(val, from_to_plutus_data(&val)?);
+            }
+
+
+            #[test]
+            fn v3_delegatee(val in arb_delegatee()) {
+                assert_eq!(val, from_to_plutus_data(&val)?);
+            }
+
+
+            #[test]
+            fn v3_tx_cert(val in arb_tx_cert()) {
+                assert_eq!(val, from_to_plutus_data(&val)?);
+            }
+
+
+            #[test]
+            fn v3_voter(val in arb_voter()) {
+                assert_eq!(val, from_to_plutus_data(&val)?);
+            }
+
+
+            #[test]
+            fn v3_vote(val in arb_vote()) {
+                assert_eq!(val, from_to_plutus_data(&val)?);
+            }
+
+
+            #[test]
+            fn v3_governance_action_id(val in arb_governance_action_id()) {
+                assert_eq!(val, from_to_plutus_data(&val)?);
+            }
+
+            #[test]
+            fn v3_committee(val in arb_committee()) {
+                assert_eq!(val, from_to_plutus_data(&val)?);
+            }
+
+            #[test]
+            fn v3_rational(val in arb_rational()) {
+                assert_eq!(val, from_to_plutus_data(&val)?);
+            }
+
+            #[test]
+            fn v3_constitution(val in arb_constitution()) {
+                assert_eq!(val, from_to_plutus_data(&val)?);
+            }
+
+
+            #[test]
+            fn v3_protocol_version(val in arb_protocol_version()) {
+                assert_eq!(val, from_to_plutus_data(&val)?);
+            }
+
+
+            #[test]
+            fn v3_change_parameters(val in arb_change_parameters()) {
+                assert_eq!(val, from_to_plutus_data(&val)?);
+            }
+
+
+            #[test]
+            fn v3_governance_action(val in arb_governance_action()) {
+                assert_eq!(val, from_to_plutus_data(&val)?);
+            }
+
+            #[test]
+            fn v3_protocol_procedure(val in arb_protocol_procedure()) {
+                assert_eq!(val, from_to_plutus_data(&val)?);
+            }
+
+            #[test]
+            fn v3_script_purpose(val in arb_script_purpose()) {
+                assert_eq!(val, from_to_plutus_data(&val)?);
+            }
+
+            #[test]
+            fn v3_script_info(val in arb_script_info()) {
+                assert_eq!(val, from_to_plutus_data(&val)?);
+            }
+
+
+            #[test]
+            fn v3_transaction_info(val in arb_transaction_info()) {
+                assert_eq!(val, from_to_plutus_data(&val)?);
+            }
+
+            #[test]
+            fn v3_script_context(val in arb_script_context()) {
+                assert_eq!(val, from_to_plutus_data(&val)?);
             }
         }
     }
