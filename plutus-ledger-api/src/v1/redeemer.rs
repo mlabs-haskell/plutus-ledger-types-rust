@@ -7,8 +7,9 @@ use lbr_prelude::json::Json;
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
+use crate as plutus_ledger_api;
 use crate::csl::pla_to_csl::{TryFromPLA, TryFromPLAError, TryToCSL};
-use crate::plutus_data::{IsPlutusData, PlutusData, PlutusDataError};
+use crate::plutus_data::{IsPlutusData, PlutusData};
 use crate::v1::crypto::LedgerBytes;
 
 //////////////
@@ -17,20 +18,11 @@ use crate::v1::crypto::LedgerBytes;
 
 /// Piece of information attached to a transaction when redeeming a value from a validator or a
 /// minting policy
-#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, IsPlutusData)]
+#[is_plutus_data_derive_strategy = "Newtype"]
 #[cfg_attr(feature = "lbf", derive(Json))]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct Redeemer(pub PlutusData);
-
-impl IsPlutusData for Redeemer {
-    fn to_plutus_data(&self) -> PlutusData {
-        self.0.clone()
-    }
-
-    fn from_plutus_data(data: &PlutusData) -> Result<Self, PlutusDataError> {
-        IsPlutusData::from_plutus_data(data).map(Self)
-    }
-}
 
 #[derive(Clone, Debug)]
 pub struct RedeemerWithExtraInfo<'a> {
@@ -56,17 +48,8 @@ impl TryFromPLA<RedeemerWithExtraInfo<'_>> for csl::Redeemer {
 //////////////////
 
 /// blake2b-256 hash of a datum
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq, IsPlutusData)]
+#[is_plutus_data_derive_strategy = "Newtype"]
 #[cfg_attr(feature = "lbf", derive(Json))]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct RedeemerHash(pub LedgerBytes);
-
-impl IsPlutusData for RedeemerHash {
-    fn to_plutus_data(&self) -> PlutusData {
-        self.0.to_plutus_data()
-    }
-
-    fn from_plutus_data(data: &PlutusData) -> Result<Self, PlutusDataError> {
-        IsPlutusData::from_plutus_data(data).map(Self)
-    }
-}

@@ -1,5 +1,15 @@
 //! Plutus Data related types and traits
+
+use std::collections::{BTreeMap, BTreeSet};
+
 use cardano_serialization_lib as csl;
+use num_bigint::BigInt;
+
+use crate::csl::csl_to_pla::{FromCSL, TryFromCSL, TryFromCSLError, TryToPLA};
+use crate::csl::pla_to_csl::{TryFromPLA, TryFromPLAError, TryToCSL};
+
+pub use is_plutus_data_derive::IsPlutusData;
+
 #[cfg(feature = "lbf")]
 use data_encoding::HEXLOWER;
 #[cfg(feature = "lbf")]
@@ -8,14 +18,9 @@ use lbr_prelude::error::Error;
 use lbr_prelude::json::{
     case_json_constructor, case_json_object, json_constructor, json_object, Json,
 };
-use num_bigint::BigInt;
-use std::collections::{BTreeMap, BTreeSet};
 
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
-
-use crate::csl::csl_to_pla::{FromCSL, TryFromCSL, TryFromCSLError, TryToPLA};
-use crate::csl::pla_to_csl::{TryFromPLA, TryFromPLAError, TryToCSL};
 
 /// Data representation of on-chain data such as Datums and Redeemers
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -26,6 +31,48 @@ pub enum PlutusData {
     List(Vec<PlutusData>),
     Integer(BigInt),
     Bytes(Vec<u8>),
+}
+
+#[derive(Clone, Debug)]
+pub enum PlutusType {
+    Constr,
+    Map,
+    List,
+    Integer,
+    Bytes,
+}
+
+pub trait IsPlutusData {
+    fn to_plutus_data(&self) -> PlutusData;
+
+    fn from_plutus_data(plutus_data: &PlutusData) -> Result<Self, PlutusDataError>
+    where
+        Self: Sized;
+}
+
+// TODO(chfanghr): improve error reporting
+#[derive(Clone, Debug, thiserror::Error)]
+pub enum PlutusDataError {
+    #[error("Expected a PlutusData type {wanted:?}, but got {got:?}")]
+    UnexpectedPlutusType { got: PlutusType, wanted: PlutusType },
+    #[error("Expected a PlutusData type as {wanted:?}, but got {got:?}")]
+    UnexpectedPlutusInvariant { got: String, wanted: String },
+    #[error("Expected a Plutus List with {wanted:?} elements, but got {got:?} elements")]
+    UnexpectedListLength { got: usize, wanted: usize },
+    #[error("Some internal error happened: {0}")]
+    InternalError(String),
+}
+
+impl From<&PlutusData> for PlutusType {
+    fn from(plutus_data: &PlutusData) -> Self {
+        match plutus_data {
+            PlutusData::Constr(_, _) => PlutusType::Constr,
+            PlutusData::Map(_) => PlutusType::Map,
+            PlutusData::List(_) => PlutusType::List,
+            PlutusData::Integer(_) => PlutusType::Integer,
+            PlutusData::Bytes(_) => PlutusType::Bytes,
+        }
+    }
 }
 
 impl PlutusData {
@@ -47,6 +94,35 @@ impl PlutusData {
 
     pub fn bytes(value: Vec<u8>) -> Self {
         PlutusData::Bytes(value)
+    }
+}
+
+impl IsPlutusData for PlutusData {
+    fn to_plutus_data(&self) -> PlutusData {
+        self.clone()
+    }
+
+    fn from_plutus_data(plutus_data: &PlutusData) -> Result<Self, PlutusDataError> {
+        Ok(plutus_data.clone())
+    }
+}
+
+impl TryFromCSL<csl::PlutusData> for PlutusData {
+    fn try_from_csl(value: &csl::PlutusData) -> Result<Self, TryFromCSLError> {
+        Ok(match value.kind() {
+            csl::PlutusDataKind::ConstrPlutusData => {
+                let constr_data = value.as_constr_plutus_data().unwrap();
+                let tag = BigInt::from_csl(&constr_data.alternative());
+                let args = constr_data.data().try_to_pla()?;
+                PlutusData::Constr(tag, args)
+            }
+            csl::PlutusDataKind::Map => PlutusData::Map(value.as_map().unwrap().try_to_pla()?),
+            csl::PlutusDataKind::List => PlutusData::List(value.as_list().unwrap().try_to_pla()?),
+            csl::PlutusDataKind::Integer => {
+                PlutusData::Integer(value.as_integer().unwrap().try_to_pla()?)
+            }
+            csl::PlutusDataKind::Bytes => PlutusData::Bytes(value.as_bytes().unwrap()),
+        })
     }
 }
 
@@ -166,62 +242,7 @@ impl Json for PlutusData {
     }
 }
 
-/// Deserialise a Plutus data using parsers for each variant
-pub fn case_plutus_data<'a, T>(
-    ctor_case: impl FnOnce(&'a BigInt) -> Box<dyn 'a + FnOnce(&'a Vec<PlutusData>) -> T>,
-    list_case: impl FnOnce(&'a Vec<PlutusData>) -> T,
-    int_case: impl FnOnce(&'a BigInt) -> T,
-    other_case: impl FnOnce(&'a PlutusData) -> T,
-    pd: &'a PlutusData,
-) -> T {
-    match pd {
-        PlutusData::Constr(tag, args) => ctor_case(tag)(args),
-        PlutusData::List(args) => list_case(args),
-        PlutusData::Integer(i) => int_case(i),
-        other => other_case(other),
-    }
-}
-
-pub trait IsPlutusData {
-    fn to_plutus_data(&self) -> PlutusData;
-
-    fn from_plutus_data(plutus_data: &PlutusData) -> Result<Self, PlutusDataError>
-    where
-        Self: Sized;
-}
-
-#[derive(Clone, Debug)]
-pub enum PlutusType {
-    Constr,
-    Map,
-    List,
-    Integer,
-    Bytes,
-}
-
-impl From<&PlutusData> for PlutusType {
-    fn from(plutus_data: &PlutusData) -> Self {
-        match plutus_data {
-            PlutusData::Constr(_, _) => PlutusType::Constr,
-            PlutusData::Map(_) => PlutusType::Map,
-            PlutusData::List(_) => PlutusType::List,
-            PlutusData::Integer(_) => PlutusType::Integer,
-            PlutusData::Bytes(_) => PlutusType::Bytes,
-        }
-    }
-}
-
-#[derive(Clone, Debug, thiserror::Error)]
-pub enum PlutusDataError {
-    #[error("Expected a PlutusData type {wanted:?}, but got {got:?}")]
-    UnexpectedPlutusType { got: PlutusType, wanted: PlutusType },
-    #[error("Expected a PlutusData type as {wanted:?}, but got {got:?}")]
-    UnexpectedPlutusInvariant { got: String, wanted: String },
-    #[error("Expected a Plutus List with {wanted:?} elements, but got {got:?} elements")]
-    UnexpectedListLength { got: usize, wanted: usize },
-    #[error("Some internal error happened: {0}")]
-    InternalError(String),
-}
+// MARK: Orphan IsPlutusData Instances
 
 impl IsPlutusData for BigInt {
     fn to_plutus_data(&self) -> PlutusData {
@@ -239,34 +260,63 @@ impl IsPlutusData for BigInt {
     }
 }
 
-impl IsPlutusData for bool {
+impl IsPlutusData for Vec<u8> {
     fn to_plutus_data(&self) -> PlutusData {
-        if *self {
-            PlutusData::Constr(BigInt::from(1), Vec::with_capacity(0))
-        } else {
-            PlutusData::Constr(BigInt::from(0), Vec::with_capacity(0))
-        }
+        PlutusData::Bytes(self.clone())
     }
 
     fn from_plutus_data(plutus_data: &PlutusData) -> Result<Self, PlutusDataError> {
         match plutus_data {
-            PlutusData::Constr(flag, fields) => match u32::try_from(flag) {
-                Ok(0) => {
-                    verify_constr_fields(fields, 0)?;
-                    Ok(false)
-                }
-                Ok(1) => {
-                    verify_constr_fields(fields, 0)?;
-                    Ok(true)
-                }
-                _ => Err(PlutusDataError::UnexpectedPlutusInvariant {
-                    wanted: "Constr field between 0 and 1".to_owned(),
-                    got: flag.to_string(),
-                }),
-            },
-
+            PlutusData::Bytes(bytes) => Ok(bytes.clone()),
             _ => Err(PlutusDataError::UnexpectedPlutusType {
-                wanted: PlutusType::Constr,
+                wanted: PlutusType::Bytes,
+                got: PlutusType::from(plutus_data),
+            }),
+        }
+    }
+}
+
+const BOOL_FALSE_TAG: u32 = 0;
+const BOOL_TRUE_TAG: u32 = 1;
+
+impl IsPlutusData for bool {
+    fn to_plutus_data(&self) -> PlutusData {
+        if *self {
+            PlutusData::Constr(BOOL_TRUE_TAG.into(), vec![])
+        } else {
+            PlutusData::Constr(BOOL_FALSE_TAG.into(), vec![])
+        }
+    }
+
+    fn from_plutus_data(plutus_data: &PlutusData) -> Result<Self, PlutusDataError> {
+        let (tag, fields) = parse_constr(plutus_data)?;
+        let [] = parse_fixed_len_constr_fields::<0>(fields)?;
+        match tag {
+            BOOL_TRUE_TAG => Ok(true),
+            BOOL_FALSE_TAG => Ok(false),
+            _ => Err(PlutusDataError::UnexpectedPlutusInvariant {
+                wanted: format!("Constr with tag {BOOL_TRUE_TAG} or {BOOL_FALSE_TAG}"),
+                got: tag.to_string(),
+            }),
+        }
+    }
+}
+
+impl IsPlutusData for String {
+    fn to_plutus_data(&self) -> PlutusData {
+        PlutusData::Bytes(self.as_bytes().into())
+    }
+
+    fn from_plutus_data(plutus_data: &PlutusData) -> Result<Self, PlutusDataError> {
+        match plutus_data {
+            PlutusData::Bytes(bytes) => String::from_utf8(bytes.clone()).map_err(|err| {
+                PlutusDataError::InternalError(format!(
+                    "Couldn't convert Plutus bytes to String: {:?}",
+                    err
+                ))
+            }),
+            _ => Err(PlutusDataError::UnexpectedPlutusType {
+                wanted: PlutusType::Bytes,
                 got: PlutusType::from(plutus_data),
             }),
         }
@@ -294,42 +344,8 @@ impl IsPlutusData for char {
     }
 }
 
-impl IsPlutusData for Vec<u8> {
-    fn to_plutus_data(&self) -> PlutusData {
-        PlutusData::Bytes(self.clone())
-    }
-
-    fn from_plutus_data(plutus_data: &PlutusData) -> Result<Self, PlutusDataError> {
-        match plutus_data {
-            PlutusData::Bytes(bytes) => Ok(bytes.clone()),
-            _ => Err(PlutusDataError::UnexpectedPlutusType {
-                wanted: PlutusType::Bytes,
-                got: PlutusType::from(plutus_data),
-            }),
-        }
-    }
-}
-
-impl IsPlutusData for String {
-    fn to_plutus_data(&self) -> PlutusData {
-        PlutusData::Bytes(self.as_bytes().into())
-    }
-
-    fn from_plutus_data(plutus_data: &PlutusData) -> Result<Self, PlutusDataError> {
-        match plutus_data {
-            PlutusData::Bytes(bytes) => String::from_utf8(bytes.clone()).map_err(|err| {
-                PlutusDataError::InternalError(format!(
-                    "Couldn't convert Plutus bytes to String: {:?}",
-                    err
-                ))
-            }),
-            _ => Err(PlutusDataError::UnexpectedPlutusType {
-                wanted: PlutusType::Integer,
-                got: PlutusType::from(plutus_data),
-            }),
-        }
-    }
-}
+const OPTION_SOME_TAG: u32 = 0;
+const OPTION_NONE_TAG: u32 = 1;
 
 impl<T> IsPlutusData for Option<T>
 where
@@ -337,35 +353,33 @@ where
 {
     fn to_plutus_data(&self) -> PlutusData {
         match self {
-            Some(val) => PlutusData::Constr(BigInt::from(0), vec![val.to_plutus_data()]),
-            None => PlutusData::Constr(BigInt::from(1), Vec::with_capacity(0)),
+            Some(val) => PlutusData::Constr(OPTION_SOME_TAG.into(), vec![val.to_plutus_data()]),
+            None => PlutusData::Constr(OPTION_NONE_TAG.into(), vec![]),
         }
     }
 
     fn from_plutus_data(plutus_data: &PlutusData) -> Result<Self, PlutusDataError> {
-        match plutus_data {
-            PlutusData::Constr(flag, fields) => match u32::try_from(flag) {
-                Ok(0) => {
-                    verify_constr_fields(fields, 1)?;
-                    Ok(Some(T::from_plutus_data(&fields[0])?))
-                }
-                Ok(1) => {
-                    verify_constr_fields(fields, 0)?;
-                    Ok(None)
-                }
-                _ => Err(PlutusDataError::UnexpectedPlutusInvariant {
-                    wanted: "Constr field between 0 and 1".to_owned(),
-                    got: flag.to_string(),
-                }),
-            },
+        let (tag, fields) = parse_constr(plutus_data)?;
 
-            _ => Err(PlutusDataError::UnexpectedPlutusType {
-                wanted: PlutusType::Constr,
-                got: PlutusType::from(plutus_data),
+        match tag {
+            OPTION_SOME_TAG => {
+                let [data] = parse_fixed_len_constr_fields::<1>(fields)?;
+                Ok(Some(T::from_plutus_data(data)?))
+            }
+            OPTION_NONE_TAG => {
+                let [] = parse_fixed_len_constr_fields::<0>(fields)?;
+                Ok(None)
+            }
+            _ => Err(PlutusDataError::UnexpectedPlutusInvariant {
+                wanted: format!("Constr with tag {OPTION_SOME_TAG} or {OPTION_NONE_TAG}"),
+                got: tag.to_string(),
             }),
         }
     }
 }
+
+const RESULT_ERR_TAG: u32 = 0;
+const RESULT_OK_TAG: u32 = 1;
 
 impl<T, E> IsPlutusData for Result<T, E>
 where
@@ -374,31 +388,21 @@ where
 {
     fn to_plutus_data(&self) -> PlutusData {
         match self {
-            Err(val) => PlutusData::Constr(BigInt::from(0), vec![val.to_plutus_data()]),
-            Ok(val) => PlutusData::Constr(BigInt::from(1), vec![val.to_plutus_data()]),
+            Err(err) => PlutusData::Constr(RESULT_ERR_TAG.into(), vec![err.to_plutus_data()]),
+            Ok(val) => PlutusData::Constr(RESULT_OK_TAG.into(), vec![val.to_plutus_data()]),
         }
     }
 
     fn from_plutus_data(plutus_data: &PlutusData) -> Result<Self, PlutusDataError> {
-        match plutus_data {
-            PlutusData::Constr(flag, fields) => match u32::try_from(flag) {
-                Ok(0) => {
-                    verify_constr_fields(fields, 1)?;
-                    Ok(Err(E::from_plutus_data(&fields[0])?))
-                }
-                Ok(1) => {
-                    verify_constr_fields(fields, 1)?;
-                    Ok(Ok(T::from_plutus_data(&fields[0])?))
-                }
-                _ => Err(PlutusDataError::UnexpectedPlutusInvariant {
-                    wanted: "Constr field between 0 and 1".to_owned(),
-                    got: flag.to_string(),
-                }),
-            },
+        let (tag, fields) = parse_constr(plutus_data)?;
+        let [field] = parse_fixed_len_constr_fields::<1>(fields)?;
 
-            _ => Err(PlutusDataError::UnexpectedPlutusType {
-                wanted: PlutusType::Constr,
-                got: PlutusType::from(plutus_data),
+        match tag {
+            RESULT_ERR_TAG => Ok(Err(E::from_plutus_data(field)?)),
+            RESULT_OK_TAG => Ok(Ok(T::from_plutus_data(field)?)),
+            _ => Err(PlutusDataError::UnexpectedPlutusInvariant {
+                wanted: format!("Constr with tag {RESULT_ERR_TAG} or {RESULT_OK_TAG}"),
+                got: tag.to_string(),
             }),
         }
     }
@@ -418,16 +422,8 @@ where
     }
 
     fn from_plutus_data(plutus_data: &PlutusData) -> Result<Self, PlutusDataError> {
-        match plutus_data {
-            PlutusData::List(vec) => vec
-                .iter()
-                .map(|val| T::from_plutus_data(val))
-                .collect::<Result<Vec<T>, PlutusDataError>>(),
-            _ => Err(PlutusDataError::UnexpectedPlutusType {
-                wanted: PlutusType::List,
-                got: PlutusType::from(plutus_data),
-            }),
-        }
+        let list = parse_list(plutus_data)?;
+        list.iter().map(T::from_plutus_data).collect()
     }
 }
 
@@ -451,7 +447,7 @@ where
                 .map(|val| T::from_plutus_data(val))
                 .collect::<Result<Self, PlutusDataError>>(),
             _ => Err(PlutusDataError::UnexpectedPlutusType {
-                wanted: PlutusType::Map,
+                wanted: PlutusType::List,
                 got: PlutusType::from(plutus_data),
             }),
         }
@@ -486,41 +482,21 @@ where
     }
 }
 
+const UNIT_TAG: u32 = 0;
+
 impl IsPlutusData for () {
     fn to_plutus_data(&self) -> PlutusData {
-        PlutusData::Constr(BigInt::from(0), Vec::with_capacity(0))
+        PlutusData::Constr(UNIT_TAG.into(), vec![])
     }
 
     fn from_plutus_data(plutus_data: &PlutusData) -> Result<Self, PlutusDataError> {
-        match plutus_data {
-            PlutusData::Constr(flag, fields) => match u32::try_from(flag) {
-                Ok(0) => {
-                    verify_constr_fields(fields, 0)?;
-                    Ok(())
-                }
-                _ => Err(PlutusDataError::UnexpectedPlutusInvariant {
-                    wanted: "Constr field to be 0".to_owned(),
-                    got: flag.to_string(),
-                }),
-            },
-
-            _ => Err(PlutusDataError::UnexpectedPlutusType {
-                wanted: PlutusType::Constr,
-                got: PlutusType::from(plutus_data),
-            }),
-        }
+        let fields = parse_constr_with_tag(plutus_data, UNIT_TAG)?;
+        let [] = parse_fixed_len_constr_fields::<0>(fields)?;
+        Ok(())
     }
 }
 
-impl IsPlutusData for PlutusData {
-    fn to_plutus_data(&self) -> PlutusData {
-        self.clone()
-    }
-
-    fn from_plutus_data(plutus_data: &PlutusData) -> Result<Self, PlutusDataError> {
-        Ok(plutus_data.clone())
-    }
-}
+const PAIR_TAG: u32 = 0;
 
 impl<A, B> IsPlutusData for (A, B)
 where
@@ -529,53 +505,19 @@ where
 {
     fn to_plutus_data(&self) -> PlutusData {
         PlutusData::Constr(
-            BigInt::from(0),
+            BigInt::from(PAIR_TAG),
             vec![self.0.to_plutus_data(), self.1.to_plutus_data()],
         )
     }
 
     fn from_plutus_data(plutus_data: &PlutusData) -> Result<Self, PlutusDataError> {
-        match plutus_data {
-            PlutusData::Constr(flag, fields) => match u32::try_from(flag) {
-                Ok(0) => {
-                    verify_constr_fields(fields, 2)?;
-                    Ok((
-                        A::from_plutus_data(&fields[0])?,
-                        B::from_plutus_data(&fields[1])?,
-                    ))
-                }
-                _ => Err(PlutusDataError::UnexpectedPlutusInvariant {
-                    wanted: "Constr field to be 0".to_owned(),
-                    got: flag.to_string(),
-                }),
-            },
-
-            _ => Err(PlutusDataError::UnexpectedPlutusType {
-                wanted: PlutusType::Constr,
-                got: PlutusType::from(plutus_data),
-            }),
-        }
+        let fields = parse_constr_with_tag(plutus_data, PAIR_TAG)?;
+        let [a, b] = parse_fixed_len_constr_fields::<2>(fields)?;
+        Ok((A::from_plutus_data(a)?, B::from_plutus_data(b)?))
     }
 }
 
-impl TryFromCSL<csl::PlutusData> for PlutusData {
-    fn try_from_csl(value: &csl::PlutusData) -> Result<Self, TryFromCSLError> {
-        Ok(match value.kind() {
-            csl::PlutusDataKind::ConstrPlutusData => {
-                let constr_data = value.as_constr_plutus_data().unwrap();
-                let tag = BigInt::from_csl(&constr_data.alternative());
-                let args = constr_data.data().try_to_pla()?;
-                PlutusData::Constr(tag, args)
-            }
-            csl::PlutusDataKind::Map => PlutusData::Map(value.as_map().unwrap().try_to_pla()?),
-            csl::PlutusDataKind::List => PlutusData::List(value.as_list().unwrap().try_to_pla()?),
-            csl::PlutusDataKind::Integer => {
-                PlutusData::Integer(value.as_integer().unwrap().try_to_pla()?)
-            }
-            csl::PlutusDataKind::Bytes => PlutusData::Bytes(value.as_bytes().unwrap()),
-        })
-    }
-}
+// MARK: Orphan TryFromCSL instances
 
 impl TryFromCSL<csl::PlutusList> for Vec<PlutusData> {
     fn try_from_csl(value: &csl::PlutusList) -> Result<Self, TryFromCSLError> {
@@ -643,23 +585,28 @@ impl TryFromPLA<Vec<(PlutusData, PlutusData)>> for csl::PlutusMap {
     }
 }
 
-/// Verify the number of fields contained in a PlutusData::Constr
-pub fn verify_constr_fields(
-    fields: &Vec<PlutusData>,
-    expected: usize,
-) -> Result<(), PlutusDataError> {
-    if fields.len() != expected {
-        Err(PlutusDataError::UnexpectedPlutusInvariant {
-            wanted: format!("Constr with {} fields", expected),
-            got: format!("{:?}", fields),
-        })
-    } else {
-        Ok(())
+// MARK: Aux functions
+
+/// Deserialise a Plutus data using parsers for each variant
+pub fn case_plutus_data<'a, T>(
+    ctor_case: impl FnOnce(&'a BigInt) -> Box<dyn 'a + FnOnce(&'a Vec<PlutusData>) -> T>,
+    list_case: impl FnOnce(&'a Vec<PlutusData>) -> T,
+    int_case: impl FnOnce(&'a BigInt) -> T,
+    other_case: impl FnOnce(&'a PlutusData) -> T,
+    pd: &'a PlutusData,
+) -> T {
+    match pd {
+        PlutusData::Constr(tag, args) => ctor_case(&tag)(&args),
+        PlutusData::List(args) => list_case(&args),
+        PlutusData::Integer(i) => int_case(&i),
+        other => other_case(&other),
     }
 }
 
 /// Given a vector of PlutusData, parse it as an array whose length is known at
 /// compile time.
+///
+/// This function is used by the derive macro.
 pub fn parse_fixed_len_constr_fields<const LEN: usize>(
     v: &[PlutusData],
 ) -> Result<&[PlutusData; LEN], PlutusDataError> {
@@ -672,6 +619,8 @@ pub fn parse_fixed_len_constr_fields<const LEN: usize>(
 
 /// Given a PlutusData, parse it as PlutusData::Constr and its tag as u32. Return
 /// the u32 tag and fields.
+///
+/// This function is used by the derive macro.
 pub fn parse_constr(data: &PlutusData) -> Result<(u32, &Vec<PlutusData>), PlutusDataError> {
     match data {
         PlutusData::Constr(tag, fields) => u32::try_from(tag)
@@ -688,6 +637,8 @@ pub fn parse_constr(data: &PlutusData) -> Result<(u32, &Vec<PlutusData>), Plutus
 }
 
 /// Given a PlutusData, parse it as PlutusData::Constr and verify its tag.
+///
+/// This function is used by the derive macro.
 pub fn parse_constr_with_tag(
     data: &PlutusData,
     expected_tag: u32,
@@ -697,9 +648,22 @@ pub fn parse_constr_with_tag(
     if tag != expected_tag {
         Err(PlutusDataError::UnexpectedPlutusInvariant {
             got: tag.to_string(),
-            wanted: format!("Constr tag to be: {}", expected_tag),
+            wanted: format!("Constr with tag {}", expected_tag),
         })
     } else {
         Ok(fields)
+    }
+}
+
+/// Given a PlutusData, parse it as PlutusData::List. Return the plutus data list.
+///
+/// This function is used by the derive macro.
+pub fn parse_list(data: &PlutusData) -> Result<&Vec<PlutusData>, PlutusDataError> {
+    match data {
+        PlutusData::List(list_of_plutus_data) => Ok(list_of_plutus_data),
+        _ => Err(PlutusDataError::UnexpectedPlutusType {
+            got: PlutusType::from(data),
+            wanted: PlutusType::List,
+        }),
     }
 }

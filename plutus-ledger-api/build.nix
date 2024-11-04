@@ -11,6 +11,9 @@
           extraSourceFilters = [
             (path: _type: builtins.match ".*golden$" path != null)
           ];
+          extraSources = [
+            config.packages.is-plutus-data-derive-rust-src
+          ];
         };
 
       plutus-ledger-api-rust-github-pages = pkgs.stdenv.mkDerivation {

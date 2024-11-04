@@ -1,7 +1,9 @@
 //! Types related to PlutusInterval
+
 use crate::feature_traits::FeatureTraits;
 use crate::plutus_data::{
-    verify_constr_fields, IsPlutusData, PlutusData, PlutusDataError, PlutusType,
+    parse_constr, parse_constr_with_tag, parse_fixed_len_constr_fields, IsPlutusData, PlutusData,
+    PlutusDataError,
 };
 #[cfg(feature = "lbf")]
 use lbr_prelude::json::Json;
@@ -268,26 +270,12 @@ where
     }
 
     fn from_plutus_data(data: &PlutusData) -> Result<Self, PlutusDataError> {
-        match data {
-            PlutusData::Constr(flag, fields) => match u32::try_from(flag) {
-                Ok(0) => {
-                    verify_constr_fields(fields, 2)?;
-                    Ok(PlutusInterval {
-                        from: <LowerBound<T>>::from_plutus_data(&fields[0])?,
-                        to: <UpperBound<T>>::from_plutus_data(&fields[1])?,
-                    })
-                }
-                _ => Err(PlutusDataError::UnexpectedPlutusInvariant {
-                    wanted: "Constr field to be 0".to_owned(),
-                    got: flag.to_string(),
-                }),
-            },
-
-            _ => Err(PlutusDataError::UnexpectedPlutusType {
-                wanted: PlutusType::Constr,
-                got: PlutusType::from(data),
-            }),
-        }
+        let fields = parse_constr_with_tag(data, 0)?;
+        let [field_0, field_1] = parse_fixed_len_constr_fields::<2>(fields)?;
+        Ok(Self {
+            from: IsPlutusData::from_plutus_data(field_0)?,
+            to: IsPlutusData::from_plutus_data(field_1)?,
+        })
     }
 }
 
@@ -318,26 +306,12 @@ where
     }
 
     fn from_plutus_data(data: &PlutusData) -> Result<Self, PlutusDataError> {
-        match data {
-            PlutusData::Constr(flag, fields) => match u32::try_from(flag) {
-                Ok(0) => {
-                    verify_constr_fields(fields, 2)?;
-                    Ok(UpperBound {
-                        bound: <Extended<T>>::from_plutus_data(&fields[0])?,
-                        closed: bool::from_plutus_data(&fields[1])?,
-                    })
-                }
-                _ => Err(PlutusDataError::UnexpectedPlutusInvariant {
-                    wanted: "Constr field to be 0".to_owned(),
-                    got: flag.to_string(),
-                }),
-            },
-
-            _ => Err(PlutusDataError::UnexpectedPlutusType {
-                wanted: PlutusType::Constr,
-                got: PlutusType::from(data),
-            }),
-        }
+        let fields = parse_constr_with_tag(data, 0)?;
+        let [field_0, field_1] = parse_fixed_len_constr_fields::<2>(fields)?;
+        Ok(Self {
+            bound: IsPlutusData::from_plutus_data(field_0)?,
+            closed: IsPlutusData::from_plutus_data(field_1)?,
+        })
     }
 }
 
@@ -368,26 +342,12 @@ where
     }
 
     fn from_plutus_data(data: &PlutusData) -> Result<Self, PlutusDataError> {
-        match data {
-            PlutusData::Constr(flag, fields) => match u32::try_from(flag) {
-                Ok(0) => {
-                    verify_constr_fields(fields, 2)?;
-                    Ok(LowerBound {
-                        bound: <Extended<T>>::from_plutus_data(&fields[0])?,
-                        closed: bool::from_plutus_data(&fields[1])?,
-                    })
-                }
-                _ => Err(PlutusDataError::UnexpectedPlutusInvariant {
-                    wanted: "Constr field to be 0".to_owned(),
-                    got: flag.to_string(),
-                }),
-            },
-
-            _ => Err(PlutusDataError::UnexpectedPlutusType {
-                wanted: PlutusType::Constr,
-                got: PlutusType::from(data),
-            }),
-        }
+        let fields = parse_constr_with_tag(data, 0)?;
+        let [field_0, field_1] = parse_fixed_len_constr_fields::<2>(fields)?;
+        Ok(Self {
+            bound: IsPlutusData::from_plutus_data(field_0)?,
+            closed: IsPlutusData::from_plutus_data(field_1)?,
+        })
     }
 }
 
@@ -465,31 +425,23 @@ where
     }
 
     fn from_plutus_data(data: &PlutusData) -> Result<Self, PlutusDataError> {
-        match data {
-            PlutusData::Constr(flag, fields) => match u32::try_from(flag) {
-                Ok(0) => {
-                    verify_constr_fields(fields, 0)?;
-                    Ok(Extended::NegInf)
-                }
-                Ok(1) => {
-                    verify_constr_fields(fields, 1)?;
-                    Ok(Extended::Finite(IsPlutusData::from_plutus_data(
-                        &fields[0],
-                    )?))
-                }
-                Ok(2) => {
-                    verify_constr_fields(fields, 0)?;
-                    Ok(Extended::PosInf)
-                }
-                _ => Err(PlutusDataError::UnexpectedPlutusInvariant {
-                    wanted: "Constr field between 0 and 1".to_owned(),
-                    got: flag.to_string(),
-                }),
-            },
-
-            _ => Err(PlutusDataError::UnexpectedPlutusType {
-                wanted: PlutusType::Constr,
-                got: PlutusType::from(data),
+        let (tag, fields) = parse_constr(data)?;
+        match tag {
+            0 => {
+                let [] = parse_fixed_len_constr_fields::<0>(fields)?;
+                Ok(Extended::NegInf)
+            }
+            1 => {
+                let [field] = parse_fixed_len_constr_fields::<1>(fields)?;
+                Ok(Extended::Finite(IsPlutusData::from_plutus_data(field)?))
+            }
+            2 => {
+                let [] = parse_fixed_len_constr_fields::<0>(fields)?;
+                Ok(Extended::PosInf)
+            }
+            _ => Err(PlutusDataError::UnexpectedPlutusInvariant {
+                wanted: "Constr with tag 0, 1 or 2".to_owned(),
+                got: tag.to_string(),
             }),
         }
     }

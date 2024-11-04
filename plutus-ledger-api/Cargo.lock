@@ -399,6 +399,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "is-plutus-data-derive"
+version = "0.1.0"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn",
+ "thiserror",
+]
+
+[[package]]
 name = "itertools"
 version = "0.10.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -608,6 +618,7 @@ dependencies = [
  "data-encoding",
  "goldie",
  "impl_ops",
+ "is-plutus-data-derive",
  "lbr-prelude",
  "linked-hash-map",
  "num-bigint",

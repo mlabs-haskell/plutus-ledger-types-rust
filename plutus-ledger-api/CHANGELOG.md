@@ -8,6 +8,8 @@ Changelog](https://keepachangelog.com/en/1.1.0).
 
 ### Added
 
+- Added the ability to derive `IsPlutusData` instances ([#56](https://github.com/mlabs-haskell/plutus-ledger-api-rust/pull/56))
+
 ### Changed
 
 ### Removed
