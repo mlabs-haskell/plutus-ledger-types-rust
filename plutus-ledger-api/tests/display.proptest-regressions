@@ -1,0 +1,8 @@
+# Seeds for failure cases proptest has generated in the past. It is
+# automatically read and these particular cases re-run before any
+# novel cases are generated.
+#
+# It is recommended to check this file in to source control so that
+# everyone who runs the test benefits from these saved cases.
+cc f28698f393b1933268f15226ce5938cff4237e12ddbc2a4a043362f4d8b53dd4 # shrinks to val = "ࡀA\u{ec8}a𑵐𞟨𐨀Ø\u{16d70}0ꫛ\u{fe20}"
+cc dafca272147ae56cc689fcc524f9eacc984ab5edb7d8a870c3beaccff6c283cd # shrinks to val = Ada

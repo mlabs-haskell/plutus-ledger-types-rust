@@ -3,10 +3,12 @@ use cardano_serialization_lib as csl;
 use data_encoding::HEXLOWER;
 #[cfg(feature = "lbf")]
 use lbr_prelude::json::{Error, Json};
+use nom::{combinator::map_res, error::VerboseError, IResult};
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
 use crate as plutus_ledger_api;
+use crate::error::ConversionError;
 use crate::{
     csl::{
         csl_to_pla::FromCSL,
@@ -91,6 +93,38 @@ impl std::fmt::Display for LedgerBytes {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", HEXLOWER.encode(&self.0))
     }
+}
+
+pub(crate) fn ledger_bytes(input: &str) -> IResult<&str, LedgerBytes, VerboseError<&str>> {
+    map_res(nom::character::complete::hex_digit0, |hex_bytes: &str| {
+        HEXLOWER
+            .decode(&hex_bytes.to_owned().to_ascii_lowercase().into_bytes())
+            .map(LedgerBytes)
+    })(input)
+}
+
+pub(crate) fn hash28(input: &str) -> IResult<&str, LedgerBytes, VerboseError<&str>> {
+    map_res(ledger_bytes, |bytes: LedgerBytes| {
+        if bytes.0.len() == 28 {
+            Ok(bytes)
+        } else {
+            Err(ConversionError::invalid_bytestring_length(
+                "hash28", 28, "equal to", &bytes.0,
+            ))
+        }
+    })(input)
+}
+
+pub(crate) fn hash32(input: &str) -> IResult<&str, LedgerBytes, VerboseError<&str>> {
+    map_res(ledger_bytes, |bytes: LedgerBytes| {
+        if bytes.0.len() == 32 {
+            Ok(bytes)
+        } else {
+            Err(ConversionError::invalid_bytestring_length(
+                "hash32", 32, "equal to", &bytes.0,
+            ))
+        }
+    })(input)
 }
 
 #[cfg(feature = "lbf")]

@@ -1,5 +1,6 @@
 //! Types related to Cardano values, such as Ada and native tokens.
 
+use std::str::FromStr;
 use std::string::String;
 use std::{
     collections::BTreeMap,
@@ -8,9 +9,20 @@ use std::{
 };
 use std::{fmt, ops};
 
+use anyhow::anyhow;
 use cardano_serialization_lib as csl;
 #[cfg(feature = "lbf")]
 use lbr_prelude::json::{Error, Json, JsonType};
+use nom::{
+    branch::alt,
+    character::complete::{char, space0},
+    combinator::{all_consuming, eof, map, map_res, success},
+    error::{context, VerboseError},
+    multi::separated_list0,
+    sequence::preceded,
+    sequence::tuple,
+    Finish, IResult,
+};
 use num_bigint::BigInt;
 use num_traits::Zero;
 #[cfg(feature = "serde")]
@@ -19,12 +31,16 @@ use serde::{Deserialize, Serialize};
 use serde_json;
 
 use crate as plutus_ledger_api;
+use crate::aux::{big_int, singleton, union_b_tree_maps_with, union_btree_maps_with};
 use crate::csl::csl_to_pla::FromCSL;
 use crate::csl::pla_to_csl::{TryFromPLA, TryFromPLAError, TryToCSL};
+use crate::error::ConversionError;
 use crate::plutus_data::{IsPlutusData, PlutusData, PlutusDataError};
-use crate::utils::aux::{singleton, union_b_tree_maps_with, union_btree_maps_with};
 use crate::v1::crypto::LedgerBytes;
 use crate::v1::script::{MintingPolicyHash, ScriptHash};
+
+use super::crypto::ledger_bytes;
+use super::script::minting_policy_hash;
 
 ////////////////////
 // CurrencySymbol //
@@ -37,6 +53,18 @@ use crate::v1::script::{MintingPolicyHash, ScriptHash};
 pub enum CurrencySymbol {
     Ada,
     NativeToken(MintingPolicyHash),
+}
+
+impl CurrencySymbol {
+    pub fn from_bytes(bytes: Vec<u8>) -> Result<Self, ConversionError> {
+        if bytes.is_empty() {
+            Ok(CurrencySymbol::Ada)
+        } else {
+            Ok(CurrencySymbol::NativeToken(MintingPolicyHash::from_bytes(
+                bytes,
+            )?))
+        }
+    }
 }
 
 impl fmt::Display for CurrencySymbol {
@@ -54,11 +82,28 @@ impl fmt::Display for CurrencySymbol {
     }
 }
 
+impl FromStr for CurrencySymbol {
+    type Err = ConversionError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        all_consuming(currency_symbol)(s)
+            .finish()
+            .map_err(|err| {
+                ConversionError::ParseError(anyhow!(
+                    "Error while parsing CurrencySymbol '{}': {}",
+                    s,
+                    err
+                ))
+            })
+            .map(|(_, cs)| cs)
+    }
+}
+
 impl IsPlutusData for CurrencySymbol {
     fn to_plutus_data(&self) -> PlutusData {
         match self {
-            CurrencySymbol::Ada => String::from("").to_plutus_data(),
             CurrencySymbol::NativeToken(policy_hash) => policy_hash.to_plutus_data(),
+            CurrencySymbol::Ada => String::from("").to_plutus_data(),
         }
     }
 
@@ -98,6 +143,27 @@ impl Json for CurrencySymbol {
             }),
         }
     }
+}
+
+pub(crate) fn currency_symbol(input: &str) -> IResult<&str, CurrencySymbol, VerboseError<&str>> {
+    context(
+        "currency symbol",
+        alt((
+            map_res(ledger_bytes, |bytes: LedgerBytes| {
+                if bytes.0.is_empty() {
+                    Ok(CurrencySymbol::Ada)
+                } else {
+                    Err(ConversionError::invalid_bytestring_length(
+                        "currency_symbol_ada",
+                        0,
+                        "equal to",
+                        &bytes.0,
+                    ))
+                }
+            }),
+            map(minting_policy_hash, CurrencySymbol::NativeToken),
+        )),
+    )(input)
 }
 
 ///////////
@@ -301,6 +367,11 @@ impl Value {
             })
             .collect()
     }
+
+    pub fn unflatten(list: &[(CurrencySymbol, TokenName, BigInt)]) -> Self {
+        list.iter()
+            .fold(Value::new(), |v, (cs, tn, am)| v.insert_token(cs, tn, am))
+    }
 }
 
 impl fmt::Display for Value {
@@ -326,6 +397,37 @@ impl fmt::Display for Value {
         }
 
         Ok(())
+    }
+}
+
+pub(crate) fn flat_value(
+    input: &str,
+) -> IResult<&str, (CurrencySymbol, TokenName, BigInt), VerboseError<&str>> {
+    let (input, cs) = currency_symbol(input)?;
+
+    let (input, tn) = alt((preceded(char('.'), token_name), success(TokenName::ada())))(input)?;
+
+    let (input, amount) = preceded(char(' '), big_int)(input)?;
+
+    Ok((input, (cs, tn, amount)))
+}
+
+pub(crate) fn value(input: &str) -> IResult<&str, Value, VerboseError<&str>> {
+    let (input, flat_values) = separated_list0(tuple((space0, char('+'))), flat_value)(input)?;
+
+    Ok((input, Value::unflatten(&flat_values)))
+}
+
+impl FromStr for Value {
+    type Err = ConversionError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        all_consuming(value)(s)
+            .finish()
+            .map_err(|err| {
+                ConversionError::ParseError(anyhow!("Error while parsing Value '{}': {}", s, err))
+            })
+            .map(|(_, cs)| cs)
     }
 }
 
@@ -592,6 +694,7 @@ impl FromCSL<csl::Mint> for Value {
 pub struct TokenName(pub LedgerBytes);
 
 impl TokenName {
+    /// Ada tokenname (empty bytestring)
     pub fn ada() -> TokenName {
         TokenName(LedgerBytes(Vec::with_capacity(0)))
     }
@@ -600,17 +703,60 @@ impl TokenName {
         self.0 .0.is_empty()
     }
 
-    pub fn from_bytes(bytes: Vec<u8>) -> Self {
-        TokenName(LedgerBytes(bytes))
+    pub fn from_bytes(bytes: Vec<u8>) -> Result<Self, ConversionError> {
+        if bytes.len() <= 32 {
+            Ok(TokenName(LedgerBytes(bytes)))
+        } else {
+            Err(ConversionError::invalid_bytestring_length(
+                "TokenName",
+                32,
+                "less than or equal to",
+                &bytes,
+            ))
+        }
     }
 
-    pub fn from_string(str: &str) -> Self {
-        TokenName(LedgerBytes(String::from(str).into_bytes()))
+    /// Convert a UTF8 string into a TokenName (use from_str to convert from a hexadecimal string)
+    pub fn from_string(str: &str) -> Result<Self, ConversionError> {
+        TokenName::from_bytes(String::from(str).into_bytes())
     }
 
+    /// Convert TokenName to string if it is a valid UTF8 bytestring
     pub fn try_into_string(self) -> Result<String, std::string::FromUtf8Error> {
         String::from_utf8(self.0 .0)
     }
+}
+
+impl FromStr for TokenName {
+    type Err = ConversionError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        all_consuming(token_name)(s)
+            .finish()
+            .map_err(|err| {
+                ConversionError::ParseError(anyhow!(
+                    "Error while parsing TokenName '{}': {}",
+                    s,
+                    err
+                ))
+            })
+            .map(|(_, cs)| cs)
+    }
+}
+
+pub(crate) fn token_name(input: &str) -> IResult<&str, TokenName, VerboseError<&str>> {
+    map_res(ledger_bytes, |bytes: LedgerBytes| {
+        if bytes.0.len() <= 32 {
+            Ok(TokenName(bytes))
+        } else {
+            Err(ConversionError::invalid_bytestring_length(
+                "token_name",
+                32,
+                "less than or equal to",
+                &bytes.0,
+            ))
+        }
+    })(input)
 }
 
 impl IsPlutusData for TokenName {
@@ -673,17 +819,38 @@ impl fmt::Display for AssetClass {
     }
 }
 
-#[cfg(test)]
-mod test {
-    use super::*;
+impl FromStr for AssetClass {
+    type Err = ConversionError;
 
-    #[test]
-    fn to_from_string_token_name() {
-        let name = "Hello";
-        let token_name = TokenName::from_string(name);
-
-        assert_eq!(token_name.try_into_string().unwrap(), name);
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        all_consuming(asset_class)(s)
+            .finish()
+            .map_err(|err| {
+                ConversionError::ParseError(anyhow!(
+                    "Error while parsing AssetClass '{}': {}",
+                    s,
+                    err
+                ))
+            })
+            .map(|(_, cs)| cs)
     }
+}
+
+pub(crate) fn asset_class(input: &str) -> IResult<&str, AssetClass, VerboseError<&str>> {
+    let (input, cs) = currency_symbol(input)?;
+
+    let (input, tn) = alt((
+        preceded(eof, success(TokenName::ada())),
+        preceded(char('.'), token_name),
+    ))(input)?;
+
+    Ok((
+        input,
+        AssetClass {
+            currency_symbol: cs,
+            token_name: tn,
+        },
+    ))
 }
 
 ////////////////

@@ -9,8 +9,9 @@ pub mod v2;
 pub mod v3;
 #[cfg(feature = "lbf")]
 pub use lbr_prelude::json;
+pub mod aux;
 pub mod csl;
-pub mod utils;
+pub mod error;
 
 #[macro_use]
 extern crate impl_ops;

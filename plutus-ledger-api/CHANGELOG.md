@@ -12,7 +12,10 @@ Changelog](https://keepachangelog.com/en/1.1.0).
 - Added v3 plutus ledger types ([#57](https://github.com/mlabs-haskell/plutus-ledger-api-rust/pull/57))
 - Added the ability to derive `IsPlutusData` instances ([#56](https://github.com/mlabs-haskell/plutus-ledger-api-rust/pull/56))
 - Added a few utility functions for Values
-- Added Display and Debug implementations for CurrencySymbol, TokenName, Value, AddressWithExtraInfo
+- Added Display and Debug implementations for
+  CurrencySymbol, TokenName, Value, AddressWithExtraInfo and some other types
+- Added FromStr implementations for CurrencySymbol, TokenName, Value, Address
+  and some other types
 
 ### Changed
 

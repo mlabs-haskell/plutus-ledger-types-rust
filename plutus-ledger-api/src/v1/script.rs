@@ -4,14 +4,21 @@ use cardano_serialization_lib as csl;
 
 #[cfg(feature = "lbf")]
 use lbr_prelude::json::Json;
+use nom::combinator::map;
+use nom::error::{context, VerboseError};
+use nom::IResult;
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
 use crate as plutus_ledger_api;
+use crate::aux::guard_bytes;
 use crate::csl::csl_to_pla::FromCSL;
 use crate::csl::pla_to_csl::{TryFromPLA, TryFromPLAError, TryToCSL};
+use crate::error::ConversionError;
 use crate::plutus_data::IsPlutusData;
 use crate::v1::crypto::LedgerBytes;
+
+use super::crypto::hash28;
 
 ///////////////////
 // ValidatorHash //
@@ -30,6 +37,16 @@ impl FromCSL<csl::ScriptHash> for ValidatorHash {
     }
 }
 
+impl ValidatorHash {
+    pub fn from_bytes(bytes: Vec<u8>) -> Result<Self, ConversionError> {
+        Ok(ValidatorHash(ScriptHash::from_bytes(bytes)?))
+    }
+}
+
+pub(crate) fn validator_hash(input: &str) -> IResult<&str, ValidatorHash, VerboseError<&str>> {
+    context("validator_hash", map(script_hash, ValidatorHash))(input)
+}
+
 ///////////////////////
 // MintingPolicyHash //
 ///////////////////////
@@ -40,6 +57,12 @@ impl FromCSL<csl::ScriptHash> for ValidatorHash {
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "lbf", derive(Json))]
 pub struct MintingPolicyHash(pub ScriptHash);
+
+impl MintingPolicyHash {
+    pub fn from_bytes(bytes: Vec<u8>) -> Result<Self, ConversionError> {
+        Ok(MintingPolicyHash(ScriptHash::from_bytes(bytes)?))
+    }
+}
 
 impl FromCSL<csl::PolicyID> for MintingPolicyHash {
     fn from_csl(value: &csl::PolicyID) -> Self {
@@ -53,6 +76,12 @@ impl TryFromPLA<MintingPolicyHash> for csl::PolicyID {
     }
 }
 
+pub(crate) fn minting_policy_hash(
+    input: &str,
+) -> IResult<&str, MintingPolicyHash, VerboseError<&str>> {
+    context("minting_policy_hash", map(script_hash, MintingPolicyHash))(input)
+}
+
 ////////////////
 // ScriptHash //
 ////////////////
@@ -63,6 +92,16 @@ impl TryFromPLA<MintingPolicyHash> for csl::PolicyID {
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "lbf", derive(Json))]
 pub struct ScriptHash(pub LedgerBytes);
+
+impl ScriptHash {
+    pub fn from_bytes(bytes: Vec<u8>) -> Result<Self, ConversionError> {
+        Ok(ScriptHash(LedgerBytes(guard_bytes(
+            "ScriptHash",
+            bytes,
+            28,
+        )?)))
+    }
+}
 
 impl FromCSL<csl::ScriptHash> for ScriptHash {
     fn from_csl(value: &csl::ScriptHash) -> Self {
@@ -75,4 +114,8 @@ impl TryFromPLA<ScriptHash> for csl::ScriptHash {
         csl::ScriptHash::from_bytes(val.0 .0.to_owned())
             .map_err(TryFromPLAError::CSLDeserializeError)
     }
+}
+
+pub(crate) fn script_hash(input: &str) -> IResult<&str, ScriptHash, VerboseError<&str>> {
+    context("script_hash", map(hash28, ScriptHash))(input)
 }

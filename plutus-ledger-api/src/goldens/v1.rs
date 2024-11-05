@@ -27,7 +27,7 @@ pub fn sample_currency_symbol() -> CurrencySymbol {
 }
 
 pub fn sample_token_name() -> TokenName {
-    TokenName::from_string("Something")
+    TokenName::from_string("Something").unwrap()
 }
 
 pub fn sample_asset_class() -> AssetClass {

@@ -1,26 +1,37 @@
 //! Types related to Cardano transactions.
-use std::fmt;
+use std::{fmt, str::FromStr};
 
+use anyhow::anyhow;
 use cardano_serialization_lib as csl;
 #[cfg(feature = "lbf")]
 use lbr_prelude::json::Json;
+use nom::{
+    character::complete::char,
+    combinator::{all_consuming, map},
+    error::{context, VerboseError},
+    sequence::preceded,
+    Finish, IResult,
+};
 use num_bigint::BigInt;
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
 use super::{
     address::{Address, StakingCredential},
-    crypto::{LedgerBytes, PaymentPubKeyHash},
+    crypto::{hash32, LedgerBytes, PaymentPubKeyHash},
     datum::{Datum, DatumHash},
     interval::PlutusInterval,
     value::{CurrencySymbol, Value},
 };
 
-use crate as plutus_ledger_api;
-use crate::csl::{csl_to_pla::FromCSL, pla_to_csl::TryFromPLA};
+use crate::{self as plutus_ledger_api, aux::big_int};
 use crate::{
     csl::pla_to_csl::{TryFromPLAError, TryToCSL},
     plutus_data::IsPlutusData,
+};
+use crate::{
+    csl::{csl_to_pla::FromCSL, pla_to_csl::TryFromPLA},
+    error::ConversionError,
 };
 
 //////////////////////
@@ -82,6 +93,39 @@ impl TryFromPLA<Vec<TransactionInput>> for csl::TransactionInputs {
     }
 }
 
+pub(crate) fn transaction_input(
+    input: &str,
+) -> IResult<&str, TransactionInput, VerboseError<&str>> {
+    let (input, tx_id) = transaction_hash(input)?;
+
+    let (input, idx) = preceded(char('#'), big_int)(input)?;
+
+    Ok((
+        input,
+        TransactionInput {
+            transaction_id: tx_id,
+            index: idx,
+        },
+    ))
+}
+
+impl FromStr for TransactionInput {
+    type Err = ConversionError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        all_consuming(transaction_input)(s)
+            .finish()
+            .map_err(|err| {
+                ConversionError::ParseError(anyhow!(
+                    "Error while parsing TransactionInput '{}': {}",
+                    s,
+                    err
+                ))
+            })
+            .map(|(_, cs)| cs)
+    }
+}
+
 /////////////////////
 // TransactionHash //
 /////////////////////
@@ -112,6 +156,27 @@ impl TryFromPLA<TransactionHash> for csl::TransactionHash {
     fn try_from_pla(val: &TransactionHash) -> Result<Self, TryFromPLAError> {
         csl::TransactionHash::from_bytes(val.0 .0.to_owned())
             .map_err(TryFromPLAError::CSLDeserializeError)
+    }
+}
+
+pub(crate) fn transaction_hash(input: &str) -> IResult<&str, TransactionHash, VerboseError<&str>> {
+    context("transaction_hash", map(hash32, TransactionHash))(input)
+}
+
+impl FromStr for TransactionHash {
+    type Err = ConversionError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        all_consuming(transaction_hash)(s)
+            .finish()
+            .map_err(|err| {
+                ConversionError::ParseError(anyhow!(
+                    "Error while parsing TransactionHash '{}': {}",
+                    s,
+                    err
+                ))
+            })
+            .map(|(_, cs)| cs)
     }
 }
 

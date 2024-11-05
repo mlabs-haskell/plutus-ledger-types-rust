@@ -1,7 +1,21 @@
 use std::{
     collections::BTreeMap,
     iter::{empty, once},
+    str::FromStr,
 };
+
+use nom::{
+    branch::alt,
+    character::complete::{char, digit1},
+    combinator::{map_res, opt, recognize},
+    error::VerboseError,
+    multi::many1,
+    sequence::tuple,
+    IResult,
+};
+use num_bigint::BigInt;
+
+use crate::error::ConversionError;
 
 /// Create a container C from one element.
 pub fn singleton<T, C>(value: T) -> C
@@ -49,4 +63,21 @@ pub fn union_b_tree_maps_with<const N: usize, K: Clone + Ord, V: Clone, F: Fn(&V
             acc
         })
     })
+}
+
+pub fn guard_bytes(ctx: &str, bytes: Vec<u8>, expected: usize) -> Result<Vec<u8>, ConversionError> {
+    if bytes.len() == expected {
+        Ok(bytes)
+    } else {
+        Err(ConversionError::invalid_bytestring_length(
+            ctx, expected, "equal to", &bytes,
+        ))
+    }
+}
+
+pub(crate) fn big_int(i: &str) -> IResult<&str, BigInt, VerboseError<&str>> {
+    map_res(
+        recognize(tuple((opt(alt((char('-'), char('+')))), many1(digit1)))),
+        |s: &str| BigInt::from_str(s),
+    )(i)
 }
