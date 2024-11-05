@@ -154,6 +154,23 @@ Constr(
                                             [
                                                 (
                                                     Bytes(
+                                                        [],
+                                                    ),
+                                                    Map(
+                                                        [
+                                                            (
+                                                                Bytes(
+                                                                    [],
+                                                                ),
+                                                                Integer(
+                                                                    234,
+                                                                ),
+                                                            ),
+                                                        ],
+                                                    ),
+                                                ),
+                                                (
+                                                    Bytes(
                                                         [
                                                             0,
                                                             0,
@@ -355,6 +372,23 @@ Constr(
                                     [
                                         (
                                             Bytes(
+                                                [],
+                                            ),
+                                            Map(
+                                                [
+                                                    (
+                                                        Bytes(
+                                                            [],
+                                                        ),
+                                                        Integer(
+                                                            234,
+                                                        ),
+                                                    ),
+                                                ],
+                                            ),
+                                        ),
+                                        (
+                                            Bytes(
                                                 [
                                                     0,
                                                     0,
@@ -460,6 +494,23 @@ Constr(
                     [
                         (
                             Bytes(
+                                [],
+                            ),
+                            Map(
+                                [
+                                    (
+                                        Bytes(
+                                            [],
+                                        ),
+                                        Integer(
+                                            234,
+                                        ),
+                                    ),
+                                ],
+                            ),
+                        ),
+                        (
+                            Bytes(
                                 [
                                     0,
                                     0,
@@ -518,6 +569,23 @@ Constr(
                 ),
                 Map(
                     [
+                        (
+                            Bytes(
+                                [],
+                            ),
+                            Map(
+                                [
+                                    (
+                                        Bytes(
+                                            [],
+                                        ),
+                                        Integer(
+                                            234,
+                                        ),
+                                    ),
+                                ],
+                            ),
+                        ),
                         (
                             Bytes(
                                 [
