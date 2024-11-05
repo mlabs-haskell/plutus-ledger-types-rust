@@ -1,4 +1,12 @@
 //! Golden test data or Plutus V2 types
+pub use super::v1::{
+    sample_address, sample_asset_class, sample_chain_pointer, sample_credential,
+    sample_currency_symbol, sample_datum, sample_datum_hash, sample_dcert,
+    sample_ed25519_pub_key_hash, sample_payment_pub_key_hash, sample_plutus_data,
+    sample_plutus_interval, sample_redeemer, sample_redeemer_hash, sample_script_hash,
+    sample_script_purpose, sample_staking_credential, sample_token_name, sample_transaction_hash,
+    sample_transaction_input, sample_value,
+};
 use crate::v2::{
     assoc_map::AssocMap,
     crypto::LedgerBytes,
