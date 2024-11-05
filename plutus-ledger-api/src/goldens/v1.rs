@@ -39,7 +39,7 @@ pub fn sample_value() -> Value {
         &sample_currency_symbol(),
         &sample_token_name(),
         &BigInt::from(123),
-    )
+    ) + Value::ada_value(&BigInt::from(234))
 }
 
 pub fn sample_plutus_interval() -> PlutusInterval<POSIXTime> {

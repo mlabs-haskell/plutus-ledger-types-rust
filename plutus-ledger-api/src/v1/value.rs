@@ -41,20 +41,16 @@ pub enum CurrencySymbol {
 
 impl fmt::Display for CurrencySymbol {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let asset_class_str = match self {
+        match self {
             CurrencySymbol::Ada => {
                 if f.alternate() {
-                    "lovelace".to_string()
+                    write!(f, "lovelace")
                 } else {
-                    "".to_string()
+                    write!(f, "")
                 }
             }
-            CurrencySymbol::NativeToken(symbol) => {
-                format!("{}", symbol.0 .0)
-            }
-        };
-
-        write!(f, "{}", asset_class_str)
+            CurrencySymbol::NativeToken(symbol) => write!(f, "{}", symbol.0 .0),
+        }
     }
 }
 
@@ -293,26 +289,43 @@ impl Value {
                 .collect(),
         )
     }
+
+    /// Create a vector with each distinct value
+    pub fn flatten(&self) -> Vec<(&CurrencySymbol, &TokenName, &BigInt)> {
+        self.0
+            .iter()
+            .flat_map(|(currency_symbol, assets)| {
+                assets
+                    .iter()
+                    .map(move |(token_name, amount)| (currency_symbol, token_name, amount))
+            })
+            .collect()
+    }
 }
 
 impl fmt::Display for Value {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let value_str = self
+        let mut it = self
             .0
             .iter()
             .flat_map(|(currency_symbol, assets)| {
-                assets.iter().map(move |(token_name, amount)| {
-                    if token_name.is_empty() {
-                        format!("{} {}", currency_symbol, amount)
-                    } else {
-                        format!("{}.{} {}", currency_symbol, token_name, amount)
-                    }
-                })
+                assets
+                    .iter()
+                    .map(move |(token_name, amount)| (currency_symbol, token_name, amount))
             })
-            .collect::<Vec<_>>()
-            .join("+");
+            .peekable();
+        while let Some((cur_sym, tn, amount)) = it.next() {
+            if tn.is_empty() {
+                write!(f, "{} {}", cur_sym, amount)?;
+            } else {
+                write!(f, "{}.{} {}", cur_sym, tn, amount)?;
+            }
+            if it.peek().is_some() {
+                write!(f, "+")?;
+            }
+        }
 
-        write!(f, "{}", value_str)
+        Ok(())
     }
 }
 
