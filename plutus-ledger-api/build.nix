@@ -4,12 +4,15 @@
       rustFlake =
         inputs.flake-lang.lib.${system}.rustFlake {
           src = ./.;
-          version = "0";
+          version = "2";
           crateName = "plutus-ledger-api";
           devShellHook = config.settings.shell.hook;
           cargoNextestExtraArgs = "--all-features";
           extraSourceFilters = [
             (path: _type: builtins.match ".*golden$" path != null)
+          ];
+          extraSources = [
+            config.packages.is-plutus-data-derive-rust-src
           ];
         };
 
