@@ -6,20 +6,22 @@ use num_bigint::BigInt;
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
+pub use crate::v2::transaction::{
+    DCert, POSIXTime, POSIXTimeRange, TransactionHash, TransactionInput, TransactionOutput,
+    TxInInfo,
+};
 use crate::{
     self as plutus_ledger_api,
     plutus_data::{IsPlutusData, PlutusData},
-    v1::{
+    v2::{
         address::{Credential, StakingCredential},
         assoc_map::AssocMap,
         crypto::{PaymentPubKeyHash, StakePubKeyHash},
         datum::{Datum, DatumHash},
         redeemer::Redeemer,
         script::ScriptHash,
-        transaction::{POSIXTimeRange, TransactionHash, TransactionInput},
         value::{CurrencySymbol, Lovelace, Value},
     },
-    v2::transaction::{TransactionOutput, TxInInfo},
 };
 
 use super::ratio::Rational;

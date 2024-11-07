@@ -8,7 +8,6 @@ use nom::{combinator::map_res, error::VerboseError, IResult};
 use serde::{Deserialize, Serialize};
 
 use crate as plutus_ledger_api;
-use crate::error::ConversionError;
 use crate::{
     csl::{
         csl_to_pla::FromCSL,
@@ -95,35 +94,14 @@ impl std::fmt::Display for LedgerBytes {
     }
 }
 
+/// Nom parser for LedgerBytes
+/// Expects a hexadecimal string of arbitrary length (0 length is allowed)
+/// E.g.: 00112233445566778899aabbcc
 pub(crate) fn ledger_bytes(input: &str) -> IResult<&str, LedgerBytes, VerboseError<&str>> {
     map_res(nom::character::complete::hex_digit0, |hex_bytes: &str| {
         HEXLOWER
             .decode(&hex_bytes.to_owned().to_ascii_lowercase().into_bytes())
             .map(LedgerBytes)
-    })(input)
-}
-
-pub(crate) fn hash28(input: &str) -> IResult<&str, LedgerBytes, VerboseError<&str>> {
-    map_res(ledger_bytes, |bytes: LedgerBytes| {
-        if bytes.0.len() == 28 {
-            Ok(bytes)
-        } else {
-            Err(ConversionError::invalid_bytestring_length(
-                "hash28", 28, "equal to", &bytes.0,
-            ))
-        }
-    })(input)
-}
-
-pub(crate) fn hash32(input: &str) -> IResult<&str, LedgerBytes, VerboseError<&str>> {
-    map_res(ledger_bytes, |bytes: LedgerBytes| {
-        if bytes.0.len() == 32 {
-            Ok(bytes)
-        } else {
-            Err(ConversionError::invalid_bytestring_length(
-                "hash32", 32, "equal to", &bytes.0,
-            ))
-        }
     })(input)
 }
 

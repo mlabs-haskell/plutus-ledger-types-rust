@@ -4,9 +4,6 @@ use cardano_serialization_lib as csl;
 
 #[cfg(feature = "lbf")]
 use lbr_prelude::json::Json;
-use nom::combinator::map;
-use nom::error::{context, VerboseError};
-use nom::IResult;
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
@@ -17,8 +14,6 @@ use crate::csl::pla_to_csl::{TryFromPLA, TryFromPLAError, TryToCSL};
 use crate::error::ConversionError;
 use crate::plutus_data::IsPlutusData;
 use crate::v1::crypto::LedgerBytes;
-
-use super::crypto::hash28;
 
 ///////////////////
 // ValidatorHash //
@@ -41,10 +36,6 @@ impl ValidatorHash {
     pub fn from_bytes(bytes: Vec<u8>) -> Result<Self, ConversionError> {
         Ok(ValidatorHash(ScriptHash::from_bytes(bytes)?))
     }
-}
-
-pub(crate) fn validator_hash(input: &str) -> IResult<&str, ValidatorHash, VerboseError<&str>> {
-    context("validator_hash", map(script_hash, ValidatorHash))(input)
 }
 
 ///////////////////////
@@ -74,12 +65,6 @@ impl TryFromPLA<MintingPolicyHash> for csl::PolicyID {
     fn try_from_pla(val: &MintingPolicyHash) -> Result<Self, TryFromPLAError> {
         val.0.try_to_csl()
     }
-}
-
-pub(crate) fn minting_policy_hash(
-    input: &str,
-) -> IResult<&str, MintingPolicyHash, VerboseError<&str>> {
-    context("minting_policy_hash", map(script_hash, MintingPolicyHash))(input)
 }
 
 ////////////////
@@ -114,8 +99,4 @@ impl TryFromPLA<ScriptHash> for csl::ScriptHash {
         csl::ScriptHash::from_bytes(val.0 .0.to_owned())
             .map_err(TryFromPLAError::CSLDeserializeError)
     }
-}
-
-pub(crate) fn script_hash(input: &str) -> IResult<&str, ScriptHash, VerboseError<&str>> {
-    context("script_hash", map(hash28, ScriptHash))(input)
 }

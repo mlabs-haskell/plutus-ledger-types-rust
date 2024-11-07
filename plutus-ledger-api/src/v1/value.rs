@@ -13,10 +13,11 @@ use anyhow::anyhow;
 use cardano_serialization_lib as csl;
 #[cfg(feature = "lbf")]
 use lbr_prelude::json::{Error, Json, JsonType};
+use nom::combinator::{map, opt};
 use nom::{
     branch::alt,
     character::complete::{char, space0},
-    combinator::{all_consuming, eof, map, map_res, success},
+    combinator::{all_consuming, eof, map_res, success},
     error::{context, VerboseError},
     multi::separated_list0,
     sequence::preceded,
@@ -40,7 +41,6 @@ use crate::v1::crypto::LedgerBytes;
 use crate::v1::script::{MintingPolicyHash, ScriptHash};
 
 use super::crypto::ledger_bytes;
-use super::script::minting_policy_hash;
 
 ////////////////////
 // CurrencySymbol //
@@ -63,6 +63,13 @@ impl CurrencySymbol {
             Ok(CurrencySymbol::NativeToken(MintingPolicyHash::from_bytes(
                 bytes,
             )?))
+        }
+    }
+
+    pub fn is_ada(&self) -> bool {
+        match self {
+            CurrencySymbol::Ada => true,
+            CurrencySymbol::NativeToken(_) => false,
         }
     }
 }
@@ -103,7 +110,7 @@ impl IsPlutusData for CurrencySymbol {
     fn to_plutus_data(&self) -> PlutusData {
         match self {
             CurrencySymbol::NativeToken(policy_hash) => policy_hash.to_plutus_data(),
-            CurrencySymbol::Ada => String::from("").to_plutus_data(),
+            CurrencySymbol::Ada => PlutusData::Bytes(Vec::with_capacity(0)),
         }
     }
 
@@ -145,24 +152,14 @@ impl Json for CurrencySymbol {
     }
 }
 
+/// Nom parser for CurrencySymbol
+/// Expects a hexadecimal string representation of 0 (Ada) or 28 bytes (NativeToken)
 pub(crate) fn currency_symbol(input: &str) -> IResult<&str, CurrencySymbol, VerboseError<&str>> {
     context(
         "currency symbol",
-        alt((
-            map_res(ledger_bytes, |bytes: LedgerBytes| {
-                if bytes.0.is_empty() {
-                    Ok(CurrencySymbol::Ada)
-                } else {
-                    Err(ConversionError::invalid_bytestring_length(
-                        "currency_symbol_ada",
-                        0,
-                        "equal to",
-                        &bytes.0,
-                    ))
-                }
-            }),
-            map(minting_policy_hash, CurrencySymbol::NativeToken),
-        )),
+        map_res(ledger_bytes, |LedgerBytes(bytes)| {
+            CurrencySymbol::from_bytes(bytes)
+        }),
     )(input)
 }
 
@@ -294,22 +291,14 @@ impl Value {
 
     pub fn is_subset(&self, b: &Value) -> bool {
         (b - self)
-            .clone()
             .normalize()
             // Has negative entries?
             .filter(|_, _, amount| amount < &BigInt::from(0u32))
             .is_empty()
     }
 
-    pub fn is_pure_ada(self) -> bool {
-        let inner = self.normalize().0;
-        let inner: Vec<_> = inner.into_iter().collect();
-
-        match inner.as_slice() {
-            [] => true,
-            [(cs, _)] => cs == &CurrencySymbol::Ada,
-            _ => false,
-        }
+    pub fn is_pure_ada(&self) -> bool {
+        self.0.iter().all(|(cs, _)| cs == &CurrencySymbol::Ada)
     }
 
     /// Apply a function to each token of the value, and use its result as the new amount.
@@ -357,6 +346,7 @@ impl Value {
     }
 
     /// Create a vector with each distinct value
+    /// Warning: is the value is not normalized, the same asset class can appear twice
     pub fn flatten(&self) -> Vec<(&CurrencySymbol, &TokenName, &BigInt)> {
         self.0
             .iter()
@@ -386,10 +376,12 @@ impl fmt::Display for Value {
             })
             .peekable();
         while let Some((cur_sym, tn, amount)) = it.next() {
-            if tn.is_empty() {
-                write!(f, "{} {}", cur_sym, amount)?;
+            if cur_sym.is_ada() {
+                write!(f, "{}", amount)?;
+            } else if tn.is_empty() {
+                write!(f, "{} {}", amount, cur_sym)?;
             } else {
-                write!(f, "{}.{} {}", cur_sym, tn, amount)?;
+                write!(f, "{} {}.{}", amount, cur_sym, tn)?;
             }
             if it.peek().is_some() {
                 write!(f, "+")?;
@@ -400,22 +392,33 @@ impl fmt::Display for Value {
     }
 }
 
+/// Nom parser for a single entry in a Value
+/// Expects an integer quantity, followed by an asset class after a space character
+/// (space is not required for Ada)
+/// E.g.: 12 11223344556677889900112233445566778899001122334455667788.001122aabbcc
 pub(crate) fn flat_value(
     input: &str,
 ) -> IResult<&str, (CurrencySymbol, TokenName, BigInt), VerboseError<&str>> {
-    let (input, cs) = currency_symbol(input)?;
-
-    let (input, tn) = alt((preceded(char('.'), token_name), success(TokenName::ada())))(input)?;
-
-    let (input, amount) = preceded(char(' '), big_int)(input)?;
-
-    Ok((input, (cs, tn, amount)))
+    map(
+        tuple((big_int, opt(preceded(char(' '), asset_class)))),
+        |(amount, asset_class)| match asset_class {
+            None => (CurrencySymbol::Ada, TokenName::ada(), amount),
+            Some(AssetClass {
+                currency_symbol,
+                token_name,
+            }) => (currency_symbol, token_name, amount),
+        },
+    )(input)
 }
 
+/// Nom parser for Value
+/// Expects flat Value entries divided by a `+` sign
+/// E.g.: 123+12 11223344556677889900112233445566778899001122334455667788.001122aabbcc
 pub(crate) fn value(input: &str) -> IResult<&str, Value, VerboseError<&str>> {
-    let (input, flat_values) = separated_list0(tuple((space0, char('+'))), flat_value)(input)?;
-
-    Ok((input, Value::unflatten(&flat_values)))
+    map(
+        separated_list0(tuple((space0, char('+'))), flat_value),
+        |flat_values| Value::unflatten(&flat_values),
+    )(input)
 }
 
 impl FromStr for Value {
@@ -636,21 +639,12 @@ impl FromCSL<csl::MintAssets> for BTreeMap<TokenName, BigInt> {
 
 impl FromCSL<csl::MintsAssets> for BTreeMap<TokenName, BigInt> {
     fn from_csl(value: &csl::MintsAssets) -> Self {
-        let mut m_ass_vec = Vec::new();
-
-        // This is so stupid. `MintsAssets` doesn't have a `len` method for some reason.
-        for idx in 0.. {
-            if let Some(m_ass) = value.get(idx) {
-                m_ass_vec.push(m_ass);
-            } else {
-                break;
-            }
-        }
-
-        m_ass_vec.into_iter().fold(BTreeMap::new(), |acc, m| {
-            let ass = BTreeMap::from_csl(&m);
-            union_b_tree_maps_with(|l, r| l + r, [&acc, &ass])
-        })
+        (0..value.len())
+            .map(|idx| value.get(idx).unwrap())
+            .fold(BTreeMap::new(), |acc, m| {
+                let ass = BTreeMap::from_csl(&m);
+                union_b_tree_maps_with(|l, r| l + r, [&acc, &ass])
+            })
     }
 }
 
@@ -744,18 +738,11 @@ impl FromStr for TokenName {
     }
 }
 
+/// Nom parser for TokenName
+/// Expects a hexadecimal string representation of up to 32
 pub(crate) fn token_name(input: &str) -> IResult<&str, TokenName, VerboseError<&str>> {
-    map_res(ledger_bytes, |bytes: LedgerBytes| {
-        if bytes.0.len() <= 32 {
-            Ok(TokenName(bytes))
-        } else {
-            Err(ConversionError::invalid_bytestring_length(
-                "token_name",
-                32,
-                "less than or equal to",
-                &bytes.0,
-            ))
-        }
+    map_res(ledger_bytes, |LedgerBytes(bytes)| {
+        TokenName::from_bytes(bytes)
     })(input)
 }
 
@@ -836,6 +823,12 @@ impl FromStr for AssetClass {
     }
 }
 
+/// Nom parser for AssetClass
+/// Expects a currency symbol and token name both in hexadecimal format, divided by a `.`
+/// In case the token name is empty, the divider is not required
+/// E.g.:
+///   - 11223344556677889900112233445566778899001122334455667788.001122aabbcc
+///   - 11223344556677889900112233445566778899001122334455667788
 pub(crate) fn asset_class(input: &str) -> IResult<&str, AssetClass, VerboseError<&str>> {
     let (input, cs) = currency_symbol(input)?;
 

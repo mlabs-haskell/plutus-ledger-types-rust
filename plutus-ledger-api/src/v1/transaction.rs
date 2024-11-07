@@ -7,9 +7,9 @@ use cardano_serialization_lib as csl;
 use lbr_prelude::json::Json;
 use nom::{
     character::complete::char,
-    combinator::{all_consuming, map},
+    combinator::{all_consuming, map, map_res},
     error::{context, VerboseError},
-    sequence::preceded,
+    sequence::{preceded, tuple},
     Finish, IResult,
 };
 use num_bigint::BigInt;
@@ -18,13 +18,16 @@ use serde::{Deserialize, Serialize};
 
 use super::{
     address::{Address, StakingCredential},
-    crypto::{hash32, LedgerBytes, PaymentPubKeyHash},
+    crypto::{ledger_bytes, LedgerBytes, PaymentPubKeyHash},
     datum::{Datum, DatumHash},
     interval::PlutusInterval,
     value::{CurrencySymbol, Value},
 };
 
-use crate::{self as plutus_ledger_api, aux::big_int};
+use crate::{
+    self as plutus_ledger_api,
+    aux::{big_int, guard_bytes},
+};
 use crate::{
     csl::pla_to_csl::{TryFromPLAError, TryToCSL},
     plutus_data::IsPlutusData,
@@ -93,20 +96,19 @@ impl TryFromPLA<Vec<TransactionInput>> for csl::TransactionInputs {
     }
 }
 
+/// Nom parser for TransactionInput
+/// Expects a transaction hash of 32 bytes in hexadecimal followed by a # and an integer index
+/// E.g.: 1122334455667788990011223344556677889900112233445566778899001122#1
 pub(crate) fn transaction_input(
     input: &str,
 ) -> IResult<&str, TransactionInput, VerboseError<&str>> {
-    let (input, tx_id) = transaction_hash(input)?;
-
-    let (input, idx) = preceded(char('#'), big_int)(input)?;
-
-    Ok((
-        input,
-        TransactionInput {
-            transaction_id: tx_id,
-            index: idx,
+    map(
+        tuple((transaction_hash, preceded(char('#'), big_int))),
+        |(transaction_id, index)| TransactionInput {
+            transaction_id,
+            index,
         },
-    ))
+    )(input)
 }
 
 impl FromStr for TransactionInput {
@@ -146,6 +148,16 @@ impl fmt::Display for TransactionHash {
     }
 }
 
+impl TransactionHash {
+    pub fn from_bytes(bytes: Vec<u8>) -> Result<Self, ConversionError> {
+        Ok(TransactionHash(LedgerBytes(guard_bytes(
+            "ScriptHash",
+            bytes,
+            32,
+        )?)))
+    }
+}
+
 impl FromCSL<csl::TransactionHash> for TransactionHash {
     fn from_csl(value: &csl::TransactionHash) -> Self {
         TransactionHash(LedgerBytes(value.to_bytes()))
@@ -159,8 +171,16 @@ impl TryFromPLA<TransactionHash> for csl::TransactionHash {
     }
 }
 
+/// Nom parser for TransactionHash
+/// Expects a hexadecimal string representation of 32 bytes
+/// E.g.: 1122334455667788990011223344556677889900112233445566778899001122
 pub(crate) fn transaction_hash(input: &str) -> IResult<&str, TransactionHash, VerboseError<&str>> {
-    context("transaction_hash", map(hash32, TransactionHash))(input)
+    context(
+        "transaction_hash",
+        map_res(ledger_bytes, |LedgerBytes(bytes)| {
+            TransactionHash::from_bytes(bytes)
+        }),
+    )(input)
 }
 
 impl FromStr for TransactionHash {

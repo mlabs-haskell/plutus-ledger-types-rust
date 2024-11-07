@@ -65,7 +65,12 @@ pub fn union_b_tree_maps_with<const N: usize, K: Clone + Ord, V: Clone, F: Fn(&V
     })
 }
 
-pub fn guard_bytes(ctx: &str, bytes: Vec<u8>, expected: usize) -> Result<Vec<u8>, ConversionError> {
+/// Verify that a given bytestring has the expected length
+pub(crate) fn guard_bytes(
+    ctx: &str,
+    bytes: Vec<u8>,
+    expected: usize,
+) -> Result<Vec<u8>, ConversionError> {
     if bytes.len() == expected {
         Ok(bytes)
     } else {
@@ -75,6 +80,8 @@ pub fn guard_bytes(ctx: &str, bytes: Vec<u8>, expected: usize) -> Result<Vec<u8>
     }
 }
 
+/// Nom parser for BigInt
+/// Expects an arbitrary length integer, optionally signed
 pub(crate) fn big_int(i: &str) -> IResult<&str, BigInt, VerboseError<&str>> {
     map_res(
         recognize(tuple((opt(alt((char('-'), char('+')))), many1(digit1)))),

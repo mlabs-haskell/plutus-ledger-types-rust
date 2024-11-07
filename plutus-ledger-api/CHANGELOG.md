@@ -8,14 +8,14 @@ Changelog](https://keepachangelog.com/en/1.1.0).
 
 ### Added
 
-- Added cardano-serialization-lib conversion traits (`ToCSL` and `FromCSL`)
+- Added cardano-serialization-lib conversion traits (`ToCSL` and `FromCSL`) ([#55](https://github.com/mlabs-haskell/plutus-ledger-api-rust/pull/55))
 - Added v3 plutus ledger types ([#57](https://github.com/mlabs-haskell/plutus-ledger-api-rust/pull/57))
 - Added the ability to derive `IsPlutusData` instances ([#56](https://github.com/mlabs-haskell/plutus-ledger-api-rust/pull/56))
-- Added a few utility functions for Values
+- Added a few utility functions for Values ([#55](https://github.com/mlabs-haskell/plutus-ledger-api-rust/pull/55))
 - Added Display and Debug implementations for
-  CurrencySymbol, TokenName, Value, AddressWithExtraInfo and some other types
+  CurrencySymbol, TokenName, Value, AddressWithExtraInfo and some other types ([#55](https://github.com/mlabs-haskell/plutus-ledger-api-rust/pull/55))
 - Added FromStr implementations for CurrencySymbol, TokenName, Value, Address
-  and some other types
+  and some other types ([#55](https://github.com/mlabs-haskell/plutus-ledger-api-rust/pull/55))
 
 ### Changed
 
