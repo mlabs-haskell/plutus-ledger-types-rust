@@ -81,7 +81,7 @@ pub(crate) fn guard_bytes(
 }
 
 /// Nom parser for BigInt
-/// Expects an arbitrary length integer, optionally signed
+/// Expects an arbitrary length decimal integer, optionally signed
 pub(crate) fn big_int(i: &str) -> IResult<&str, BigInt, VerboseError<&str>> {
     map_res(
         recognize(tuple((opt(alt((char('-'), char('+')))), many1(digit1)))),
