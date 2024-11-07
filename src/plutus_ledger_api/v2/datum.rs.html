@@ -120,31 +120,37 @@
 <a href="#118" id="118">118</a>
 <a href="#119" id="119">119</a>
 <a href="#120" id="120">120</a>
-<a href="#121" id="121">121</a>
-<a href="#122" id="122">122</a>
-<a href="#123" id="123">123</a>
-<a href="#124" id="124">124</a>
-<a href="#125" id="125">125</a>
-<a href="#126" id="126">126</a>
-<a href="#127" id="127">127</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! Types related to Plutus Datums
-</span><span class="kw">use </span><span class="kw">crate</span>::plutus_data::{
-    verify_constr_fields, IsPlutusData, PlutusData, PlutusDataError, PlutusType,
-};
-<span class="kw">pub use </span><span class="kw">crate</span>::v1::datum::{Datum, DatumHash};
+
+</span><span class="kw">use </span>cardano_serialization_lib <span class="kw">as </span>csl;
 <span class="attr">#[cfg(feature = <span class="string">"lbf"</span>)]
 </span><span class="kw">use </span>lbr_prelude::json::{<span class="self">self</span>, Error, Json};
-<span class="kw">use </span>num_bigint::BigInt;
 
 <span class="attr">#[cfg(feature = <span class="string">"serde"</span>)]
 </span><span class="kw">use </span>serde::{Deserialize, Serialize};
 
-<span class="doccomment">/// Optional datum of a transaction
+<span class="kw">use crate as </span>plutus_ledger_api;
+<span class="kw">pub use </span><span class="kw">crate</span>::v1::datum::{Datum, DatumHash};
+<span class="kw">use crate</span>::{
+    csl::{
+        csl_to_pla::{FromCSL, TryFromCSL, TryFromCSLError, TryToPLA},
+        pla_to_csl::{TryFromPLA, TryFromPLAError, TryToCSL},
+    },
+    plutus_data::IsPlutusData,
+};
+
+<span class="comment">// use crate as plutus_data/
+/////////////////
+// OutputDatum //
+/////////////////
+
+</span><span class="doccomment">/// Optional datum of a transaction
 ///
 /// In case an inline datum is used, the data is embedded inside the transaction body, so it can be
 /// directly retrieved. In case of a datum hash, an off-chain indexer is required to find the
 /// associated datum by its hash.
-</span><span class="attr">#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+</span><span class="attr">#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, IsPlutusData)]
+#[is_plutus_data_derive_strategy = <span class="string">"Constr"</span>]
 #[cfg_attr(feature = <span class="string">"serde"</span>, derive(Serialize, Deserialize))]
 </span><span class="kw">pub enum </span>OutputDatum {
     <span class="prelude-val">None</span>,
@@ -152,62 +158,16 @@
     InlineDatum(Datum),
 }
 
-<span class="kw">impl </span>IsPlutusData <span class="kw">for </span>OutputDatum {
-    <span class="kw">fn </span>to_plutus_data(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; PlutusData {
-        <span class="kw">match </span><span class="self">self </span>{
-            OutputDatum::None =&gt; PlutusData::Constr(BigInt::from(<span class="number">0</span>), <span class="macro">vec!</span>[]),
-            OutputDatum::DatumHash(dat_hash) =&gt; {
-                PlutusData::Constr(BigInt::from(<span class="number">1</span>), <span class="macro">vec!</span>[dat_hash.to_plutus_data()])
-            }
-            OutputDatum::InlineDatum(datum) =&gt; {
-                PlutusData::Constr(BigInt::from(<span class="number">2</span>), <span class="macro">vec!</span>[datum.to_plutus_data()])
-            }
-        }
-    }
-
-    <span class="kw">fn </span>from_plutus_data(data: <span class="kw-2">&amp;</span>PlutusData) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>, PlutusDataError&gt; {
-        <span class="kw">match </span>data {
-            PlutusData::Constr(flag, fields) =&gt; <span class="kw">match </span>u32::try_from(flag) {
-                <span class="prelude-val">Ok</span>(<span class="number">0</span>) =&gt; {
-                    verify_constr_fields(<span class="kw-2">&amp;</span>fields, <span class="number">0</span>)<span class="question-mark">?</span>;
-                    <span class="prelude-val">Ok</span>(OutputDatum::None)
-                }
-                <span class="prelude-val">Ok</span>(<span class="number">1</span>) =&gt; {
-                    verify_constr_fields(<span class="kw-2">&amp;</span>fields, <span class="number">1</span>)<span class="question-mark">?</span>;
-                    <span class="prelude-val">Ok</span>(OutputDatum::DatumHash(DatumHash::from_plutus_data(
-                        <span class="kw-2">&amp;</span>fields[<span class="number">0</span>],
-                    )<span class="question-mark">?</span>))
-                }
-                <span class="prelude-val">Ok</span>(<span class="number">2</span>) =&gt; {
-                    verify_constr_fields(<span class="kw-2">&amp;</span>fields, <span class="number">1</span>)<span class="question-mark">?</span>;
-                    <span class="prelude-val">Ok</span>(OutputDatum::InlineDatum(Datum::from_plutus_data(
-                        <span class="kw-2">&amp;</span>fields[<span class="number">0</span>],
-                    )<span class="question-mark">?</span>))
-                }
-                <span class="kw">_ </span>=&gt; <span class="prelude-val">Err</span>(PlutusDataError::UnexpectedPlutusInvariant {
-                    wanted: <span class="string">"Constr field to be between 0..2"</span>.to_owned(),
-                    got: flag.to_string(),
-                }),
-            },
-
-            <span class="kw">_ </span>=&gt; <span class="prelude-val">Err</span>(PlutusDataError::UnexpectedPlutusType {
-                wanted: PlutusType::Constr,
-                got: PlutusType::from(data),
-            }),
-        }
-    }
-}
-
 <span class="attr">#[cfg(feature = <span class="string">"lbf"</span>)]
 </span><span class="kw">impl </span>Json <span class="kw">for </span>OutputDatum {
     <span class="kw">fn </span>to_json(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; serde_json::Value {
         <span class="kw">match </span><span class="self">self </span>{
-            OutputDatum::None =&gt; json::json_constructor(<span class="string">"NoOutputDatum"</span>, <span class="kw-2">&amp;</span>Vec::with_capacity(<span class="number">0</span>)),
+            OutputDatum::None =&gt; json::json_constructor(<span class="string">"NoOutputDatum"</span>, Vec::with_capacity(<span class="number">0</span>)),
             OutputDatum::DatumHash(dat_hash) =&gt; {
-                json::json_constructor(<span class="string">"OutputDatumHash"</span>, <span class="kw-2">&amp;</span><span class="macro">vec!</span>[dat_hash.to_json()])
+                json::json_constructor(<span class="string">"OutputDatumHash"</span>, <span class="macro">vec!</span>[dat_hash.to_json()])
             }
             OutputDatum::InlineDatum(datum) =&gt; {
-                json::json_constructor(<span class="string">"OutputDatum"</span>, <span class="kw-2">&amp;</span><span class="macro">vec!</span>[datum.to_json()])
+                json::json_constructor(<span class="string">"OutputDatum"</span>, <span class="macro">vec!</span>[datum.to_json()])
             }
         }
     }
@@ -230,7 +190,7 @@
                 (
                     <span class="string">"OutputDatumHash"</span>,
                     Box::new(|ctor_fields| <span class="kw">match </span><span class="kw-2">&amp;</span>ctor_fields[..] {
-                        [dat_hash] =&gt; <span class="prelude-val">Ok</span>(OutputDatum::DatumHash(Json::from_json(<span class="kw-2">&amp;</span>dat_hash)<span class="question-mark">?</span>)),
+                        [dat_hash] =&gt; <span class="prelude-val">Ok</span>(OutputDatum::DatumHash(Json::from_json(dat_hash)<span class="question-mark">?</span>)),
                         <span class="kw">_ </span>=&gt; <span class="prelude-val">Err</span>(Error::UnexpectedArrayLength {
                             wanted: <span class="number">1</span>,
                             got: ctor_fields.len(),
@@ -252,6 +212,32 @@
             ],
             value,
         )
+    }
+}
+
+<span class="kw">impl </span>TryFromCSL&lt;csl::OutputDatum&gt; <span class="kw">for </span>OutputDatum {
+    <span class="kw">fn </span>try_from_csl(value: <span class="kw-2">&amp;</span>csl::OutputDatum) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>, TryFromCSLError&gt; {
+        <span class="prelude-val">Ok</span>(<span class="kw">if let </span><span class="prelude-val">Some</span>(d) = value.data() {
+            OutputDatum::InlineDatum(Datum(d.try_to_pla()<span class="question-mark">?</span>))
+        } <span class="kw">else if let </span><span class="prelude-val">Some</span>(h) = value.data_hash() {
+            OutputDatum::DatumHash(DatumHash::from_csl(<span class="kw-2">&amp;</span>h))
+        } <span class="kw">else </span>{
+            OutputDatum::None
+        })
+    }
+}
+
+<span class="kw">impl </span>TryFromPLA&lt;OutputDatum&gt; <span class="kw">for </span><span class="prelude-ty">Option</span>&lt;csl::OutputDatum&gt; {
+    <span class="kw">fn </span>try_from_pla(
+        pla_output_datum: <span class="kw-2">&amp;</span>OutputDatum,
+    ) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="prelude-ty">Option</span>&lt;csl::OutputDatum&gt;, TryFromPLAError&gt; {
+        <span class="prelude-val">Ok</span>(<span class="kw">match </span>pla_output_datum {
+            OutputDatum::None =&gt; <span class="prelude-val">None</span>,
+            OutputDatum::InlineDatum(Datum(d)) =&gt; {
+                <span class="prelude-val">Some</span>(csl::OutputDatum::new_data(<span class="kw-2">&amp;</span>d.try_to_csl()<span class="question-mark">?</span>))
+            }
+            OutputDatum::DatumHash(dh) =&gt; <span class="prelude-val">Some</span>(csl::OutputDatum::new_data_hash(<span class="kw-2">&amp;</span>dh.try_to_csl()<span class="question-mark">?</span>)),
+        })
     }
 }
 </code></pre></div></section></main></body></html>

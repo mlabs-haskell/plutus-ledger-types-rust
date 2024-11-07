@@ -465,38 +465,12 @@
 <a href="#463" id="463">463</a>
 <a href="#464" id="464">464</a>
 <a href="#465" id="465">465</a>
-<a href="#466" id="466">466</a>
-<a href="#467" id="467">467</a>
-<a href="#468" id="468">468</a>
-<a href="#469" id="469">469</a>
-<a href="#470" id="470">470</a>
-<a href="#471" id="471">471</a>
-<a href="#472" id="472">472</a>
-<a href="#473" id="473">473</a>
-<a href="#474" id="474">474</a>
-<a href="#475" id="475">475</a>
-<a href="#476" id="476">476</a>
-<a href="#477" id="477">477</a>
-<a href="#478" id="478">478</a>
-<a href="#479" id="479">479</a>
-<a href="#480" id="480">480</a>
-<a href="#481" id="481">481</a>
-<a href="#482" id="482">482</a>
-<a href="#483" id="483">483</a>
-<a href="#484" id="484">484</a>
-<a href="#485" id="485">485</a>
-<a href="#486" id="486">486</a>
-<a href="#487" id="487">487</a>
-<a href="#488" id="488">488</a>
-<a href="#489" id="489">489</a>
-<a href="#490" id="490">490</a>
-<a href="#491" id="491">491</a>
-<a href="#492" id="492">492</a>
-<a href="#493" id="493">493</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! Types related to PlutusInterval
+
 </span><span class="kw">use </span><span class="kw">crate</span>::feature_traits::FeatureTraits;
 <span class="kw">use </span><span class="kw">crate</span>::plutus_data::{
-    verify_constr_fields, IsPlutusData, PlutusData, PlutusDataError, PlutusType,
+    parse_constr, parse_constr_with_tag, parse_fixed_len_constr_fields, IsPlutusData, PlutusData,
+    PlutusDataError,
 };
 <span class="attr">#[cfg(feature = <span class="string">"lbf"</span>)]
 </span><span class="kw">use </span>lbr_prelude::json::Json;
@@ -505,7 +479,11 @@
 </span><span class="kw">use </span>serde::{Deserialize, Serialize};
 <span class="kw">use </span>std::cmp;
 
-<span class="doccomment">/// An abstraction over `PlutusInterval`, allowing valid values only
+<span class="comment">//////////////
+// Interval //
+//////////////
+
+</span><span class="doccomment">/// An abstraction over `PlutusInterval`, allowing valid values only
 </span><span class="attr">#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[cfg_attr(feature = <span class="string">"serde"</span>, derive(Serialize, Deserialize))]
 </span><span class="kw">pub enum </span>Interval&lt;T&gt; {
@@ -718,7 +696,11 @@
     }
 }
 
-<span class="doccomment">/// An interval of `T`s.
+<span class="comment">////////////////////
+// PlutusInterval //
+////////////////////
+
+</span><span class="doccomment">/// An interval of `T`s.
 ///
 /// The interval may be either closed or open at either end, meaning
 /// that the endpoints may or may not be included in the interval.
@@ -755,30 +737,20 @@
     }
 
     <span class="kw">fn </span>from_plutus_data(data: <span class="kw-2">&amp;</span>PlutusData) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>, PlutusDataError&gt; {
-        <span class="kw">match </span>data {
-            PlutusData::Constr(flag, fields) =&gt; <span class="kw">match </span>u32::try_from(flag) {
-                <span class="prelude-val">Ok</span>(<span class="number">0</span>) =&gt; {
-                    verify_constr_fields(<span class="kw-2">&amp;</span>fields, <span class="number">2</span>)<span class="question-mark">?</span>;
-                    <span class="prelude-val">Ok</span>(PlutusInterval {
-                        from: &lt;LowerBound&lt;T&gt;&gt;::from_plutus_data(<span class="kw-2">&amp;</span>fields[<span class="number">0</span>])<span class="question-mark">?</span>,
-                        to: &lt;UpperBound&lt;T&gt;&gt;::from_plutus_data(<span class="kw-2">&amp;</span>fields[<span class="number">1</span>])<span class="question-mark">?</span>,
-                    })
-                }
-                <span class="kw">_ </span>=&gt; <span class="prelude-val">Err</span>(PlutusDataError::UnexpectedPlutusInvariant {
-                    wanted: <span class="string">"Constr field to be 0"</span>.to_owned(),
-                    got: flag.to_string(),
-                }),
-            },
-
-            <span class="kw">_ </span>=&gt; <span class="prelude-val">Err</span>(PlutusDataError::UnexpectedPlutusType {
-                wanted: PlutusType::Constr,
-                got: PlutusType::from(data),
-            }),
-        }
+        <span class="kw">let </span>fields = parse_constr_with_tag(data, <span class="number">0</span>)<span class="question-mark">?</span>;
+        <span class="kw">let </span>[field_0, field_1] = parse_fixed_len_constr_fields::&lt;<span class="number">2</span>&gt;(fields)<span class="question-mark">?</span>;
+        <span class="prelude-val">Ok</span>(<span class="self">Self </span>{
+            from: IsPlutusData::from_plutus_data(field_0)<span class="question-mark">?</span>,
+            to: IsPlutusData::from_plutus_data(field_1)<span class="question-mark">?</span>,
+        })
     }
 }
 
-<span class="attr">#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+<span class="comment">////////////////
+// UpperBound //
+////////////////
+
+</span><span class="attr">#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[cfg_attr(feature = <span class="string">"lbf"</span>, derive(Json))]
 #[cfg_attr(feature = <span class="string">"serde"</span>, derive(Serialize, Deserialize))]
 </span><span class="kw">pub struct </span>UpperBound&lt;T&gt;
@@ -801,30 +773,20 @@
     }
 
     <span class="kw">fn </span>from_plutus_data(data: <span class="kw-2">&amp;</span>PlutusData) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>, PlutusDataError&gt; {
-        <span class="kw">match </span>data {
-            PlutusData::Constr(flag, fields) =&gt; <span class="kw">match </span>u32::try_from(flag) {
-                <span class="prelude-val">Ok</span>(<span class="number">0</span>) =&gt; {
-                    verify_constr_fields(<span class="kw-2">&amp;</span>fields, <span class="number">2</span>)<span class="question-mark">?</span>;
-                    <span class="prelude-val">Ok</span>(UpperBound {
-                        bound: &lt;Extended&lt;T&gt;&gt;::from_plutus_data(<span class="kw-2">&amp;</span>fields[<span class="number">0</span>])<span class="question-mark">?</span>,
-                        closed: bool::from_plutus_data(<span class="kw-2">&amp;</span>fields[<span class="number">1</span>])<span class="question-mark">?</span>,
-                    })
-                }
-                <span class="kw">_ </span>=&gt; <span class="prelude-val">Err</span>(PlutusDataError::UnexpectedPlutusInvariant {
-                    wanted: <span class="string">"Constr field to be 0"</span>.to_owned(),
-                    got: flag.to_string(),
-                }),
-            },
-
-            <span class="kw">_ </span>=&gt; <span class="prelude-val">Err</span>(PlutusDataError::UnexpectedPlutusType {
-                wanted: PlutusType::Constr,
-                got: PlutusType::from(data),
-            }),
-        }
+        <span class="kw">let </span>fields = parse_constr_with_tag(data, <span class="number">0</span>)<span class="question-mark">?</span>;
+        <span class="kw">let </span>[field_0, field_1] = parse_fixed_len_constr_fields::&lt;<span class="number">2</span>&gt;(fields)<span class="question-mark">?</span>;
+        <span class="prelude-val">Ok</span>(<span class="self">Self </span>{
+            bound: IsPlutusData::from_plutus_data(field_0)<span class="question-mark">?</span>,
+            closed: IsPlutusData::from_plutus_data(field_1)<span class="question-mark">?</span>,
+        })
     }
 }
 
-<span class="attr">#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+<span class="comment">////////////////
+// LowerBound //
+////////////////
+
+</span><span class="attr">#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[cfg_attr(feature = <span class="string">"lbf"</span>, derive(Json))]
 #[cfg_attr(feature = <span class="string">"serde"</span>, derive(Serialize, Deserialize))]
 </span><span class="kw">pub struct </span>LowerBound&lt;T&gt;
@@ -847,30 +809,20 @@
     }
 
     <span class="kw">fn </span>from_plutus_data(data: <span class="kw-2">&amp;</span>PlutusData) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>, PlutusDataError&gt; {
-        <span class="kw">match </span>data {
-            PlutusData::Constr(flag, fields) =&gt; <span class="kw">match </span>u32::try_from(flag) {
-                <span class="prelude-val">Ok</span>(<span class="number">0</span>) =&gt; {
-                    verify_constr_fields(<span class="kw-2">&amp;</span>fields, <span class="number">2</span>)<span class="question-mark">?</span>;
-                    <span class="prelude-val">Ok</span>(LowerBound {
-                        bound: &lt;Extended&lt;T&gt;&gt;::from_plutus_data(<span class="kw-2">&amp;</span>fields[<span class="number">0</span>])<span class="question-mark">?</span>,
-                        closed: bool::from_plutus_data(<span class="kw-2">&amp;</span>fields[<span class="number">1</span>])<span class="question-mark">?</span>,
-                    })
-                }
-                <span class="kw">_ </span>=&gt; <span class="prelude-val">Err</span>(PlutusDataError::UnexpectedPlutusInvariant {
-                    wanted: <span class="string">"Constr field to be 0"</span>.to_owned(),
-                    got: flag.to_string(),
-                }),
-            },
-
-            <span class="kw">_ </span>=&gt; <span class="prelude-val">Err</span>(PlutusDataError::UnexpectedPlutusType {
-                wanted: PlutusType::Constr,
-                got: PlutusType::from(data),
-            }),
-        }
+        <span class="kw">let </span>fields = parse_constr_with_tag(data, <span class="number">0</span>)<span class="question-mark">?</span>;
+        <span class="kw">let </span>[field_0, field_1] = parse_fixed_len_constr_fields::&lt;<span class="number">2</span>&gt;(fields)<span class="question-mark">?</span>;
+        <span class="prelude-val">Ok</span>(<span class="self">Self </span>{
+            bound: IsPlutusData::from_plutus_data(field_0)<span class="question-mark">?</span>,
+            closed: IsPlutusData::from_plutus_data(field_1)<span class="question-mark">?</span>,
+        })
     }
 }
 
-<span class="doccomment">/// A set extended with a positive and negative infinity.
+<span class="comment">//////////////
+// Extended //
+//////////////
+
+</span><span class="doccomment">/// A set extended with a positive and negative infinity.
 </span><span class="attr">#[derive(Clone, Debug, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = <span class="string">"lbf"</span>, derive(Json))]
 #[cfg_attr(feature = <span class="string">"serde"</span>, derive(Serialize, Deserialize))]
@@ -940,31 +892,23 @@
     }
 
     <span class="kw">fn </span>from_plutus_data(data: <span class="kw-2">&amp;</span>PlutusData) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>, PlutusDataError&gt; {
-        <span class="kw">match </span>data {
-            PlutusData::Constr(flag, fields) =&gt; <span class="kw">match </span>u32::try_from(flag) {
-                <span class="prelude-val">Ok</span>(<span class="number">0</span>) =&gt; {
-                    verify_constr_fields(<span class="kw-2">&amp;</span>fields, <span class="number">0</span>)<span class="question-mark">?</span>;
-                    <span class="prelude-val">Ok</span>(Extended::NegInf)
-                }
-                <span class="prelude-val">Ok</span>(<span class="number">1</span>) =&gt; {
-                    verify_constr_fields(<span class="kw-2">&amp;</span>fields, <span class="number">1</span>)<span class="question-mark">?</span>;
-                    <span class="prelude-val">Ok</span>(Extended::Finite(IsPlutusData::from_plutus_data(
-                        <span class="kw-2">&amp;</span>fields[<span class="number">0</span>],
-                    )<span class="question-mark">?</span>))
-                }
-                <span class="prelude-val">Ok</span>(<span class="number">2</span>) =&gt; {
-                    verify_constr_fields(<span class="kw-2">&amp;</span>fields, <span class="number">0</span>)<span class="question-mark">?</span>;
-                    <span class="prelude-val">Ok</span>(Extended::PosInf)
-                }
-                <span class="kw">_ </span>=&gt; <span class="prelude-val">Err</span>(PlutusDataError::UnexpectedPlutusInvariant {
-                    wanted: <span class="string">"Constr field between 0 and 1"</span>.to_owned(),
-                    got: flag.to_string(),
-                }),
-            },
-
-            <span class="kw">_ </span>=&gt; <span class="prelude-val">Err</span>(PlutusDataError::UnexpectedPlutusType {
-                wanted: PlutusType::Constr,
-                got: PlutusType::from(data),
+        <span class="kw">let </span>(tag, fields) = parse_constr(data)<span class="question-mark">?</span>;
+        <span class="kw">match </span>tag {
+            <span class="number">0 </span>=&gt; {
+                <span class="kw">let </span>[] = parse_fixed_len_constr_fields::&lt;<span class="number">0</span>&gt;(fields)<span class="question-mark">?</span>;
+                <span class="prelude-val">Ok</span>(Extended::NegInf)
+            }
+            <span class="number">1 </span>=&gt; {
+                <span class="kw">let </span>[field] = parse_fixed_len_constr_fields::&lt;<span class="number">1</span>&gt;(fields)<span class="question-mark">?</span>;
+                <span class="prelude-val">Ok</span>(Extended::Finite(IsPlutusData::from_plutus_data(field)<span class="question-mark">?</span>))
+            }
+            <span class="number">2 </span>=&gt; {
+                <span class="kw">let </span>[] = parse_fixed_len_constr_fields::&lt;<span class="number">0</span>&gt;(fields)<span class="question-mark">?</span>;
+                <span class="prelude-val">Ok</span>(Extended::PosInf)
+            }
+            <span class="kw">_ </span>=&gt; <span class="prelude-val">Err</span>(PlutusDataError::UnexpectedPlutusInvariant {
+                wanted: <span class="string">"Constr with tag 0, 1 or 2"</span>.to_owned(),
+                got: tag.to_string(),
             }),
         }
     }

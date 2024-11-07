@@ -137,7 +137,7 @@
 <span class="doccomment">/// Helper function to generate a well typed arbitrary natural number
 /// Generating `n` vectors of random u32 values, which gives a max bound of u32::MAX ^ n
 </span><span class="kw">fn </span>arb_biguint(n: usize) -&gt; <span class="kw">impl </span>Strategy&lt;Value = BigUint&gt; {
-    vec(any::&lt;u32&gt;(), n).prop_map(|value| BigUint::new(value))
+    vec(any::&lt;u32&gt;(), n).prop_map(BigUint::new)
 }
 
 <span class="doccomment">/// Strategy to generate an arbitrary character

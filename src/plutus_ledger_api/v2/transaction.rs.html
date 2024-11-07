@@ -219,25 +219,54 @@
 <a href="#217" id="217">217</a>
 <a href="#218" id="218">218</a>
 <a href="#219" id="219">219</a>
+<a href="#220" id="220">220</a>
+<a href="#221" id="221">221</a>
+<a href="#222" id="222">222</a>
+<a href="#223" id="223">223</a>
+<a href="#224" id="224">224</a>
+<a href="#225" id="225">225</a>
+<a href="#226" id="226">226</a>
+<a href="#227" id="227">227</a>
+<a href="#228" id="228">228</a>
+<a href="#229" id="229">229</a>
+<a href="#230" id="230">230</a>
+<a href="#231" id="231">231</a>
+<a href="#232" id="232">232</a>
+<a href="#233" id="233">233</a>
+<a href="#234" id="234">234</a>
+<a href="#235" id="235">235</a>
+<a href="#236" id="236">236</a>
+<a href="#237" id="237">237</a>
+<a href="#238" id="238">238</a>
+<a href="#239" id="239">239</a>
+<a href="#240" id="240">240</a>
+<a href="#241" id="241">241</a>
+<a href="#242" id="242">242</a>
+<a href="#243" id="243">243</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! Types related to Cardano transactions.
-</span><span class="kw">use </span><span class="kw">crate</span>::plutus_data::{parse_constr_with_tag, parse_fixed_len_constr_fields};
-<span class="kw">use </span><span class="kw">crate</span>::plutus_data::{
-    verify_constr_fields, IsPlutusData, PlutusData, PlutusDataError, PlutusType,
-};
+
+</span><span class="kw">use </span>std::collections::BTreeMap;
+
+<span class="kw">use </span>cardano_serialization_lib <span class="kw">as </span>csl;
+<span class="attr">#[cfg(feature = <span class="string">"lbf"</span>)]
+</span><span class="kw">use </span>lbr_prelude::json::Json;
+<span class="kw">use </span>num_bigint::BigInt;
+<span class="attr">#[cfg(feature = <span class="string">"serde"</span>)]
+</span><span class="kw">use </span>serde::{Deserialize, Serialize};
+
+<span class="kw">use crate as </span>plutus_ledger_api;
+<span class="kw">use </span><span class="kw">crate</span>::csl::csl_to_pla::{FromCSL, TryFromCSL, TryFromCSLError, TryToPLA};
+<span class="kw">use </span><span class="kw">crate</span>::csl::pla_to_csl::{TryFromPLA, TryFromPLAError, TryToCSL};
+<span class="kw">use </span><span class="kw">crate</span>::plutus_data::IsPlutusData;
 <span class="attr">#[cfg(feature = <span class="string">"chrono"</span>)]
 </span><span class="kw">pub use </span><span class="kw">crate</span>::v1::transaction::POSIXTimeConversionError;
 <span class="kw">pub use </span><span class="kw">crate</span>::v1::transaction::{
     DCert, POSIXTime, POSIXTimeRange, ScriptPurpose, TransactionHash, TransactionInput,
 };
-<span class="attr">#[cfg(feature = <span class="string">"lbf"</span>)]
-</span><span class="kw">use </span>lbr_prelude::json::Json;
-<span class="kw">use </span>num_bigint::BigInt;
 
-<span class="attr">#[cfg(feature = <span class="string">"serde"</span>)]
-</span><span class="kw">use </span>serde::{Deserialize, Serialize};
-
+<span class="kw">use </span><span class="kw">super</span>::address::AddressWithExtraInfo;
 <span class="kw">use super</span>::{
-    address::{Address, StakingCredential},
+    address::{Address, RewardAddressWithExtraInfo, StakingCredential},
     assoc_map::AssocMap,
     crypto::PaymentPubKeyHash,
     datum::{Datum, DatumHash, OutputDatum},
@@ -246,11 +275,16 @@
     value::Value,
 };
 
-<span class="doccomment">/// An output of a transaction
+<span class="comment">///////////////////////
+// TransactionOutput //
+///////////////////////
+
+</span><span class="doccomment">/// An output of a transaction
 ///
 /// This must include the target address, an optional datum, an optional reference script, and the
 /// amount of output tokens
-</span><span class="attr">#[derive(Clone, Debug, PartialEq, Eq)]
+</span><span class="attr">#[derive(Clone, Debug, PartialEq, Eq, IsPlutusData)]
+#[is_plutus_data_derive_strategy = <span class="string">"Constr"</span>]
 #[cfg_attr(feature = <span class="string">"serde"</span>, derive(Serialize, Deserialize))]
 #[cfg_attr(feature = <span class="string">"lbf"</span>, derive(Json))]
 </span><span class="kw">pub struct </span>TransactionOutput {
@@ -260,47 +294,124 @@
     <span class="kw">pub </span>reference_script: <span class="prelude-ty">Option</span>&lt;ScriptHash&gt;,
 }
 
-<span class="kw">impl </span>IsPlutusData <span class="kw">for </span>TransactionOutput {
-    <span class="kw">fn </span>to_plutus_data(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; PlutusData {
-        PlutusData::Constr(
-            BigInt::from(<span class="number">0</span>),
-            <span class="macro">vec!</span>[
-                <span class="self">self</span>.address.to_plutus_data(),
-                <span class="self">self</span>.value.to_plutus_data(),
-                <span class="self">self</span>.datum.to_plutus_data(),
-                <span class="self">self</span>.reference_script.to_plutus_data(),
-            ],
-        )
-    }
-
-    <span class="kw">fn </span>from_plutus_data(data: <span class="kw-2">&amp;</span>PlutusData) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>, PlutusDataError&gt; {
-        <span class="kw">match </span>data {
-            PlutusData::Constr(flag, fields) =&gt; <span class="kw">match </span>u32::try_from(flag) {
-                <span class="prelude-val">Ok</span>(<span class="number">0</span>) =&gt; {
-                    verify_constr_fields(<span class="kw-2">&amp;</span>fields, <span class="number">4</span>)<span class="question-mark">?</span>;
-                    <span class="prelude-val">Ok</span>(TransactionOutput {
-                        address: Address::from_plutus_data(<span class="kw-2">&amp;</span>fields[<span class="number">0</span>])<span class="question-mark">?</span>,
-                        value: Value::from_plutus_data(<span class="kw-2">&amp;</span>fields[<span class="number">1</span>])<span class="question-mark">?</span>,
-                        datum: OutputDatum::from_plutus_data(<span class="kw-2">&amp;</span>fields[<span class="number">2</span>])<span class="question-mark">?</span>,
-                        reference_script: &lt;<span class="prelude-ty">Option</span>&lt;ScriptHash&gt;&gt;::from_plutus_data(<span class="kw-2">&amp;</span>fields[<span class="number">3</span>])<span class="question-mark">?</span>,
-                    })
-                }
-                <span class="kw">_ </span>=&gt; <span class="prelude-val">Err</span>(PlutusDataError::UnexpectedPlutusInvariant {
-                    wanted: <span class="string">"Constr field to be 0"</span>.to_owned(),
-                    got: flag.to_string(),
-                }),
+<span class="kw">impl </span>TryFromCSL&lt;csl::TransactionOutput&gt; <span class="kw">for </span>TransactionOutput {
+    <span class="kw">fn </span>try_from_csl(value: <span class="kw-2">&amp;</span>csl::TransactionOutput) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>, TryFromCSLError&gt; {
+        <span class="prelude-val">Ok</span>(TransactionOutput {
+            address: value.address().try_to_pla()<span class="question-mark">?</span>,
+            datum: <span class="kw">if </span>value.has_data_hash() {
+                OutputDatum::DatumHash(DatumHash::from_csl(<span class="kw-2">&amp;</span>value.data_hash().unwrap()))
+            } <span class="kw">else if </span>value.has_plutus_data() {
+                OutputDatum::InlineDatum(Datum(value.plutus_data().unwrap().try_to_pla()<span class="question-mark">?</span>))
+            } <span class="kw">else </span>{
+                OutputDatum::None
             },
-
-            <span class="kw">_ </span>=&gt; <span class="prelude-val">Err</span>(PlutusDataError::UnexpectedPlutusType {
-                wanted: PlutusType::Constr,
-                got: PlutusType::from(data),
-            }),
-        }
+            reference_script: <span class="kw">if </span>value.has_script_ref() {
+                <span class="kw">let </span>script_ref = value.script_ref().unwrap();
+                <span class="kw">let </span>script_hash = <span class="kw">if </span>script_ref.is_native_script() {
+                    script_ref.native_script().unwrap().hash()
+                } <span class="kw">else </span>{
+                    script_ref.plutus_script().unwrap().hash()
+                };
+                <span class="prelude-val">Some</span>(ScriptHash::from_csl(<span class="kw-2">&amp;</span>script_hash))
+            } <span class="kw">else </span>{
+                <span class="prelude-val">None
+            </span>},
+            value: Value::from_csl(<span class="kw-2">&amp;</span>value.amount()),
+        })
     }
 }
 
-<span class="doccomment">/// An input of a pending transaction.
-</span><span class="attr">#[derive(Clone, Debug, PartialEq, Eq)]
+<span class="kw">impl </span>TryFromCSL&lt;csl::TransactionOutputs&gt; <span class="kw">for </span>Vec&lt;TransactionOutput&gt; {
+    <span class="kw">fn </span>try_from_csl(value: <span class="kw-2">&amp;</span>csl::TransactionOutputs) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>, TryFromCSLError&gt; {
+        (<span class="number">0</span>..value.len())
+            .map(|idx| TransactionOutput::try_from_csl(<span class="kw-2">&amp;</span>value.get(idx)))
+            .collect()
+    }
+}
+
+<span class="attr">#[derive(Clone, Debug)]
+</span><span class="kw">pub struct </span>TransactionOutputWithExtraInfo&lt;<span class="lifetime">'a</span>&gt; {
+    <span class="kw">pub </span>transaction_output: <span class="kw-2">&amp;</span><span class="lifetime">'a </span>TransactionOutput,
+    <span class="kw">pub </span>scripts: <span class="kw-2">&amp;</span><span class="lifetime">'a </span>BTreeMap&lt;ScriptHash, csl::PlutusScript&gt;,
+    <span class="kw">pub </span>network_id: u8,
+    <span class="kw">pub </span>data_cost: <span class="kw-2">&amp;</span><span class="lifetime">'a </span>csl::DataCost,
+}
+
+<span class="kw">impl </span>TryFromPLA&lt;TransactionOutputWithExtraInfo&lt;<span class="lifetime">'_</span>&gt;&gt; <span class="kw">for </span>csl::TransactionOutput {
+    <span class="kw">fn </span>try_from_pla(val: <span class="kw-2">&amp;</span>TransactionOutputWithExtraInfo&lt;<span class="lifetime">'_</span>&gt;) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>, TryFromPLAError&gt; {
+        <span class="kw">let </span><span class="kw-2">mut </span>output_builder = csl::TransactionOutputBuilder::new().with_address(
+            <span class="kw-2">&amp;</span>AddressWithExtraInfo {
+                address: <span class="kw-2">&amp;</span>val.transaction_output.address,
+                network_tag: val.network_id,
+            }
+            .try_to_csl()<span class="question-mark">?</span>,
+        );
+
+        output_builder = <span class="kw">match </span><span class="kw-2">&amp;</span>val.transaction_output.datum {
+            OutputDatum::None =&gt; output_builder,
+            OutputDatum::InlineDatum(Datum(d)) =&gt; output_builder.with_plutus_data(<span class="kw-2">&amp;</span>d.try_to_csl()<span class="question-mark">?</span>),
+            OutputDatum::DatumHash(dh) =&gt; output_builder.with_data_hash(<span class="kw-2">&amp;</span>dh.try_to_csl()<span class="question-mark">?</span>),
+        };
+
+        <span class="kw">let </span>script_ref = val
+            .transaction_output
+            .reference_script
+            .clone()
+            .map(|script_hash| -&gt; <span class="prelude-ty">Result</span>&lt;<span class="kw">_</span>, TryFromPLAError&gt; {
+                <span class="kw">let </span>script = val
+                    .scripts
+                    .get(<span class="kw-2">&amp;</span>script_hash)
+                    .ok_or(TryFromPLAError::MissingScript(script_hash))<span class="question-mark">?</span>;
+                <span class="prelude-val">Ok</span>(csl::ScriptRef::new_plutus_script(script))
+            })
+            .transpose()<span class="question-mark">?</span>;
+
+        <span class="kw">if let </span><span class="prelude-val">Some</span>(script_ref) = <span class="kw-2">&amp;</span>script_ref {
+            output_builder = output_builder.with_script_ref(script_ref);
+        };
+
+        <span class="kw">let </span>value_without_min_utxo = val.transaction_output.value.try_to_csl()<span class="question-mark">?</span>;
+
+        <span class="kw">let </span><span class="kw-2">mut </span>calc = csl::MinOutputAdaCalculator::new_empty(val.data_cost)
+            .map_err(TryFromPLAError::CSLJsError)<span class="question-mark">?</span>;
+        calc.set_amount(<span class="kw-2">&amp;</span>value_without_min_utxo);
+        <span class="kw">match </span><span class="kw-2">&amp;</span>val.transaction_output.datum {
+            OutputDatum::None =&gt; {}
+            OutputDatum::InlineDatum(Datum(d)) =&gt; {
+                calc.set_plutus_data(<span class="kw-2">&amp;</span>d.try_to_csl()<span class="question-mark">?</span>);
+            }
+            OutputDatum::DatumHash(dh) =&gt; {
+                calc.set_data_hash(<span class="kw-2">&amp;</span>dh.try_to_csl()<span class="question-mark">?</span>);
+            }
+        };
+        <span class="kw">if let </span><span class="prelude-val">Some</span>(script_ref) = script_ref {
+            calc.set_script_ref(<span class="kw-2">&amp;</span>script_ref);
+        }
+
+        <span class="kw">let </span>required_coin = calc.calculate_ada().map_err(TryFromPLAError::CSLJsError)<span class="question-mark">?</span>;
+        <span class="kw">let </span>coin = std::cmp::max(value_without_min_utxo.coin(), required_coin);
+
+        <span class="kw">let </span>value = <span class="kw">match </span>value_without_min_utxo.multiasset() {
+            <span class="prelude-val">Some</span>(multiasset) =&gt; csl::Value::new_with_assets(<span class="kw-2">&amp;</span>coin, <span class="kw-2">&amp;</span>multiasset),
+            <span class="prelude-val">None </span>=&gt; csl::Value::new(<span class="kw-2">&amp;</span>coin),
+        };
+
+        output_builder
+            .next()
+            .map_err(TryFromPLAError::CSLJsError)<span class="question-mark">?
+            </span>.with_value(<span class="kw-2">&amp;</span>value)
+            .build()
+            .map_err(TryFromPLAError::CSLJsError)
+    }
+}
+
+<span class="comment">//////////////
+// TxInInfo //
+//////////////
+
+</span><span class="doccomment">/// An input of a pending transaction.
+</span><span class="attr">#[derive(Clone, Debug, PartialEq, Eq, IsPlutusData)]
+#[is_plutus_data_derive_strategy = <span class="string">"Constr"</span>]
 #[cfg_attr(feature = <span class="string">"serde"</span>, derive(Serialize, Deserialize))]
 #[cfg_attr(feature = <span class="string">"lbf"</span>, derive(Json))]
 </span><span class="kw">pub struct </span>TxInInfo {
@@ -314,43 +425,12 @@
     }
 }
 
-<span class="kw">impl </span>IsPlutusData <span class="kw">for </span>TxInInfo {
-    <span class="kw">fn </span>to_plutus_data(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; PlutusData {
-        PlutusData::Constr(
-            BigInt::from(<span class="number">0</span>),
-            <span class="macro">vec!</span>[
-                <span class="self">self</span>.reference.to_plutus_data(),
-                <span class="self">self</span>.output.to_plutus_data(),
-            ],
-        )
-    }
+<span class="comment">// TransactionInfo //
+/////////////////////
 
-    <span class="kw">fn </span>from_plutus_data(data: <span class="kw-2">&amp;</span>PlutusData) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>, PlutusDataError&gt; {
-        <span class="kw">match </span>data {
-            PlutusData::Constr(flag, fields) =&gt; <span class="kw">match </span>u32::try_from(flag) {
-                <span class="prelude-val">Ok</span>(<span class="number">0</span>) =&gt; {
-                    verify_constr_fields(<span class="kw-2">&amp;</span>fields, <span class="number">2</span>)<span class="question-mark">?</span>;
-                    <span class="prelude-val">Ok</span>(TxInInfo {
-                        reference: TransactionInput::from_plutus_data(<span class="kw-2">&amp;</span>fields[<span class="number">0</span>])<span class="question-mark">?</span>,
-                        output: TransactionOutput::from_plutus_data(<span class="kw-2">&amp;</span>fields[<span class="number">1</span>])<span class="question-mark">?</span>,
-                    })
-                }
-                <span class="kw">_ </span>=&gt; <span class="prelude-val">Err</span>(PlutusDataError::UnexpectedPlutusInvariant {
-                    wanted: <span class="string">"Constr field to be 0"</span>.to_owned(),
-                    got: flag.to_string(),
-                }),
-            },
-
-            <span class="kw">_ </span>=&gt; <span class="prelude-val">Err</span>(PlutusDataError::UnexpectedPlutusType {
-                wanted: PlutusType::Constr,
-                got: PlutusType::from(data),
-            }),
-        }
-    }
-}
-
-<span class="doccomment">/// A pending transaction as seen by validator scripts, also known as TxInfo in Plutus
-</span><span class="attr">#[derive(Debug, PartialEq, Eq, Clone)]
+</span><span class="doccomment">/// A pending transaction as seen by validator scripts, also known as TxInfo in Plutus
+</span><span class="attr">#[derive(Debug, PartialEq, Eq, Clone, IsPlutusData)]
+#[is_plutus_data_derive_strategy = <span class="string">"Constr"</span>]
 #[cfg_attr(feature = <span class="string">"serde"</span>, derive(Serialize, Deserialize))]
 #[cfg_attr(feature = <span class="string">"lbf"</span>, derive(Json))]
 </span><span class="kw">pub struct </span>TransactionInfo {
@@ -368,74 +448,42 @@
     <span class="kw">pub </span>id: TransactionHash,
 }
 
-<span class="kw">impl </span>IsPlutusData <span class="kw">for </span>TransactionInfo {
-    <span class="kw">fn </span>to_plutus_data(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; PlutusData {
-        PlutusData::Constr(
-            BigInt::from(<span class="number">0</span>),
-            <span class="macro">vec!</span>[
-                <span class="self">self</span>.inputs.to_plutus_data(),
-                <span class="self">self</span>.reference_inputs.to_plutus_data(),
-                <span class="self">self</span>.outputs.to_plutus_data(),
-                <span class="self">self</span>.fee.to_plutus_data(),
-                <span class="self">self</span>.mint.to_plutus_data(),
-                <span class="self">self</span>.d_cert.to_plutus_data(),
-                <span class="self">self</span>.wdrl.to_plutus_data(),
-                <span class="self">self</span>.valid_range.to_plutus_data(),
-                <span class="self">self</span>.signatories.to_plutus_data(),
-                <span class="self">self</span>.redeemers.to_plutus_data(),
-                <span class="self">self</span>.datums.to_plutus_data(),
-                <span class="self">self</span>.id.to_plutus_data(),
-            ],
-        )
-    }
+<span class="attr">#[derive(Clone, Debug)]
+</span><span class="kw">pub struct </span>WithdrawalsWithExtraInfo&lt;<span class="lifetime">'a</span>&gt; {
+    <span class="kw">pub </span>withdrawals: <span class="kw-2">&amp;</span><span class="lifetime">'a </span>AssocMap&lt;StakingCredential, BigInt&gt;,
+    <span class="kw">pub </span>network_tag: u8,
+}
 
-    <span class="kw">fn </span>from_plutus_data(data: <span class="kw-2">&amp;</span>PlutusData) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>, PlutusDataError&gt; {
-        <span class="kw">let </span>fields = parse_constr_with_tag(data, <span class="number">0</span>)<span class="question-mark">?</span>;
-        <span class="kw">let </span>[inputs, reference_inputs, outputs, fee, mint, d_cert, wdrl, valid_range, signatories, redeemers, datums, id] =
-            parse_fixed_len_constr_fields(fields)<span class="question-mark">?</span>;
-
-        <span class="prelude-val">Ok</span>(<span class="self">Self </span>{
-            inputs: IsPlutusData::from_plutus_data(inputs)<span class="question-mark">?</span>,
-            reference_inputs: IsPlutusData::from_plutus_data(reference_inputs)<span class="question-mark">?</span>,
-            outputs: IsPlutusData::from_plutus_data(outputs)<span class="question-mark">?</span>,
-            fee: IsPlutusData::from_plutus_data(fee)<span class="question-mark">?</span>,
-            mint: IsPlutusData::from_plutus_data(mint)<span class="question-mark">?</span>,
-            d_cert: IsPlutusData::from_plutus_data(d_cert)<span class="question-mark">?</span>,
-            wdrl: IsPlutusData::from_plutus_data(wdrl)<span class="question-mark">?</span>,
-            valid_range: IsPlutusData::from_plutus_data(valid_range)<span class="question-mark">?</span>,
-            signatories: IsPlutusData::from_plutus_data(signatories)<span class="question-mark">?</span>,
-            redeemers: IsPlutusData::from_plutus_data(redeemers)<span class="question-mark">?</span>,
-            datums: IsPlutusData::from_plutus_data(datums)<span class="question-mark">?</span>,
-            id: IsPlutusData::from_plutus_data(id)<span class="question-mark">?</span>,
-        })
+<span class="kw">impl </span>TryFromPLA&lt;WithdrawalsWithExtraInfo&lt;<span class="lifetime">'_</span>&gt;&gt; <span class="kw">for </span>csl::Withdrawals {
+    <span class="kw">fn </span>try_from_pla(val: <span class="kw-2">&amp;</span>WithdrawalsWithExtraInfo&lt;<span class="lifetime">'_</span>&gt;) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>, TryFromPLAError&gt; {
+        val.withdrawals
+            .<span class="number">0
+            </span>.iter()
+            .try_fold(csl::Withdrawals::new(), |<span class="kw-2">mut </span>acc, (s, q)| {
+                acc.insert(
+                    <span class="kw-2">&amp;</span>RewardAddressWithExtraInfo {
+                        staking_credential: s,
+                        network_tag: val.network_tag,
+                    }
+                    .try_to_csl()<span class="question-mark">?</span>,
+                    <span class="kw-2">&amp;</span>q.try_to_csl()<span class="question-mark">?</span>,
+                );
+                <span class="prelude-val">Ok</span>(acc)
+            })
     }
 }
 
-<span class="doccomment">/// The context that is presented to the currently-executing script.
-</span><span class="attr">#[derive(Debug, PartialEq, Eq, Clone)]
+<span class="comment">///////////////////
+// ScriptContext //
+///////////////////
+
+</span><span class="doccomment">/// The context that is presented to the currently-executing script.
+</span><span class="attr">#[derive(Debug, PartialEq, Eq, Clone, IsPlutusData)]
+#[is_plutus_data_derive_strategy = <span class="string">"Constr"</span>]
 #[cfg_attr(feature = <span class="string">"serde"</span>, derive(Serialize, Deserialize))]
 #[cfg_attr(feature = <span class="string">"lbf"</span>, derive(Json))]
 </span><span class="kw">pub struct </span>ScriptContext {
     <span class="kw">pub </span>tx_info: TransactionInfo,
     <span class="kw">pub </span>purpose: ScriptPurpose,
-}
-
-<span class="kw">impl </span>IsPlutusData <span class="kw">for </span>ScriptContext {
-    <span class="kw">fn </span>to_plutus_data(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; PlutusData {
-        PlutusData::Constr(
-            BigInt::from(<span class="number">0</span>),
-            <span class="macro">vec!</span>[<span class="self">self</span>.tx_info.to_plutus_data(), <span class="self">self</span>.purpose.to_plutus_data()],
-        )
-    }
-
-    <span class="kw">fn </span>from_plutus_data(data: <span class="kw-2">&amp;</span>PlutusData) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>, PlutusDataError&gt; {
-        <span class="kw">let </span>fields = parse_constr_with_tag(data, <span class="number">0</span>)<span class="question-mark">?</span>;
-        <span class="kw">let </span>[tx_info, purpose] = parse_fixed_len_constr_fields(fields)<span class="question-mark">?</span>;
-
-        <span class="prelude-val">Ok</span>(<span class="self">Self </span>{
-            tx_info: IsPlutusData::from_plutus_data(tx_info)<span class="question-mark">?</span>,
-            purpose: IsPlutusData::from_plutus_data(purpose)<span class="question-mark">?</span>,
-        })
-    }
 }
 </code></pre></div></section></main></body></html>

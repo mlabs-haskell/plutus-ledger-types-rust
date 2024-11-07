@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["DRep","Delegatee","GovernanceAction","ScriptInfo","ScriptPurpose","TxCert","Vote","Voter"],"struct":["ChangeParameters","ColdCommitteeCredential","Committee","Constitution","DRepCredential","GovernanceActionId","HotCommitteeCredential","ProtocolProcedure","ProtocolVersion","ScriptContext","TransactionInfo"]};

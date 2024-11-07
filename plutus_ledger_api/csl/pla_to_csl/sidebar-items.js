@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["TryFromPLAError"],"trait":["TryFromPLA","TryToCSL"]};

@@ -126,87 +126,88 @@
 <a href="#124" id="124">124</a>
 <a href="#125" id="125">125</a>
 <a href="#126" id="126">126</a>
+<a href="#127" id="127">127</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! Types for cryptographic primitives, and other lower level building blocks
-</span><span class="kw">use </span><span class="kw">crate</span>::plutus_data::{IsPlutusData, PlutusData, PlutusDataError, PlutusType};
+</span><span class="kw">use </span>cardano_serialization_lib <span class="kw">as </span>csl;
 <span class="kw">use </span>data_encoding::HEXLOWER;
 <span class="attr">#[cfg(feature = <span class="string">"lbf"</span>)]
 </span><span class="kw">use </span>lbr_prelude::json::{Error, Json};
+<span class="kw">use </span>nom::{combinator::map_res, error::VerboseError, IResult};
 <span class="attr">#[cfg(feature = <span class="string">"serde"</span>)]
 </span><span class="kw">use </span>serde::{Deserialize, Serialize};
 
-<span class="doccomment">/// ED25519 public key hash
+<span class="kw">use crate as </span>plutus_ledger_api;
+<span class="kw">use crate</span>::{
+    csl::{
+        csl_to_pla::FromCSL,
+        pla_to_csl::{TryFromPLA, TryFromPLAError},
+    },
+    plutus_data::IsPlutusData,
+};
+
+<span class="comment">///////////////////////
+// Ed25519PubKeyHash //
+///////////////////////
+
+</span><span class="doccomment">/// ED25519 public key hash
 /// This is the standard cryptography in Cardano, commonly referred to as `PubKeyHash` in Plutus
 /// and other libraries
-</span><span class="attr">#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+</span><span class="attr">#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, IsPlutusData)]
+#[is_plutus_data_derive_strategy = <span class="string">"Newtype"</span>]
 #[cfg_attr(feature = <span class="string">"serde"</span>, derive(Serialize, Deserialize))]
 #[cfg_attr(feature = <span class="string">"lbf"</span>, derive(Json))]
 </span><span class="kw">pub struct </span>Ed25519PubKeyHash(<span class="kw">pub </span>LedgerBytes);
 
-<span class="kw">impl </span>IsPlutusData <span class="kw">for </span>Ed25519PubKeyHash {
-    <span class="kw">fn </span>to_plutus_data(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; PlutusData {
-        <span class="kw">let </span>Ed25519PubKeyHash(LedgerBytes(bytes)) = <span class="self">self</span>;
-        PlutusData::Bytes(bytes.clone())
-    }
-
-    <span class="kw">fn </span>from_plutus_data(data: <span class="kw-2">&amp;</span>PlutusData) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>, PlutusDataError&gt; {
-        <span class="kw">match </span>data {
-            PlutusData::Bytes(bytes) =&gt; <span class="prelude-val">Ok</span>(<span class="self">Self</span>(LedgerBytes(bytes.clone()))),
-            <span class="kw">_ </span>=&gt; <span class="prelude-val">Err</span>(PlutusDataError::UnexpectedPlutusType {
-                wanted: PlutusType::Bytes,
-                got: PlutusType::from(data),
-            }),
-        }
+<span class="kw">impl </span>FromCSL&lt;csl::Ed25519KeyHash&gt; <span class="kw">for </span>Ed25519PubKeyHash {
+    <span class="kw">fn </span>from_csl(value: <span class="kw-2">&amp;</span>csl::Ed25519KeyHash) -&gt; <span class="self">Self </span>{
+        Ed25519PubKeyHash(LedgerBytes(value.to_bytes()))
     }
 }
 
-<span class="doccomment">/// Standard public key hash used to verify a transaction witness
-</span><span class="attr">#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+<span class="kw">impl </span>TryFromPLA&lt;Ed25519PubKeyHash&gt; <span class="kw">for </span>csl::Ed25519KeyHash {
+    <span class="kw">fn </span>try_from_pla(val: <span class="kw-2">&amp;</span>Ed25519PubKeyHash) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>, TryFromPLAError&gt; {
+        csl::Ed25519KeyHash::from_bytes(val.<span class="number">0 </span>.<span class="number">0</span>.to_owned())
+            .map_err(TryFromPLAError::CSLDeserializeError)
+    }
+}
+
+<span class="kw">impl </span>FromCSL&lt;csl::RequiredSigners&gt; <span class="kw">for </span>Vec&lt;Ed25519PubKeyHash&gt; {
+    <span class="kw">fn </span>from_csl(value: <span class="kw-2">&amp;</span>csl::RequiredSigners) -&gt; <span class="self">Self </span>{
+        (<span class="number">0</span>..value.len())
+            .map(|idx| Ed25519PubKeyHash::from_csl(<span class="kw-2">&amp;</span>value.get(idx)))
+            .collect()
+    }
+}
+
+<span class="comment">///////////////////////
+// PaymentPubKeyHash //
+///////////////////////
+
+</span><span class="doccomment">/// Standard public key hash used to verify a transaction witness
+</span><span class="attr">#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, IsPlutusData)]
+#[is_plutus_data_derive_strategy = <span class="string">"Newtype"</span>]
 #[cfg_attr(feature = <span class="string">"serde"</span>, derive(Serialize, Deserialize))]
 #[cfg_attr(feature = <span class="string">"lbf"</span>, derive(Json))]
 </span><span class="kw">pub struct </span>PaymentPubKeyHash(<span class="kw">pub </span>Ed25519PubKeyHash);
 
-<span class="kw">impl </span>IsPlutusData <span class="kw">for </span>PaymentPubKeyHash {
-    <span class="kw">fn </span>to_plutus_data(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; PlutusData {
-        <span class="kw">let </span>PaymentPubKeyHash(Ed25519PubKeyHash(LedgerBytes(bytes))) = <span class="self">self</span>;
-        PlutusData::Bytes(bytes.clone())
-    }
+<span class="comment">/////////////////////
+// StakePubKeyHash //
+/////////////////////
 
-    <span class="kw">fn </span>from_plutus_data(data: <span class="kw-2">&amp;</span>PlutusData) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>, PlutusDataError&gt; {
-        <span class="kw">match </span>data {
-            PlutusData::Bytes(bytes) =&gt; <span class="prelude-val">Ok</span>(<span class="self">Self</span>(Ed25519PubKeyHash(LedgerBytes(bytes.clone())))),
-            <span class="kw">_ </span>=&gt; <span class="prelude-val">Err</span>(PlutusDataError::UnexpectedPlutusType {
-                wanted: PlutusType::Bytes,
-                got: PlutusType::from(data),
-            }),
-        }
-    }
-}
-
-<span class="doccomment">/// Standard public key hash used to verify a staking
-</span><span class="attr">#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+</span><span class="doccomment">/// Standard public key hash used to verify a staking
+</span><span class="attr">#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, IsPlutusData)]
+#[is_plutus_data_derive_strategy = <span class="string">"Newtype"</span>]
 #[cfg_attr(feature = <span class="string">"serde"</span>, derive(Serialize, Deserialize))]
 #[cfg_attr(feature = <span class="string">"lbf"</span>, derive(Json))]
 </span><span class="kw">pub struct </span>StakePubKeyHash(<span class="kw">pub </span>Ed25519PubKeyHash);
 
-<span class="kw">impl </span>IsPlutusData <span class="kw">for </span>StakePubKeyHash {
-    <span class="kw">fn </span>to_plutus_data(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; PlutusData {
-        <span class="kw">let </span>StakePubKeyHash(Ed25519PubKeyHash(LedgerBytes(bytes))) = <span class="self">self</span>;
-        PlutusData::Bytes(bytes.clone())
-    }
+<span class="comment">/////////////////
+// LedgerBytes //
+/////////////////
 
-    <span class="kw">fn </span>from_plutus_data(data: <span class="kw-2">&amp;</span>PlutusData) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>, PlutusDataError&gt; {
-        <span class="kw">match </span>data {
-            PlutusData::Bytes(bytes) =&gt; <span class="prelude-val">Ok</span>(<span class="self">Self</span>(Ed25519PubKeyHash(LedgerBytes(bytes.clone())))),
-            <span class="kw">_ </span>=&gt; <span class="prelude-val">Err</span>(PlutusDataError::UnexpectedPlutusType {
-                wanted: PlutusType::Bytes,
-                got: PlutusType::from(data),
-            }),
-        }
-    }
-}
-
-<span class="doccomment">/// A bytestring in the Cardano ledger context
-</span><span class="attr">#[derive(Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+</span><span class="doccomment">/// A bytestring in the Cardano ledger context
+</span><span class="attr">#[derive(Clone, PartialEq, Eq, PartialOrd, Ord, Hash, IsPlutusData)]
+#[is_plutus_data_derive_strategy = <span class="string">"Newtype"</span>]
 #[cfg_attr(feature = <span class="string">"serde"</span>, derive(Serialize, Deserialize))]
 </span><span class="kw">pub struct </span>LedgerBytes(<span class="kw">pub </span>Vec&lt;u8&gt;);
 
@@ -216,20 +217,21 @@
     }
 }
 
-<span class="kw">impl </span>IsPlutusData <span class="kw">for </span>LedgerBytes {
-    <span class="kw">fn </span>to_plutus_data(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; PlutusData {
-        PlutusData::Bytes(<span class="self">self</span>.<span class="number">0</span>.clone())
+<span class="kw">impl </span>std::fmt::Display <span class="kw">for </span>LedgerBytes {
+    <span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, f: <span class="kw-2">&amp;mut </span>std::fmt::Formatter&lt;<span class="lifetime">'_</span>&gt;) -&gt; std::fmt::Result {
+        <span class="macro">write!</span>(f, <span class="string">"{}"</span>, HEXLOWER.encode(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="number">0</span>))
     }
+}
 
-    <span class="kw">fn </span>from_plutus_data(data: <span class="kw-2">&amp;</span>PlutusData) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>, PlutusDataError&gt; {
-        <span class="kw">match </span>data {
-            PlutusData::Bytes(bytes) =&gt; <span class="prelude-val">Ok</span>(<span class="self">Self</span>(bytes.clone())),
-            <span class="kw">_ </span>=&gt; <span class="prelude-val">Err</span>(PlutusDataError::UnexpectedPlutusType {
-                wanted: PlutusType::Bytes,
-                got: PlutusType::from(data),
-            }),
-        }
-    }
+<span class="doccomment">/// Nom parser for LedgerBytes
+/// Expects a hexadecimal string of arbitrary length (0 length is allowed)
+/// E.g.: 00112233445566778899aabbcc
+</span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>ledger_bytes(input: <span class="kw-2">&amp;</span>str) -&gt; IResult&lt;<span class="kw-2">&amp;</span>str, LedgerBytes, VerboseError&lt;<span class="kw-2">&amp;</span>str&gt;&gt; {
+    map_res(nom::character::complete::hex_digit0, |hex_bytes: <span class="kw-2">&amp;</span>str| {
+        HEXLOWER
+            .decode(<span class="kw-2">&amp;</span>hex_bytes.to_owned().to_ascii_lowercase().into_bytes())
+            .map(LedgerBytes)
+    })(input)
 }
 
 <span class="attr">#[cfg(feature = <span class="string">"lbf"</span>)]

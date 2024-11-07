@@ -40,44 +40,70 @@
 <a href="#38" id="38">38</a>
 <a href="#39" id="39">39</a>
 <a href="#40" id="40">40</a>
+<a href="#41" id="41">41</a>
+<a href="#42" id="42">42</a>
+<a href="#43" id="43">43</a>
+<a href="#44" id="44">44</a>
+<a href="#45" id="45">45</a>
+<a href="#46" id="46">46</a>
+<a href="#47" id="47">47</a>
+<a href="#48" id="48">48</a>
+<a href="#49" id="49">49</a>
+<a href="#50" id="50">50</a>
+<a href="#51" id="51">51</a>
+<a href="#52" id="52">52</a>
+<a href="#53" id="53">53</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! Types related to Plutus Datums
-</span><span class="kw">use </span><span class="kw">crate</span>::plutus_data::{IsPlutusData, PlutusData, PlutusDataError};
+
+</span><span class="kw">use </span>cardano_serialization_lib <span class="kw">as </span>csl;
+
+<span class="kw">use crate as </span>plutus_ledger_api;
+<span class="kw">use </span><span class="kw">crate</span>::csl::csl_to_pla::FromCSL;
+<span class="kw">use </span><span class="kw">crate</span>::csl::pla_to_csl::{TryFromPLA, TryFromPLAError, TryToCSL};
+<span class="kw">use </span><span class="kw">crate</span>::plutus_data::{IsPlutusData, PlutusData};
 <span class="kw">use </span><span class="kw">crate</span>::v1::crypto::LedgerBytes;
 <span class="attr">#[cfg(feature = <span class="string">"lbf"</span>)]
 </span><span class="kw">use </span>lbr_prelude::json::Json;
-
 <span class="attr">#[cfg(feature = <span class="string">"serde"</span>)]
 </span><span class="kw">use </span>serde::{Deserialize, Serialize};
 
-<span class="doccomment">/// blake2b-256 hash of a datum
-</span><span class="attr">#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+<span class="comment">///////////////
+// DatumHash //
+///////////////
+
+</span><span class="doccomment">/// blake2b-256 hash of a datum
+</span><span class="attr">#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, IsPlutusData)]
+#[is_plutus_data_derive_strategy = <span class="string">"Newtype"</span>]
 #[cfg_attr(feature = <span class="string">"lbf"</span>, derive(Json))]
 #[cfg_attr(feature = <span class="string">"serde"</span>, derive(Serialize, Deserialize))]
 </span><span class="kw">pub struct </span>DatumHash(<span class="kw">pub </span>LedgerBytes);
 
-<span class="kw">impl </span>IsPlutusData <span class="kw">for </span>DatumHash {
-    <span class="kw">fn </span>to_plutus_data(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; PlutusData {
-        <span class="self">self</span>.<span class="number">0</span>.to_plutus_data()
-    }
-
-    <span class="kw">fn </span>from_plutus_data(data: <span class="kw-2">&amp;</span>PlutusData) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>, PlutusDataError&gt; {
-        IsPlutusData::from_plutus_data(data).map(<span class="self">Self</span>)
+<span class="kw">impl </span>FromCSL&lt;csl::DataHash&gt; <span class="kw">for </span>DatumHash {
+    <span class="kw">fn </span>from_csl(value: <span class="kw-2">&amp;</span>csl::DataHash) -&gt; <span class="self">Self </span>{
+        DatumHash(LedgerBytes(value.to_bytes()))
     }
 }
 
-<span class="doccomment">/// Piece of information associated with a UTxO encoded into a PlutusData type.
-</span><span class="attr">#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+<span class="kw">impl </span>TryFromPLA&lt;DatumHash&gt; <span class="kw">for </span>csl::DataHash {
+    <span class="kw">fn </span>try_from_pla(val: <span class="kw-2">&amp;</span>DatumHash) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>, TryFromPLAError&gt; {
+        csl::DataHash::from_bytes(val.<span class="number">0 </span>.<span class="number">0</span>.to_owned()).map_err(TryFromPLAError::CSLDeserializeError)
+    }
+}
+
+<span class="comment">///////////
+// Datum //
+///////////
+
+</span><span class="doccomment">/// Piece of information associated with a UTxO encoded into a PlutusData type.
+</span><span class="attr">#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, IsPlutusData)]
+#[is_plutus_data_derive_strategy = <span class="string">"Newtype"</span>]
 #[cfg_attr(feature = <span class="string">"lbf"</span>, derive(Json))]
 #[cfg_attr(feature = <span class="string">"serde"</span>, derive(Serialize, Deserialize))]
 </span><span class="kw">pub struct </span>Datum(<span class="kw">pub </span>PlutusData);
 
-<span class="kw">impl </span>IsPlutusData <span class="kw">for </span>Datum {
-    <span class="kw">fn </span>to_plutus_data(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; PlutusData {
-        <span class="self">self</span>.<span class="number">0</span>.clone()
-    }
-
-    <span class="kw">fn </span>from_plutus_data(data: <span class="kw-2">&amp;</span>PlutusData) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>, PlutusDataError&gt; {
-        IsPlutusData::from_plutus_data(data).map(<span class="self">Self</span>)
+<span class="kw">impl </span>TryFromPLA&lt;Datum&gt; <span class="kw">for </span>csl::PlutusData {
+    <span class="kw">fn </span>try_from_pla(val: <span class="kw-2">&amp;</span>Datum) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>, TryFromPLAError&gt; {
+        val.<span class="number">0</span>.try_to_csl()
     }
 }
 </code></pre></div></section></main></body></html>

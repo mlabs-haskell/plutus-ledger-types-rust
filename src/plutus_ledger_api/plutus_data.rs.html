@@ -618,8 +618,70 @@
 <a href="#616" id="616">616</a>
 <a href="#617" id="617">617</a>
 <a href="#618" id="618">618</a>
+<a href="#619" id="619">619</a>
+<a href="#620" id="620">620</a>
+<a href="#621" id="621">621</a>
+<a href="#622" id="622">622</a>
+<a href="#623" id="623">623</a>
+<a href="#624" id="624">624</a>
+<a href="#625" id="625">625</a>
+<a href="#626" id="626">626</a>
+<a href="#627" id="627">627</a>
+<a href="#628" id="628">628</a>
+<a href="#629" id="629">629</a>
+<a href="#630" id="630">630</a>
+<a href="#631" id="631">631</a>
+<a href="#632" id="632">632</a>
+<a href="#633" id="633">633</a>
+<a href="#634" id="634">634</a>
+<a href="#635" id="635">635</a>
+<a href="#636" id="636">636</a>
+<a href="#637" id="637">637</a>
+<a href="#638" id="638">638</a>
+<a href="#639" id="639">639</a>
+<a href="#640" id="640">640</a>
+<a href="#641" id="641">641</a>
+<a href="#642" id="642">642</a>
+<a href="#643" id="643">643</a>
+<a href="#644" id="644">644</a>
+<a href="#645" id="645">645</a>
+<a href="#646" id="646">646</a>
+<a href="#647" id="647">647</a>
+<a href="#648" id="648">648</a>
+<a href="#649" id="649">649</a>
+<a href="#650" id="650">650</a>
+<a href="#651" id="651">651</a>
+<a href="#652" id="652">652</a>
+<a href="#653" id="653">653</a>
+<a href="#654" id="654">654</a>
+<a href="#655" id="655">655</a>
+<a href="#656" id="656">656</a>
+<a href="#657" id="657">657</a>
+<a href="#658" id="658">658</a>
+<a href="#659" id="659">659</a>
+<a href="#660" id="660">660</a>
+<a href="#661" id="661">661</a>
+<a href="#662" id="662">662</a>
+<a href="#663" id="663">663</a>
+<a href="#664" id="664">664</a>
+<a href="#665" id="665">665</a>
+<a href="#666" id="666">666</a>
+<a href="#667" id="667">667</a>
+<a href="#668" id="668">668</a>
+<a href="#669" id="669">669</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! Plutus Data related types and traits
-</span><span class="attr">#[cfg(feature = <span class="string">"lbf"</span>)]
+
+</span><span class="kw">use </span>std::collections::{BTreeMap, BTreeSet};
+
+<span class="kw">use </span>cardano_serialization_lib <span class="kw">as </span>csl;
+<span class="kw">use </span>num_bigint::BigInt;
+
+<span class="kw">use </span><span class="kw">crate</span>::csl::csl_to_pla::{FromCSL, TryFromCSL, TryFromCSLError, TryToPLA};
+<span class="kw">use </span><span class="kw">crate</span>::csl::pla_to_csl::{TryFromPLA, TryFromPLAError, TryToCSL};
+
+<span class="kw">pub use </span>is_plutus_data_derive::IsPlutusData;
+
+<span class="attr">#[cfg(feature = <span class="string">"lbf"</span>)]
 </span><span class="kw">use </span>data_encoding::HEXLOWER;
 <span class="attr">#[cfg(feature = <span class="string">"lbf"</span>)]
 </span><span class="kw">use </span>lbr_prelude::error::Error;
@@ -627,8 +689,6 @@
 </span><span class="kw">use </span>lbr_prelude::json::{
     case_json_constructor, case_json_object, json_constructor, json_object, Json,
 };
-<span class="kw">use </span>num_bigint::BigInt;
-<span class="kw">use </span>std::collections::{BTreeMap, BTreeSet};
 
 <span class="attr">#[cfg(feature = <span class="string">"serde"</span>)]
 </span><span class="kw">use </span>serde::{Deserialize, Serialize};
@@ -642,6 +702,48 @@
     List(Vec&lt;PlutusData&gt;),
     Integer(BigInt),
     Bytes(Vec&lt;u8&gt;),
+}
+
+<span class="attr">#[derive(Clone, Debug)]
+</span><span class="kw">pub enum </span>PlutusType {
+    Constr,
+    Map,
+    List,
+    Integer,
+    Bytes,
+}
+
+<span class="kw">pub trait </span>IsPlutusData {
+    <span class="kw">fn </span>to_plutus_data(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; PlutusData;
+
+    <span class="kw">fn </span>from_plutus_data(plutus_data: <span class="kw-2">&amp;</span>PlutusData) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>, PlutusDataError&gt;
+    <span class="kw">where
+        </span><span class="self">Self</span>: Sized;
+}
+
+<span class="comment">// TODO(chfanghr): improve error reporting
+</span><span class="attr">#[derive(Clone, Debug, thiserror::Error)]
+</span><span class="kw">pub enum </span>PlutusDataError {
+    <span class="attr">#[error(<span class="string">"Expected a PlutusData type {wanted:?}, but got {got:?}"</span>)]
+    </span>UnexpectedPlutusType { got: PlutusType, wanted: PlutusType },
+    <span class="attr">#[error(<span class="string">"Expected a PlutusData type as {wanted:?}, but got {got:?}"</span>)]
+    </span>UnexpectedPlutusInvariant { got: String, wanted: String },
+    <span class="attr">#[error(<span class="string">"Expected a Plutus List with {wanted:?} elements, but got {got:?} elements"</span>)]
+    </span>UnexpectedListLength { got: usize, wanted: usize },
+    <span class="attr">#[error(<span class="string">"Some internal error happened: {0}"</span>)]
+    </span>InternalError(String),
+}
+
+<span class="kw">impl </span>From&lt;<span class="kw-2">&amp;</span>PlutusData&gt; <span class="kw">for </span>PlutusType {
+    <span class="kw">fn </span>from(plutus_data: <span class="kw-2">&amp;</span>PlutusData) -&gt; <span class="self">Self </span>{
+        <span class="kw">match </span>plutus_data {
+            PlutusData::Constr(<span class="kw">_</span>, <span class="kw">_</span>) =&gt; PlutusType::Constr,
+            PlutusData::Map(<span class="kw">_</span>) =&gt; PlutusType::Map,
+            PlutusData::List(<span class="kw">_</span>) =&gt; PlutusType::List,
+            PlutusData::Integer(<span class="kw">_</span>) =&gt; PlutusType::Integer,
+            PlutusData::Bytes(<span class="kw">_</span>) =&gt; PlutusType::Bytes,
+        }
+    }
 }
 
 <span class="kw">impl </span>PlutusData {
@@ -663,6 +765,35 @@
 
     <span class="kw">pub fn </span>bytes(value: Vec&lt;u8&gt;) -&gt; <span class="self">Self </span>{
         PlutusData::Bytes(value)
+    }
+}
+
+<span class="kw">impl </span>IsPlutusData <span class="kw">for </span>PlutusData {
+    <span class="kw">fn </span>to_plutus_data(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; PlutusData {
+        <span class="self">self</span>.clone()
+    }
+
+    <span class="kw">fn </span>from_plutus_data(plutus_data: <span class="kw-2">&amp;</span>PlutusData) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>, PlutusDataError&gt; {
+        <span class="prelude-val">Ok</span>(plutus_data.clone())
+    }
+}
+
+<span class="kw">impl </span>TryFromCSL&lt;csl::PlutusData&gt; <span class="kw">for </span>PlutusData {
+    <span class="kw">fn </span>try_from_csl(value: <span class="kw-2">&amp;</span>csl::PlutusData) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>, TryFromCSLError&gt; {
+        <span class="prelude-val">Ok</span>(<span class="kw">match </span>value.kind() {
+            csl::PlutusDataKind::ConstrPlutusData =&gt; {
+                <span class="kw">let </span>constr_data = value.as_constr_plutus_data().unwrap();
+                <span class="kw">let </span>tag = BigInt::from_csl(<span class="kw-2">&amp;</span>constr_data.alternative());
+                <span class="kw">let </span>args = constr_data.data().try_to_pla()<span class="question-mark">?</span>;
+                PlutusData::Constr(tag, args)
+            }
+            csl::PlutusDataKind::Map =&gt; PlutusData::Map(value.as_map().unwrap().try_to_pla()<span class="question-mark">?</span>),
+            csl::PlutusDataKind::List =&gt; PlutusData::List(value.as_list().unwrap().try_to_pla()<span class="question-mark">?</span>),
+            csl::PlutusDataKind::Integer =&gt; {
+                PlutusData::Integer(value.as_integer().unwrap().try_to_pla()<span class="question-mark">?</span>)
+            }
+            csl::PlutusDataKind::Bytes =&gt; PlutusData::Bytes(value.as_bytes().unwrap()),
+        })
     }
 }
 
@@ -782,64 +913,9 @@
     }
 }
 
-<span class="doccomment">/// Deserialise a Plutus data using parsers for each variant
-</span><span class="kw">pub fn </span>case_plutus_data&lt;<span class="lifetime">'a</span>, T&gt;(
-    ctor_case: <span class="kw">impl </span>FnOnce(<span class="kw-2">&amp;</span><span class="lifetime">'a </span>BigInt) -&gt; Box&lt;<span class="kw">dyn </span><span class="lifetime">'a </span>+ FnOnce(<span class="kw-2">&amp;</span><span class="lifetime">'a </span>Vec&lt;PlutusData&gt;) -&gt; T&gt;,
-    list_case: <span class="kw">impl </span>FnOnce(<span class="kw-2">&amp;</span><span class="lifetime">'a </span>Vec&lt;PlutusData&gt;) -&gt; T,
-    int_case: <span class="kw">impl </span>FnOnce(<span class="kw-2">&amp;</span><span class="lifetime">'a </span>BigInt) -&gt; T,
-    other_case: <span class="kw">impl </span>FnOnce(<span class="kw-2">&amp;</span><span class="lifetime">'a </span>PlutusData) -&gt; T,
-    pd: <span class="kw-2">&amp;</span><span class="lifetime">'a </span>PlutusData,
-) -&gt; T {
-    <span class="kw">match </span>pd {
-        PlutusData::Constr(tag, args) =&gt; ctor_case(<span class="kw-2">&amp;</span>tag)(<span class="kw-2">&amp;</span>args),
-        PlutusData::List(args) =&gt; list_case(<span class="kw-2">&amp;</span>args),
-        PlutusData::Integer(i) =&gt; int_case(<span class="kw-2">&amp;</span>i),
-        other =&gt; other_case(<span class="kw-2">&amp;</span>other),
-    }
-}
+<span class="comment">// MARK: Orphan IsPlutusData Instances
 
-<span class="kw">pub trait </span>IsPlutusData {
-    <span class="kw">fn </span>to_plutus_data(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; PlutusData;
-
-    <span class="kw">fn </span>from_plutus_data(plutus_data: <span class="kw-2">&amp;</span>PlutusData) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>, PlutusDataError&gt;
-    <span class="kw">where
-        </span><span class="self">Self</span>: Sized;
-}
-
-<span class="attr">#[derive(Clone, Debug)]
-</span><span class="kw">pub enum </span>PlutusType {
-    Constr,
-    Map,
-    List,
-    Integer,
-    Bytes,
-}
-
-<span class="kw">impl </span>From&lt;<span class="kw-2">&amp;</span>PlutusData&gt; <span class="kw">for </span>PlutusType {
-    <span class="kw">fn </span>from(plutus_data: <span class="kw-2">&amp;</span>PlutusData) -&gt; <span class="self">Self </span>{
-        <span class="kw">match </span>plutus_data {
-            PlutusData::Constr(<span class="kw">_</span>, <span class="kw">_</span>) =&gt; PlutusType::Constr,
-            PlutusData::Map(<span class="kw">_</span>) =&gt; PlutusType::Map,
-            PlutusData::List(<span class="kw">_</span>) =&gt; PlutusType::List,
-            PlutusData::Integer(<span class="kw">_</span>) =&gt; PlutusType::Integer,
-            PlutusData::Bytes(<span class="kw">_</span>) =&gt; PlutusType::Bytes,
-        }
-    }
-}
-
-<span class="attr">#[derive(Clone, Debug, thiserror::Error)]
-</span><span class="kw">pub enum </span>PlutusDataError {
-    <span class="attr">#[error(<span class="string">"Expected a PlutusData type {wanted:?}, but got {got:?}"</span>)]
-    </span>UnexpectedPlutusType { got: PlutusType, wanted: PlutusType },
-    <span class="attr">#[error(<span class="string">"Expected a PlutusData type as {wanted:?}, but got {got:?}"</span>)]
-    </span>UnexpectedPlutusInvariant { got: String, wanted: String },
-    <span class="attr">#[error(<span class="string">"Expected a Plutus List with {wanted:?} elements, but got {got:?} elements"</span>)]
-    </span>UnexpectedListLength { got: usize, wanted: usize },
-    <span class="attr">#[error(<span class="string">"Some internal error happened: {0}"</span>)]
-    </span>InternalError(String),
-}
-
-<span class="kw">impl </span>IsPlutusData <span class="kw">for </span>BigInt {
+</span><span class="kw">impl </span>IsPlutusData <span class="kw">for </span>BigInt {
     <span class="kw">fn </span>to_plutus_data(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; PlutusData {
         PlutusData::Integer(<span class="self">self</span>.clone())
     }
@@ -855,34 +931,63 @@
     }
 }
 
-<span class="kw">impl </span>IsPlutusData <span class="kw">for </span>bool {
+<span class="kw">impl </span>IsPlutusData <span class="kw">for </span>Vec&lt;u8&gt; {
     <span class="kw">fn </span>to_plutus_data(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; PlutusData {
-        <span class="kw">if </span><span class="kw-2">*</span><span class="self">self </span>{
-            PlutusData::Constr(BigInt::from(<span class="number">1</span>), Vec::with_capacity(<span class="number">0</span>))
-        } <span class="kw">else </span>{
-            PlutusData::Constr(BigInt::from(<span class="number">0</span>), Vec::with_capacity(<span class="number">0</span>))
-        }
+        PlutusData::Bytes(<span class="self">self</span>.clone())
     }
 
     <span class="kw">fn </span>from_plutus_data(plutus_data: <span class="kw-2">&amp;</span>PlutusData) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>, PlutusDataError&gt; {
         <span class="kw">match </span>plutus_data {
-            PlutusData::Constr(flag, fields) =&gt; <span class="kw">match </span>u32::try_from(flag) {
-                <span class="prelude-val">Ok</span>(<span class="number">0</span>) =&gt; {
-                    verify_constr_fields(<span class="kw-2">&amp;</span>fields, <span class="number">0</span>)<span class="question-mark">?</span>;
-                    <span class="prelude-val">Ok</span>(<span class="bool-val">false</span>)
-                }
-                <span class="prelude-val">Ok</span>(<span class="number">1</span>) =&gt; {
-                    verify_constr_fields(<span class="kw-2">&amp;</span>fields, <span class="number">0</span>)<span class="question-mark">?</span>;
-                    <span class="prelude-val">Ok</span>(<span class="bool-val">true</span>)
-                }
-                <span class="kw">_ </span>=&gt; <span class="prelude-val">Err</span>(PlutusDataError::UnexpectedPlutusInvariant {
-                    wanted: <span class="string">"Constr field between 0 and 1"</span>.to_owned(),
-                    got: flag.to_string(),
-                }),
-            },
-
+            PlutusData::Bytes(bytes) =&gt; <span class="prelude-val">Ok</span>(bytes.clone()),
             <span class="kw">_ </span>=&gt; <span class="prelude-val">Err</span>(PlutusDataError::UnexpectedPlutusType {
-                wanted: PlutusType::Constr,
+                wanted: PlutusType::Bytes,
+                got: PlutusType::from(plutus_data),
+            }),
+        }
+    }
+}
+
+<span class="kw">const </span>BOOL_FALSE_TAG: u32 = <span class="number">0</span>;
+<span class="kw">const </span>BOOL_TRUE_TAG: u32 = <span class="number">1</span>;
+
+<span class="kw">impl </span>IsPlutusData <span class="kw">for </span>bool {
+    <span class="kw">fn </span>to_plutus_data(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; PlutusData {
+        <span class="kw">if </span><span class="kw-2">*</span><span class="self">self </span>{
+            PlutusData::Constr(BOOL_TRUE_TAG.into(), <span class="macro">vec!</span>[])
+        } <span class="kw">else </span>{
+            PlutusData::Constr(BOOL_FALSE_TAG.into(), <span class="macro">vec!</span>[])
+        }
+    }
+
+    <span class="kw">fn </span>from_plutus_data(plutus_data: <span class="kw-2">&amp;</span>PlutusData) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>, PlutusDataError&gt; {
+        <span class="kw">let </span>(tag, fields) = parse_constr(plutus_data)<span class="question-mark">?</span>;
+        <span class="kw">let </span>[] = parse_fixed_len_constr_fields::&lt;<span class="number">0</span>&gt;(fields)<span class="question-mark">?</span>;
+        <span class="kw">match </span>tag {
+            BOOL_TRUE_TAG =&gt; <span class="prelude-val">Ok</span>(<span class="bool-val">true</span>),
+            BOOL_FALSE_TAG =&gt; <span class="prelude-val">Ok</span>(<span class="bool-val">false</span>),
+            <span class="kw">_ </span>=&gt; <span class="prelude-val">Err</span>(PlutusDataError::UnexpectedPlutusInvariant {
+                wanted: <span class="macro">format!</span>(<span class="string">"Constr with tag {BOOL_TRUE_TAG} or {BOOL_FALSE_TAG}"</span>),
+                got: tag.to_string(),
+            }),
+        }
+    }
+}
+
+<span class="kw">impl </span>IsPlutusData <span class="kw">for </span>String {
+    <span class="kw">fn </span>to_plutus_data(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; PlutusData {
+        PlutusData::Bytes(<span class="self">self</span>.as_bytes().into())
+    }
+
+    <span class="kw">fn </span>from_plutus_data(plutus_data: <span class="kw-2">&amp;</span>PlutusData) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>, PlutusDataError&gt; {
+        <span class="kw">match </span>plutus_data {
+            PlutusData::Bytes(bytes) =&gt; String::from_utf8(bytes.clone()).map_err(|err| {
+                PlutusDataError::InternalError(<span class="macro">format!</span>(
+                    <span class="string">"Couldn't convert Plutus bytes to String: {:?}"</span>,
+                    err
+                ))
+            }),
+            <span class="kw">_ </span>=&gt; <span class="prelude-val">Err</span>(PlutusDataError::UnexpectedPlutusType {
+                wanted: PlutusType::Bytes,
                 got: PlutusType::from(plutus_data),
             }),
         }
@@ -910,42 +1015,8 @@
     }
 }
 
-<span class="kw">impl </span>IsPlutusData <span class="kw">for </span>Vec&lt;u8&gt; {
-    <span class="kw">fn </span>to_plutus_data(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; PlutusData {
-        PlutusData::Bytes(<span class="self">self</span>.clone())
-    }
-
-    <span class="kw">fn </span>from_plutus_data(plutus_data: <span class="kw-2">&amp;</span>PlutusData) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>, PlutusDataError&gt; {
-        <span class="kw">match </span>plutus_data {
-            PlutusData::Bytes(bytes) =&gt; <span class="prelude-val">Ok</span>(bytes.clone()),
-            <span class="kw">_ </span>=&gt; <span class="prelude-val">Err</span>(PlutusDataError::UnexpectedPlutusType {
-                wanted: PlutusType::Bytes,
-                got: PlutusType::from(plutus_data),
-            }),
-        }
-    }
-}
-
-<span class="kw">impl </span>IsPlutusData <span class="kw">for </span>String {
-    <span class="kw">fn </span>to_plutus_data(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; PlutusData {
-        PlutusData::Bytes(<span class="self">self</span>.as_bytes().into())
-    }
-
-    <span class="kw">fn </span>from_plutus_data(plutus_data: <span class="kw-2">&amp;</span>PlutusData) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>, PlutusDataError&gt; {
-        <span class="kw">match </span>plutus_data {
-            PlutusData::Bytes(bytes) =&gt; String::from_utf8(bytes.clone()).map_err(|err| {
-                PlutusDataError::InternalError(<span class="macro">format!</span>(
-                    <span class="string">"Couldn't convert Plutus bytes to String: {:?}"</span>,
-                    err
-                ))
-            }),
-            <span class="kw">_ </span>=&gt; <span class="prelude-val">Err</span>(PlutusDataError::UnexpectedPlutusType {
-                wanted: PlutusType::Integer,
-                got: PlutusType::from(plutus_data),
-            }),
-        }
-    }
-}
+<span class="kw">const </span>OPTION_SOME_TAG: u32 = <span class="number">0</span>;
+<span class="kw">const </span>OPTION_NONE_TAG: u32 = <span class="number">1</span>;
 
 <span class="kw">impl</span>&lt;T&gt; IsPlutusData <span class="kw">for </span><span class="prelude-ty">Option</span>&lt;T&gt;
 <span class="kw">where
@@ -953,35 +1024,33 @@
 {
     <span class="kw">fn </span>to_plutus_data(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; PlutusData {
         <span class="kw">match </span><span class="self">self </span>{
-            <span class="prelude-val">Some</span>(val) =&gt; PlutusData::Constr(BigInt::from(<span class="number">0</span>), <span class="macro">vec!</span>[val.to_plutus_data()]),
-            <span class="prelude-val">None </span>=&gt; PlutusData::Constr(BigInt::from(<span class="number">1</span>), Vec::with_capacity(<span class="number">0</span>)),
+            <span class="prelude-val">Some</span>(val) =&gt; PlutusData::Constr(OPTION_SOME_TAG.into(), <span class="macro">vec!</span>[val.to_plutus_data()]),
+            <span class="prelude-val">None </span>=&gt; PlutusData::Constr(OPTION_NONE_TAG.into(), <span class="macro">vec!</span>[]),
         }
     }
 
     <span class="kw">fn </span>from_plutus_data(plutus_data: <span class="kw-2">&amp;</span>PlutusData) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>, PlutusDataError&gt; {
-        <span class="kw">match </span>plutus_data {
-            PlutusData::Constr(flag, fields) =&gt; <span class="kw">match </span>u32::try_from(flag) {
-                <span class="prelude-val">Ok</span>(<span class="number">0</span>) =&gt; {
-                    verify_constr_fields(<span class="kw-2">&amp;</span>fields, <span class="number">1</span>)<span class="question-mark">?</span>;
-                    <span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(T::from_plutus_data(<span class="kw-2">&amp;</span>fields[<span class="number">0</span>])<span class="question-mark">?</span>))
-                }
-                <span class="prelude-val">Ok</span>(<span class="number">1</span>) =&gt; {
-                    verify_constr_fields(<span class="kw-2">&amp;</span>fields, <span class="number">0</span>)<span class="question-mark">?</span>;
-                    <span class="prelude-val">Ok</span>(<span class="prelude-val">None</span>)
-                }
-                <span class="kw">_ </span>=&gt; <span class="prelude-val">Err</span>(PlutusDataError::UnexpectedPlutusInvariant {
-                    wanted: <span class="string">"Constr field between 0 and 1"</span>.to_owned(),
-                    got: flag.to_string(),
-                }),
-            },
+        <span class="kw">let </span>(tag, fields) = parse_constr(plutus_data)<span class="question-mark">?</span>;
 
-            <span class="kw">_ </span>=&gt; <span class="prelude-val">Err</span>(PlutusDataError::UnexpectedPlutusType {
-                wanted: PlutusType::Constr,
-                got: PlutusType::from(plutus_data),
+        <span class="kw">match </span>tag {
+            OPTION_SOME_TAG =&gt; {
+                <span class="kw">let </span>[data] = parse_fixed_len_constr_fields::&lt;<span class="number">1</span>&gt;(fields)<span class="question-mark">?</span>;
+                <span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(T::from_plutus_data(data)<span class="question-mark">?</span>))
+            }
+            OPTION_NONE_TAG =&gt; {
+                <span class="kw">let </span>[] = parse_fixed_len_constr_fields::&lt;<span class="number">0</span>&gt;(fields)<span class="question-mark">?</span>;
+                <span class="prelude-val">Ok</span>(<span class="prelude-val">None</span>)
+            }
+            <span class="kw">_ </span>=&gt; <span class="prelude-val">Err</span>(PlutusDataError::UnexpectedPlutusInvariant {
+                wanted: <span class="macro">format!</span>(<span class="string">"Constr with tag {OPTION_SOME_TAG} or {OPTION_NONE_TAG}"</span>),
+                got: tag.to_string(),
             }),
         }
     }
 }
+
+<span class="kw">const </span>RESULT_ERR_TAG: u32 = <span class="number">0</span>;
+<span class="kw">const </span>RESULT_OK_TAG: u32 = <span class="number">1</span>;
 
 <span class="kw">impl</span>&lt;T, E&gt; IsPlutusData <span class="kw">for </span><span class="prelude-ty">Result</span>&lt;T, E&gt;
 <span class="kw">where
@@ -990,31 +1059,21 @@
 {
     <span class="kw">fn </span>to_plutus_data(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; PlutusData {
         <span class="kw">match </span><span class="self">self </span>{
-            <span class="prelude-val">Err</span>(val) =&gt; PlutusData::Constr(BigInt::from(<span class="number">0</span>), <span class="macro">vec!</span>[val.to_plutus_data()]),
-            <span class="prelude-val">Ok</span>(val) =&gt; PlutusData::Constr(BigInt::from(<span class="number">1</span>), <span class="macro">vec!</span>[val.to_plutus_data()]),
+            <span class="prelude-val">Err</span>(err) =&gt; PlutusData::Constr(RESULT_ERR_TAG.into(), <span class="macro">vec!</span>[err.to_plutus_data()]),
+            <span class="prelude-val">Ok</span>(val) =&gt; PlutusData::Constr(RESULT_OK_TAG.into(), <span class="macro">vec!</span>[val.to_plutus_data()]),
         }
     }
 
     <span class="kw">fn </span>from_plutus_data(plutus_data: <span class="kw-2">&amp;</span>PlutusData) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>, PlutusDataError&gt; {
-        <span class="kw">match </span>plutus_data {
-            PlutusData::Constr(flag, fields) =&gt; <span class="kw">match </span>u32::try_from(flag) {
-                <span class="prelude-val">Ok</span>(<span class="number">0</span>) =&gt; {
-                    verify_constr_fields(<span class="kw-2">&amp;</span>fields, <span class="number">1</span>)<span class="question-mark">?</span>;
-                    <span class="prelude-val">Ok</span>(<span class="prelude-val">Err</span>(E::from_plutus_data(<span class="kw-2">&amp;</span>fields[<span class="number">0</span>])<span class="question-mark">?</span>))
-                }
-                <span class="prelude-val">Ok</span>(<span class="number">1</span>) =&gt; {
-                    verify_constr_fields(<span class="kw-2">&amp;</span>fields, <span class="number">1</span>)<span class="question-mark">?</span>;
-                    <span class="prelude-val">Ok</span>(<span class="prelude-val">Ok</span>(T::from_plutus_data(<span class="kw-2">&amp;</span>fields[<span class="number">0</span>])<span class="question-mark">?</span>))
-                }
-                <span class="kw">_ </span>=&gt; <span class="prelude-val">Err</span>(PlutusDataError::UnexpectedPlutusInvariant {
-                    wanted: <span class="string">"Constr field between 0 and 1"</span>.to_owned(),
-                    got: flag.to_string(),
-                }),
-            },
+        <span class="kw">let </span>(tag, fields) = parse_constr(plutus_data)<span class="question-mark">?</span>;
+        <span class="kw">let </span>[field] = parse_fixed_len_constr_fields::&lt;<span class="number">1</span>&gt;(fields)<span class="question-mark">?</span>;
 
-            <span class="kw">_ </span>=&gt; <span class="prelude-val">Err</span>(PlutusDataError::UnexpectedPlutusType {
-                wanted: PlutusType::Constr,
-                got: PlutusType::from(plutus_data),
+        <span class="kw">match </span>tag {
+            RESULT_ERR_TAG =&gt; <span class="prelude-val">Ok</span>(<span class="prelude-val">Err</span>(E::from_plutus_data(field)<span class="question-mark">?</span>)),
+            RESULT_OK_TAG =&gt; <span class="prelude-val">Ok</span>(<span class="prelude-val">Ok</span>(T::from_plutus_data(field)<span class="question-mark">?</span>)),
+            <span class="kw">_ </span>=&gt; <span class="prelude-val">Err</span>(PlutusDataError::UnexpectedPlutusInvariant {
+                wanted: <span class="macro">format!</span>(<span class="string">"Constr with tag {RESULT_ERR_TAG} or {RESULT_OK_TAG}"</span>),
+                got: tag.to_string(),
             }),
         }
     }
@@ -1034,16 +1093,8 @@
     }
 
     <span class="kw">fn </span>from_plutus_data(plutus_data: <span class="kw-2">&amp;</span>PlutusData) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>, PlutusDataError&gt; {
-        <span class="kw">match </span>plutus_data {
-            PlutusData::List(vec) =&gt; vec
-                .iter()
-                .map(|val| T::from_plutus_data(val))
-                .collect::&lt;<span class="prelude-ty">Result</span>&lt;Vec&lt;T&gt;, PlutusDataError&gt;&gt;(),
-            <span class="kw">_ </span>=&gt; <span class="prelude-val">Err</span>(PlutusDataError::UnexpectedPlutusType {
-                wanted: PlutusType::List,
-                got: PlutusType::from(plutus_data),
-            }),
-        }
+        <span class="kw">let </span>list = parse_list(plutus_data)<span class="question-mark">?</span>;
+        list.iter().map(T::from_plutus_data).collect()
     }
 }
 
@@ -1063,11 +1114,11 @@
     <span class="kw">fn </span>from_plutus_data(plutus_data: <span class="kw-2">&amp;</span>PlutusData) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>, PlutusDataError&gt; {
         <span class="kw">match </span>plutus_data {
             PlutusData::List(vec) =&gt; vec
-                .into_iter()
+                .iter()
                 .map(|val| T::from_plutus_data(val))
                 .collect::&lt;<span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>, PlutusDataError&gt;&gt;(),
             <span class="kw">_ </span>=&gt; <span class="prelude-val">Err</span>(PlutusDataError::UnexpectedPlutusType {
-                wanted: PlutusType::Map,
+                wanted: PlutusType::List,
                 got: PlutusType::from(plutus_data),
             }),
         }
@@ -1091,7 +1142,7 @@
     <span class="kw">fn </span>from_plutus_data(plutus_data: <span class="kw-2">&amp;</span>PlutusData) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>, PlutusDataError&gt; {
         <span class="kw">match </span>plutus_data {
             PlutusData::Map(dict) =&gt; dict
-                .into_iter()
+                .iter()
                 .map(|(key, val)| <span class="prelude-val">Ok</span>((K::from_plutus_data(key)<span class="question-mark">?</span>, V::from_plutus_data(val)<span class="question-mark">?</span>)))
                 .collect::&lt;<span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>, PlutusDataError&gt;&gt;(),
             <span class="kw">_ </span>=&gt; <span class="prelude-val">Err</span>(PlutusDataError::UnexpectedPlutusType {
@@ -1102,41 +1153,21 @@
     }
 }
 
+<span class="kw">const </span>UNIT_TAG: u32 = <span class="number">0</span>;
+
 <span class="kw">impl </span>IsPlutusData <span class="kw">for </span>() {
     <span class="kw">fn </span>to_plutus_data(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; PlutusData {
-        PlutusData::Constr(BigInt::from(<span class="number">0</span>), Vec::with_capacity(<span class="number">0</span>))
+        PlutusData::Constr(UNIT_TAG.into(), <span class="macro">vec!</span>[])
     }
 
     <span class="kw">fn </span>from_plutus_data(plutus_data: <span class="kw-2">&amp;</span>PlutusData) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>, PlutusDataError&gt; {
-        <span class="kw">match </span>plutus_data {
-            PlutusData::Constr(flag, fields) =&gt; <span class="kw">match </span>u32::try_from(flag) {
-                <span class="prelude-val">Ok</span>(<span class="number">0</span>) =&gt; {
-                    verify_constr_fields(<span class="kw-2">&amp;</span>fields, <span class="number">0</span>)<span class="question-mark">?</span>;
-                    <span class="prelude-val">Ok</span>(())
-                }
-                <span class="kw">_ </span>=&gt; <span class="prelude-val">Err</span>(PlutusDataError::UnexpectedPlutusInvariant {
-                    wanted: <span class="string">"Constr field to be 0"</span>.to_owned(),
-                    got: flag.to_string(),
-                }),
-            },
-
-            <span class="kw">_ </span>=&gt; <span class="prelude-val">Err</span>(PlutusDataError::UnexpectedPlutusType {
-                wanted: PlutusType::Constr,
-                got: PlutusType::from(plutus_data),
-            }),
-        }
+        <span class="kw">let </span>fields = parse_constr_with_tag(plutus_data, UNIT_TAG)<span class="question-mark">?</span>;
+        <span class="kw">let </span>[] = parse_fixed_len_constr_fields::&lt;<span class="number">0</span>&gt;(fields)<span class="question-mark">?</span>;
+        <span class="prelude-val">Ok</span>(())
     }
 }
 
-<span class="kw">impl </span>IsPlutusData <span class="kw">for </span>PlutusData {
-    <span class="kw">fn </span>to_plutus_data(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; PlutusData {
-        <span class="self">self</span>.clone()
-    }
-
-    <span class="kw">fn </span>from_plutus_data(plutus_data: <span class="kw-2">&amp;</span>PlutusData) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>, PlutusDataError&gt; {
-        <span class="prelude-val">Ok</span>(plutus_data.clone())
-    }
-}
+<span class="kw">const </span>PAIR_TAG: u32 = <span class="number">0</span>;
 
 <span class="kw">impl</span>&lt;A, B&gt; IsPlutusData <span class="kw">for </span>(A, B)
 <span class="kw">where
@@ -1145,55 +1176,111 @@
 {
     <span class="kw">fn </span>to_plutus_data(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; PlutusData {
         PlutusData::Constr(
-            BigInt::from(<span class="number">0</span>),
+            BigInt::from(PAIR_TAG),
             <span class="macro">vec!</span>[<span class="self">self</span>.<span class="number">0</span>.to_plutus_data(), <span class="self">self</span>.<span class="number">1</span>.to_plutus_data()],
         )
     }
 
     <span class="kw">fn </span>from_plutus_data(plutus_data: <span class="kw-2">&amp;</span>PlutusData) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>, PlutusDataError&gt; {
-        <span class="kw">match </span>plutus_data {
-            PlutusData::Constr(flag, fields) =&gt; <span class="kw">match </span>u32::try_from(flag) {
-                <span class="prelude-val">Ok</span>(<span class="number">0</span>) =&gt; {
-                    verify_constr_fields(<span class="kw-2">&amp;</span>fields, <span class="number">2</span>)<span class="question-mark">?</span>;
-                    <span class="prelude-val">Ok</span>((
-                        A::from_plutus_data(<span class="kw-2">&amp;</span>fields[<span class="number">0</span>])<span class="question-mark">?</span>,
-                        B::from_plutus_data(<span class="kw-2">&amp;</span>fields[<span class="number">1</span>])<span class="question-mark">?</span>,
-                    ))
-                }
-                <span class="kw">_ </span>=&gt; <span class="prelude-val">Err</span>(PlutusDataError::UnexpectedPlutusInvariant {
-                    wanted: <span class="string">"Constr field to be 0"</span>.to_owned(),
-                    got: flag.to_string(),
-                }),
-            },
+        <span class="kw">let </span>fields = parse_constr_with_tag(plutus_data, PAIR_TAG)<span class="question-mark">?</span>;
+        <span class="kw">let </span>[a, b] = parse_fixed_len_constr_fields::&lt;<span class="number">2</span>&gt;(fields)<span class="question-mark">?</span>;
+        <span class="prelude-val">Ok</span>((A::from_plutus_data(a)<span class="question-mark">?</span>, B::from_plutus_data(b)<span class="question-mark">?</span>))
+    }
+}
 
-            <span class="kw">_ </span>=&gt; <span class="prelude-val">Err</span>(PlutusDataError::UnexpectedPlutusType {
-                wanted: PlutusType::Constr,
-                got: PlutusType::from(plutus_data),
-            }),
+<span class="comment">// MARK: Orphan TryFromCSL instances
+
+</span><span class="kw">impl </span>TryFromCSL&lt;csl::PlutusList&gt; <span class="kw">for </span>Vec&lt;PlutusData&gt; {
+    <span class="kw">fn </span>try_from_csl(value: <span class="kw-2">&amp;</span>csl::PlutusList) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>, TryFromCSLError&gt; {
+        (<span class="number">0</span>..value.len())
+            .map(|idx| value.get(idx).try_to_pla())
+            .collect()
+    }
+}
+
+<span class="kw">impl </span>TryFromCSL&lt;csl::PlutusMap&gt; <span class="kw">for </span>Vec&lt;(PlutusData, PlutusData)&gt; {
+    <span class="kw">fn </span>try_from_csl(c_map: <span class="kw-2">&amp;</span>csl::PlutusMap) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>, TryFromCSLError&gt; {
+        <span class="kw">let </span>keys = c_map.keys();
+        (<span class="number">0</span>..keys.len()).try_fold(Vec::new(), |<span class="kw-2">mut </span>vector, idx| {
+            <span class="kw">let </span>key = keys.get(idx);
+            <span class="kw">let </span>values = c_map.get(<span class="kw-2">&amp;</span>key).unwrap();
+
+            <span class="kw">for </span>value_idx <span class="kw">in </span><span class="number">0</span>..values.len() {
+                vector.push((
+                    key.clone().try_to_pla()<span class="question-mark">?</span>,
+                    values.get(value_idx).unwrap().try_to_pla()<span class="question-mark">?</span>,
+                ))
+            }
+
+            <span class="prelude-val">Ok</span>(vector)
+        })
+    }
+}
+
+<span class="kw">impl </span>TryFromPLA&lt;PlutusData&gt; <span class="kw">for </span>csl::PlutusData {
+    <span class="kw">fn </span>try_from_pla(val: <span class="kw-2">&amp;</span>PlutusData) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>, TryFromPLAError&gt; {
+        <span class="kw">match </span>val {
+            PlutusData::Constr(tag, args) =&gt; <span class="prelude-val">Ok</span>(csl::PlutusData::new_constr_plutus_data(
+                <span class="kw-2">&amp;</span>csl::ConstrPlutusData::new(<span class="kw-2">&amp;</span>tag.try_to_csl()<span class="question-mark">?</span>, <span class="kw-2">&amp;</span>args.try_to_csl()<span class="question-mark">?</span>),
+            )),
+            PlutusData::Map(l) =&gt; <span class="prelude-val">Ok</span>(csl::PlutusData::new_map(<span class="kw-2">&amp;</span>l.try_to_csl()<span class="question-mark">?</span>)),
+            PlutusData::List(l) =&gt; <span class="prelude-val">Ok</span>(csl::PlutusData::new_list(<span class="kw-2">&amp;</span>l.try_to_csl()<span class="question-mark">?</span>)),
+            PlutusData::Integer(i) =&gt; <span class="prelude-val">Ok</span>(csl::PlutusData::new_integer(<span class="kw-2">&amp;</span>i.try_to_csl()<span class="question-mark">?</span>)),
+            PlutusData::Bytes(b) =&gt; <span class="prelude-val">Ok</span>(csl::PlutusData::new_bytes(b.to_owned())),
         }
     }
 }
 
-<span class="doccomment">/// Verify the number of fields contained in a PlutusData::Constr
-</span><span class="kw">pub fn </span>verify_constr_fields(
-    fields: <span class="kw-2">&amp;</span>Vec&lt;PlutusData&gt;,
-    expected: usize,
-) -&gt; <span class="prelude-ty">Result</span>&lt;(), PlutusDataError&gt; {
-    <span class="kw">if </span>fields.len() != expected {
-        <span class="prelude-val">Err</span>(PlutusDataError::UnexpectedPlutusInvariant {
-            wanted: <span class="macro">format!</span>(<span class="string">"Constr with {} fields"</span>, expected),
-            got: <span class="macro">format!</span>(<span class="string">"{:?}"</span>, fields),
-        })
-    } <span class="kw">else </span>{
-        <span class="prelude-val">Ok</span>(())
+<span class="kw">impl </span>TryFromPLA&lt;Vec&lt;PlutusData&gt;&gt; <span class="kw">for </span>csl::PlutusList {
+    <span class="kw">fn </span>try_from_pla(val: <span class="kw-2">&amp;</span>Vec&lt;PlutusData&gt;) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>, TryFromPLAError&gt; {
+        val.iter()
+            <span class="comment">// traverse
+            </span>.map(|x| x.try_to_csl())
+            .collect::&lt;<span class="prelude-ty">Result</span>&lt;Vec&lt;csl::PlutusData&gt;, TryFromPLAError&gt;&gt;()
+            .map(|x| x.into())
+    }
+}
+
+<span class="kw">impl </span>TryFromPLA&lt;Vec&lt;(PlutusData, PlutusData)&gt;&gt; <span class="kw">for </span>csl::PlutusMap {
+    <span class="kw">fn </span>try_from_pla(val: <span class="kw-2">&amp;</span>Vec&lt;(PlutusData, PlutusData)&gt;) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>, TryFromPLAError&gt; {
+        val.iter()
+            .try_fold(csl::PlutusMap::new(), |<span class="kw-2">mut </span>acc, (k, v)| {
+                <span class="kw">let </span><span class="kw-2">mut </span>values = <span class="kw">match </span>acc.get(<span class="kw-2">&amp;</span>k.try_to_csl()<span class="question-mark">?</span>) {
+                    <span class="prelude-val">Some</span>(existing_values) =&gt; existing_values,
+                    <span class="prelude-val">None </span>=&gt; csl::PlutusMapValues::new(),
+                };
+                values.add(<span class="kw-2">&amp;</span>v.try_to_csl()<span class="question-mark">?</span>);
+                acc.insert(<span class="kw-2">&amp;</span>k.try_to_csl()<span class="question-mark">?</span>, <span class="kw-2">&amp;</span>values);
+                <span class="prelude-val">Ok</span>(acc)
+            })
+    }
+}
+
+<span class="comment">// MARK: Aux functions
+
+</span><span class="doccomment">/// Deserialise a Plutus data using parsers for each variant
+</span><span class="kw">pub fn </span>case_plutus_data&lt;<span class="lifetime">'a</span>, T&gt;(
+    ctor_case: <span class="kw">impl </span>FnOnce(<span class="kw-2">&amp;</span><span class="lifetime">'a </span>BigInt) -&gt; Box&lt;<span class="kw">dyn </span><span class="lifetime">'a </span>+ FnOnce(<span class="kw-2">&amp;</span><span class="lifetime">'a </span>Vec&lt;PlutusData&gt;) -&gt; T&gt;,
+    list_case: <span class="kw">impl </span>FnOnce(<span class="kw-2">&amp;</span><span class="lifetime">'a </span>Vec&lt;PlutusData&gt;) -&gt; T,
+    int_case: <span class="kw">impl </span>FnOnce(<span class="kw-2">&amp;</span><span class="lifetime">'a </span>BigInt) -&gt; T,
+    other_case: <span class="kw">impl </span>FnOnce(<span class="kw-2">&amp;</span><span class="lifetime">'a </span>PlutusData) -&gt; T,
+    pd: <span class="kw-2">&amp;</span><span class="lifetime">'a </span>PlutusData,
+) -&gt; T {
+    <span class="kw">match </span>pd {
+        PlutusData::Constr(tag, args) =&gt; ctor_case(<span class="kw-2">&amp;</span>tag)(<span class="kw-2">&amp;</span>args),
+        PlutusData::List(args) =&gt; list_case(<span class="kw-2">&amp;</span>args),
+        PlutusData::Integer(i) =&gt; int_case(<span class="kw-2">&amp;</span>i),
+        other =&gt; other_case(<span class="kw-2">&amp;</span>other),
     }
 }
 
 <span class="doccomment">/// Given a vector of PlutusData, parse it as an array whose length is known at
 /// compile time.
-</span><span class="kw">pub fn </span>parse_fixed_len_constr_fields&lt;<span class="lifetime">'a</span>, <span class="kw">const </span>LEN: usize&gt;(
-    v: <span class="kw-2">&amp;</span><span class="lifetime">'a </span>[PlutusData],
-) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="kw-2">&amp;</span><span class="lifetime">'a </span>[PlutusData; LEN], PlutusDataError&gt; {
+///
+/// This function is used by the derive macro.
+</span><span class="kw">pub fn </span>parse_fixed_len_constr_fields&lt;<span class="kw">const </span>LEN: usize&gt;(
+    v: <span class="kw-2">&amp;</span>[PlutusData],
+) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="kw-2">&amp;</span>[PlutusData; LEN], PlutusDataError&gt; {
     v.try_into()
         .map_err(|<span class="kw">_</span>| PlutusDataError::UnexpectedListLength {
             got: v.len(),
@@ -1203,9 +1290,9 @@
 
 <span class="doccomment">/// Given a PlutusData, parse it as PlutusData::Constr and its tag as u32. Return
 /// the u32 tag and fields.
-</span><span class="kw">pub fn </span>parse_constr&lt;<span class="lifetime">'a</span>&gt;(
-    data: <span class="kw-2">&amp;</span><span class="lifetime">'a </span>PlutusData,
-) -&gt; <span class="prelude-ty">Result</span>&lt;(u32, <span class="kw-2">&amp;</span><span class="lifetime">'a </span>Vec&lt;PlutusData&gt;), PlutusDataError&gt; {
+///
+/// This function is used by the derive macro.
+</span><span class="kw">pub fn </span>parse_constr(data: <span class="kw-2">&amp;</span>PlutusData) -&gt; <span class="prelude-ty">Result</span>&lt;(u32, <span class="kw-2">&amp;</span>Vec&lt;PlutusData&gt;), PlutusDataError&gt; {
     <span class="kw">match </span>data {
         PlutusData::Constr(tag, fields) =&gt; u32::try_from(tag)
             .map_err(|err| PlutusDataError::UnexpectedPlutusInvariant {
@@ -1221,19 +1308,34 @@
 }
 
 <span class="doccomment">/// Given a PlutusData, parse it as PlutusData::Constr and verify its tag.
-</span><span class="kw">pub fn </span>parse_constr_with_tag&lt;<span class="lifetime">'a</span>&gt;(
-    data: <span class="kw-2">&amp;</span><span class="lifetime">'a </span>PlutusData,
+///
+/// This function is used by the derive macro.
+</span><span class="kw">pub fn </span>parse_constr_with_tag(
+    data: <span class="kw-2">&amp;</span>PlutusData,
     expected_tag: u32,
-) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="kw-2">&amp;</span><span class="lifetime">'a </span>Vec&lt;PlutusData&gt;, PlutusDataError&gt; {
+) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="kw-2">&amp;</span>Vec&lt;PlutusData&gt;, PlutusDataError&gt; {
     <span class="kw">let </span>(tag, fields) = parse_constr(data)<span class="question-mark">?</span>;
 
     <span class="kw">if </span>tag != expected_tag {
         <span class="prelude-val">Err</span>(PlutusDataError::UnexpectedPlutusInvariant {
             got: tag.to_string(),
-            wanted: <span class="macro">format!</span>(<span class="string">"Constr tag to be: {}"</span>, expected_tag),
+            wanted: <span class="macro">format!</span>(<span class="string">"Constr with tag {}"</span>, expected_tag),
         })
     } <span class="kw">else </span>{
         <span class="prelude-val">Ok</span>(fields)
+    }
+}
+
+<span class="doccomment">/// Given a PlutusData, parse it as PlutusData::List. Return the plutus data list.
+///
+/// This function is used by the derive macro.
+</span><span class="kw">pub fn </span>parse_list(data: <span class="kw-2">&amp;</span>PlutusData) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="kw-2">&amp;</span>Vec&lt;PlutusData&gt;, PlutusDataError&gt; {
+    <span class="kw">match </span>data {
+        PlutusData::List(list_of_plutus_data) =&gt; <span class="prelude-val">Ok</span>(list_of_plutus_data),
+        <span class="kw">_ </span>=&gt; <span class="prelude-val">Err</span>(PlutusDataError::UnexpectedPlutusType {
+            got: PlutusType::from(data),
+            wanted: PlutusType::List,
+        }),
     }
 }
 </code></pre></div></section></main></body></html>

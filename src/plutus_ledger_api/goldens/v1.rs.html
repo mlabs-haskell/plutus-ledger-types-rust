@@ -143,6 +143,20 @@
 <a href="#141" id="141">141</a>
 <a href="#142" id="142">142</a>
 <a href="#143" id="143">143</a>
+<a href="#144" id="144">144</a>
+<a href="#145" id="145">145</a>
+<a href="#146" id="146">146</a>
+<a href="#147" id="147">147</a>
+<a href="#148" id="148">148</a>
+<a href="#149" id="149">149</a>
+<a href="#150" id="150">150</a>
+<a href="#151" id="151">151</a>
+<a href="#152" id="152">152</a>
+<a href="#153" id="153">153</a>
+<a href="#154" id="154">154</a>
+<a href="#155" id="155">155</a>
+<a href="#156" id="156">156</a>
+<a href="#157" id="157">157</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! Golden test data or Plutus V1 types
 </span><span class="kw">use crate</span>::{
     plutus_data::PlutusData,
@@ -159,17 +173,20 @@
         },
         value::{AssetClass, CurrencySymbol, TokenName, Value},
     },
+    v2::address::{CertificateIndex, ChainPointer, Slot, TransactionIndex},
 };
 <span class="kw">use </span>num_bigint::BigInt;
 
+<span class="kw">pub fn </span>sample_script_hash() -&gt; ScriptHash {
+    ScriptHash(LedgerBytes([<span class="number">1</span>].repeat(<span class="number">28</span>).to_vec()))
+}
+
 <span class="kw">pub fn </span>sample_currency_symbol() -&gt; CurrencySymbol {
-    CurrencySymbol::NativeToken(MintingPolicyHash(ScriptHash(LedgerBytes(
-        [<span class="number">0</span>].repeat(<span class="number">28</span>).to_vec(),
-    ))))
+    CurrencySymbol::NativeToken(MintingPolicyHash(sample_script_hash()))
 }
 
 <span class="kw">pub fn </span>sample_token_name() -&gt; TokenName {
-    TokenName::from_string(<span class="string">"Something"</span>)
+    TokenName::from_string(<span class="string">"Something"</span>).unwrap()
 }
 
 <span class="kw">pub fn </span>sample_asset_class() -&gt; AssetClass {
@@ -184,7 +201,7 @@
         <span class="kw-2">&amp;</span>sample_currency_symbol(),
         <span class="kw-2">&amp;</span>sample_token_name(),
         <span class="kw-2">&amp;</span>BigInt::from(<span class="number">123</span>),
-    )
+    ) + Value::ada_value(<span class="kw-2">&amp;</span>BigInt::from(<span class="number">234</span>))
 }
 
 <span class="kw">pub fn </span>sample_plutus_interval() -&gt; PlutusInterval&lt;POSIXTime&gt; {
@@ -195,10 +212,20 @@
     Ed25519PubKeyHash(LedgerBytes([<span class="number">0</span>].repeat(<span class="number">28</span>).to_vec()))
 }
 
+<span class="kw">pub fn </span>sample_credential() -&gt; Credential {
+    Credential::Script(ValidatorHash(sample_script_hash()))
+}
+
 <span class="kw">pub fn </span>sample_staking_credential() -&gt; StakingCredential {
-    StakingCredential::Hash(Credential::Script(ValidatorHash(ScriptHash(LedgerBytes(
-        [<span class="number">1</span>].repeat(<span class="number">28</span>).to_vec(),
-    )))))
+    StakingCredential::Hash(sample_credential())
+}
+
+<span class="kw">pub fn </span>sample_chain_pointer() -&gt; ChainPointer {
+    ChainPointer {
+        slot_number: Slot(<span class="number">134561</span>.into()),
+        transaction_index: TransactionIndex(<span class="number">4</span>.into()),
+        certificate_index: CertificateIndex(<span class="number">10</span>.into()),
+    }
 }
 
 <span class="kw">pub fn </span>sample_address() -&gt; Address {
@@ -223,11 +250,12 @@
     DatumHash(LedgerBytes([<span class="number">0</span>].repeat(<span class="number">32</span>).to_vec()))
 }
 
+<span class="kw">pub fn </span>sample_plutus_data() -&gt; PlutusData {
+    PlutusData::constr(<span class="number">1</span>, <span class="macro">vec!</span>[PlutusData::bytes(<span class="string">"Something"</span>.as_bytes().to_vec())])
+}
+
 <span class="kw">pub fn </span>sample_datum() -&gt; Datum {
-    Datum(PlutusData::constr(
-        <span class="number">1</span>,
-        <span class="macro">vec!</span>[PlutusData::bytes(<span class="string">"Something"</span>.as_bytes().to_vec())],
-    ))
+    Datum(sample_plutus_data())
 }
 
 <span class="kw">pub fn </span>sample_redeemer_hash() -&gt; RedeemerHash {

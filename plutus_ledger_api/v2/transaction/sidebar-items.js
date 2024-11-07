@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"struct":["ScriptContext","TransactionInfo","TransactionOutput","TxInInfo"]};
+window.SIDEBAR_ITEMS = {"struct":["ScriptContext","TransactionInfo","TransactionOutput","TransactionOutputWithExtraInfo","TxInInfo","WithdrawalsWithExtraInfo"]};

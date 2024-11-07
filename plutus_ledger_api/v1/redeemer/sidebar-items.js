@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"struct":["Redeemer","RedeemerHash"]};
+window.SIDEBAR_ITEMS = {"struct":["Redeemer","RedeemerHash","RedeemerWithExtraInfo"]};

@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"mod":["generators","goldens","plutus_data","utils","v1","v2"]};
+window.SIDEBAR_ITEMS = {"mod":["aux","csl","error","generators","goldens","plutus_data","v1","v2","v3"]};

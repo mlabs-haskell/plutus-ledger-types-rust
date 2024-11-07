@@ -188,6 +188,8 @@
 <a href="#186" id="186">186</a>
 <a href="#187" id="187">187</a>
 <a href="#188" id="188">188</a>
+<a href="#189" id="189">189</a>
+<a href="#190" id="190">190</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span>std::hash::Hash;
 
 <span class="attr">#[cfg(feature = <span class="string">"lbf"</span>)]
@@ -198,7 +200,11 @@
 
 <span class="kw">use </span><span class="kw">crate</span>::plutus_data::{IsPlutusData, PlutusData, PlutusDataError, PlutusType};
 
-<span class="attr">#[derive(Debug, PartialEq, Eq, Clone)]
+<span class="comment">//////////////
+// AssocMap //
+//////////////
+
+</span><span class="attr">#[derive(Debug, PartialEq, Eq, Clone, Default)]
 #[cfg_attr(feature = <span class="string">"serde"</span>, derive(Serialize, Deserialize))]
 </span><span class="kw">pub struct </span>AssocMap&lt;K, V&gt;(<span class="kw">pub </span>Vec&lt;(K, V)&gt;);
 
@@ -216,9 +222,7 @@
     <span class="kw">where
         </span>K: PartialEq,
     {
-        <span class="kw">let </span>vec = <span class="kw-2">&amp;mut </span><span class="self">self</span>.<span class="number">0</span>;
-
-        <span class="kw">let </span>old_value = vec.into_iter().find(|(k, _v)| k == <span class="kw-2">&amp;</span>key);
+        <span class="kw">let </span>old_value = <span class="self">self</span>.<span class="number">0</span>.iter_mut().find(|(k, _v)| k == <span class="kw-2">&amp;</span>key);
         <span class="kw">match </span>old_value {
             <span class="prelude-val">None </span>=&gt; {
                 <span class="self">self</span>.<span class="number">0</span>.push((key, value));
@@ -258,8 +262,8 @@
 <span class="kw">impl</span>&lt;K: IsPlutusData, V: IsPlutusData&gt; IsPlutusData <span class="kw">for </span>AssocMap&lt;K, V&gt; {
     <span class="kw">fn </span>to_plutus_data(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; PlutusData {
         PlutusData::Map(
-            (<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="number">0</span>)
-                .into_iter()
+            <span class="self">self</span>.<span class="number">0
+                </span>.iter()
                 .map(|(k, v)| (k.to_plutus_data(), v.to_plutus_data()))
                 .collect(),
         )
@@ -268,7 +272,7 @@
     <span class="kw">fn </span>from_plutus_data(plutus_data: <span class="kw-2">&amp;</span>PlutusData) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>, PlutusDataError&gt; {
         <span class="kw">match </span>plutus_data {
             PlutusData::Map(pairs) =&gt; pairs
-                .into_iter()
+                .iter()
                 .map(|(k, v)| <span class="prelude-val">Ok</span>((K::from_plutus_data(k)<span class="question-mark">?</span>, V::from_plutus_data(v)<span class="question-mark">?</span>)))
                 .collect::&lt;<span class="prelude-ty">Result</span>&lt;Vec&lt;(K, V)&gt;, PlutusDataError&gt;&gt;()
                 .map(<span class="self">Self</span>),
@@ -314,8 +318,8 @@
 </span><span class="kw">impl</span>&lt;K: Json, V: Json&gt; Json <span class="kw">for </span>AssocMap&lt;K, V&gt; {
     <span class="kw">fn </span>to_json(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; serde_json::Value {
         json_array(
-            (<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="number">0</span>)
-                .into_iter()
+            <span class="self">self</span>.<span class="number">0
+                </span>.iter()
                 .map(|(k, v)| json_array(<span class="macro">vec!</span>[k.to_json(), v.to_json()]))
                 .collect(),
         )

@@ -14,6 +14,9 @@
 <a href="#12" id="12">12</a>
 <a href="#13" id="13">13</a>
 <a href="#14" id="14">14</a>
+<a href="#15" id="15">15</a>
+<a href="#16" id="16">16</a>
+<a href="#17" id="17">17</a>
 </pre></div><pre class="rust"><code><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">mod </span>feature_traits;
 <span class="kw">pub mod </span>generators;
 <span class="kw">pub mod </span>goldens;
@@ -22,9 +25,12 @@
 <span class="kw">pub mod </span>plutus_data;
 <span class="kw">pub mod </span>v1;
 <span class="kw">pub mod </span>v2;
+<span class="kw">pub mod </span>v3;
 <span class="attr">#[cfg(feature = <span class="string">"lbf"</span>)]
 </span><span class="kw">pub use </span>lbr_prelude::json;
-<span class="kw">pub mod </span>utils;
+<span class="kw">pub mod </span>aux;
+<span class="kw">pub mod </span>csl;
+<span class="kw">pub mod </span>error;
 
 <span class="attr">#[macro_use]
 </span><span class="kw">extern crate </span>impl_ops;

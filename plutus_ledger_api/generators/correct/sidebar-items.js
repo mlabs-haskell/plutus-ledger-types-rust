@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"mod":["primitive","v1","v2"]};
+window.SIDEBAR_ITEMS = {"mod":["primitive","v1","v2","v3"]};
