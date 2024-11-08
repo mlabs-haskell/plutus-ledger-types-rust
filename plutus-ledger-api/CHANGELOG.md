@@ -4,6 +4,16 @@
 This changelog is based on [Keep A
 Changelog](https://keepachangelog.com/en/1.1.0).
 
+## v2.1.0
+
+### Added
+
+- Re-exported cardano-serialization-lib as `plutus-ledger-api::csl::lib`
+
+### Changed
+
+- Updated to cardano-serialization-lib 13.1.0
+
 ## v2.0.0
 
 ### Added
