@@ -1,6 +1,6 @@
 [package]
 name = "plutus-ledger-api"
-version = "2.0.0"
+version = "2.1.0"
 edition = "2021"
 license = "Apache-2.0"
 description = "Plutus Ledger types and utilities implemented in Rust"
@@ -20,7 +20,7 @@ linked-hash-map = "~0.5.6"
 num-traits = "~0.2.17"
 impl_ops = "0.1.1"
 chrono = { version = "0.4.34", optional = true }
-cardano-serialization-lib = "12.1.1"
+cardano-serialization-lib = "13.1.0"
 is-plutus-data-derive = { version = "1.0.0", path = ".extras/is-plutus-data-derive-0" }
 anyhow = "1.0.86"
 nom = "7.1.3"

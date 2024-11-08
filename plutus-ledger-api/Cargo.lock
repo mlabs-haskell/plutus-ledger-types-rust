@@ -97,9 +97,9 @@ checksum = "1fd0f2584146f6f2ef48085050886acf353beff7305ebd1ae69500e27c67f64b"
 
 [[package]]
 name = "cardano-serialization-lib"
-version = "12.1.1"
+version = "13.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "72a6b87191e22d30d2fd9cf52a8db1acd0611d119f432e3dc676650c76f67840"
+checksum = "a060cf6912878c0132ce9ac8577eb62f151ba8f00fe2e75a57f85260c696e421"
 dependencies = [
  "bech32",
  "cbor_event",
@@ -623,7 +623,7 @@ checksum = "c08d65885ee38876c4f86fa503fb49d7b507c2b62552df7c70b2fce627e06381"
 
 [[package]]
 name = "plutus-ledger-api"
-version = "2.0.0"
+version = "2.1.0"
 dependencies = [
  "anyhow",
  "cardano-serialization-lib",
