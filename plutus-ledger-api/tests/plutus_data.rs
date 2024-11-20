@@ -493,7 +493,7 @@ mod plutusdata_roundtrip_tests {
 
 
             #[test]
-            fn v3_change_parameters(val in arb_change_parameters()) {
+            fn v3_changed_parameters(val in arb_changed_parameters()) {
                 assert_eq!(val, from_to_plutus_data(&val)?);
             }
 
@@ -504,7 +504,7 @@ mod plutusdata_roundtrip_tests {
             }
 
             #[test]
-            fn v3_protocol_procedure(val in arb_protocol_procedure()) {
+            fn v3_proposal_procedure(val in arb_proposal_procedure()) {
                 assert_eq!(val, from_to_plutus_data(&val)?);
             }
 

@@ -227,7 +227,7 @@ mod lb_json_roundtrip_tests {
             }
 
             #[test]
-            fn test_change_parameters(val in arb_change_parameters()) {
+            fn test_changed_parameters(val in arb_changed_parameters()) {
                 assert_eq!(val, from_to_json(&val)?)
             }
 
@@ -238,7 +238,7 @@ mod lb_json_roundtrip_tests {
             }
 
             #[test]
-            fn test_protocol_procedure(val in arb_protocol_procedure()) {
+            fn test_proposal_procedure(val in arb_proposal_procedure()) {
                 assert_eq!(val, from_to_json(&val)?)
             }
 

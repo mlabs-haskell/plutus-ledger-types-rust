@@ -4,6 +4,12 @@
 This changelog is based on [Keep A
 Changelog](https://keepachangelog.com/en/1.1.0).
 
+## v2.2.0
+
+### Changed
+
+- Fixed typos in V3 types
+
 ## v2.1.0
 
 ### Added

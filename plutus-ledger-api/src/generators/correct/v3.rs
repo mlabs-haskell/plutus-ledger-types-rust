@@ -20,9 +20,9 @@ use crate::{
     v3::{
         ratio::Rational,
         transaction::{
-            ChangeParameters, ColdCommitteeCredential, Committee, Constitution, DRep,
+            ChangedParameters, ColdCommitteeCredential, Committee, Constitution, DRep,
             DRepCredential, Delegatee, GovernanceAction, GovernanceActionId,
-            HotCommitteeCredential, ProtocolProcedure, ProtocolVersion, ScriptContext, ScriptInfo,
+            HotCommitteeCredential, ProposalProcedure, ProtocolVersion, ScriptContext, ScriptInfo,
             ScriptPurpose, TransactionInfo, TxCert, Vote, Voter,
         },
     },
@@ -145,8 +145,8 @@ pub fn arb_protocol_version() -> impl Strategy<Value = ProtocolVersion> {
 }
 
 /// Strategy to generate change parameters
-pub fn arb_change_parameters() -> impl Strategy<Value = ChangeParameters> {
-    arb_plutus_data().prop_map(ChangeParameters)
+pub fn arb_changed_parameters() -> impl Strategy<Value = ChangedParameters> {
+    arb_plutus_data().prop_map(ChangedParameters)
 }
 
 /// Strategy to generate governance actions
@@ -154,7 +154,7 @@ pub fn arb_governance_action() -> impl Strategy<Value = GovernanceAction> {
     prop_oneof![
         (
             option::of(arb_governance_action_id()),
-            arb_change_parameters(),
+            arb_changed_parameters(),
             option::of(arb_script_hash())
         )
             .prop_map(|(g, c, s)| GovernanceAction::ParameterChange(g, c, s)),
@@ -183,9 +183,9 @@ pub fn arb_governance_action() -> impl Strategy<Value = GovernanceAction> {
 }
 
 /// Strategy to generate protocol procedures
-pub fn arb_protocol_procedure() -> impl Strategy<Value = ProtocolProcedure> {
+pub fn arb_proposal_procedure() -> impl Strategy<Value = ProposalProcedure> {
     (arb_lovelace(), arb_credential(), arb_governance_action()).prop_map(|(l, c, g)| {
-        ProtocolProcedure {
+        ProposalProcedure {
             deposit: l,
             return_addr: c,
             governance_action: g,
@@ -201,7 +201,7 @@ pub fn arb_script_purpose() -> impl Strategy<Value = ScriptPurpose> {
         arb_credential().prop_map(ScriptPurpose::Rewarding),
         (arb_integer(), arb_tx_cert()).prop_map(|(i, c)| ScriptPurpose::Certifying(i, c)),
         arb_voter().prop_map(ScriptPurpose::Voting),
-        (arb_integer(), arb_protocol_procedure()).prop_map(|(i, p)| ScriptPurpose::Proposing(i, p))
+        (arb_integer(), arb_proposal_procedure()).prop_map(|(i, p)| ScriptPurpose::Proposing(i, p))
     ]
 }
 
@@ -214,7 +214,7 @@ pub fn arb_script_info() -> impl Strategy<Value = ScriptInfo> {
         arb_credential().prop_map(ScriptInfo::Rewarding),
         (arb_integer(), arb_tx_cert()).prop_map(|(i, c)| ScriptInfo::Certifying(i, c)),
         arb_voter().prop_map(ScriptInfo::Voting),
-        (arb_integer(), arb_protocol_procedure()).prop_map(|(i, p)| ScriptInfo::Proposing(i, p))
+        (arb_integer(), arb_proposal_procedure()).prop_map(|(i, p)| ScriptInfo::Proposing(i, p))
     ]
 }
 
@@ -239,7 +239,7 @@ pub fn arb_transaction_info() -> impl Strategy<Value = TransactionInfo> {
                 arb_voter(),
                 arb_assoc_map(arb_governance_action_id(), arb_vote()),
             ),
-            vec(arb_protocol_procedure(), 5),
+            vec(arb_proposal_procedure(), 5),
             option::of(arb_lovelace()),
             option::of(arb_lovelace()),
         ),
@@ -257,7 +257,7 @@ pub fn arb_transaction_info() -> impl Strategy<Value = TransactionInfo> {
                 signatories,
                 redeemers,
                 datums,
-                (id, votes, protocol_procedures, current_treasury_amount, treasury_donation),
+                (id, votes, proposal_procedures, current_treasury_amount, treasury_donation),
             )| {
                 TransactionInfo {
                     inputs,
@@ -273,7 +273,7 @@ pub fn arb_transaction_info() -> impl Strategy<Value = TransactionInfo> {
                     datums,
                     id,
                     votes,
-                    protocol_procedures,
+                    proposal_procedures,
                     current_treasury_amount,
                     treasury_donation,
                 }
