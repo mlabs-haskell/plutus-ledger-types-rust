@@ -54,6 +54,7 @@ pub struct TransactionInput {
     pub index: BigInt,
 }
 
+/// Serializing into a hexadecimal tx hash, followed by an tx id after a # (e.g. aabbcc#1)
 impl fmt::Display for TransactionInput {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}#{}", self.transaction_id.0, self.index)

@@ -6,9 +6,11 @@ use num_bigint::BigInt;
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
+#[cfg(feature = "chrono")]
+pub use crate::v1::transaction::POSIXTimeConversionError;
 pub use crate::v2::transaction::{
-    DCert, POSIXTime, POSIXTimeRange, TransactionHash, TransactionId, TransactionInput,
-    TransactionOutput, TxInInfo,
+    DCert, POSIXTime, POSIXTimeRange, TransactionHash, TransactionInput, TransactionOutput,
+    TransactionOutputWithExtraInfo, TxInInfo, WithdrawalsWithExtraInfo,
 };
 use crate::{
     self as plutus_ledger_api,

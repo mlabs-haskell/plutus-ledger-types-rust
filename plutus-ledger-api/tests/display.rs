@@ -55,8 +55,13 @@ mod display_serialisation_tests {
         }
 
         #[test]
-        fn v1_asset_class_display() {
+        fn v1_asset_class_display_1() {
             goldie::assert!(format!("{}", sample_asset_class()))
+        }
+
+        #[test]
+        fn v1_asset_class_display_2() {
+            goldie::assert!(format!("{:#}", sample_asset_class()))
         }
 
         #[test]
