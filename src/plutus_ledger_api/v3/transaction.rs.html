@@ -279,6 +279,8 @@
 <a href="#277" id="277">277</a>
 <a href="#278" id="278">278</a>
 <a href="#279" id="279">279</a>
+<a href="#280" id="280">280</a>
+<a href="#281" id="281">281</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! Types related to Cardano transactions.
 
 </span><span class="attr">#[cfg(feature = <span class="string">"lbf"</span>)]
@@ -287,9 +289,11 @@
 <span class="attr">#[cfg(feature = <span class="string">"serde"</span>)]
 </span><span class="kw">use </span>serde::{Deserialize, Serialize};
 
+<span class="attr">#[cfg(feature = <span class="string">"chrono"</span>)]
+</span><span class="kw">pub use </span><span class="kw">crate</span>::v1::transaction::POSIXTimeConversionError;
 <span class="kw">pub use </span><span class="kw">crate</span>::v2::transaction::{
     DCert, POSIXTime, POSIXTimeRange, TransactionHash, TransactionInput, TransactionOutput,
-    TxInInfo,
+    TransactionOutputWithExtraInfo, TxInInfo, WithdrawalsWithExtraInfo,
 };
 <span class="kw">use crate</span>::{
     <span class="self">self </span><span class="kw">as </span>plutus_ledger_api,
@@ -443,7 +447,7 @@
 #[is_plutus_data_derive_strategy = <span class="string">"Newtype"</span>]
 #[cfg_attr(feature = <span class="string">"serde"</span>, derive(Serialize, Deserialize))]
 #[cfg_attr(feature = <span class="string">"lbf"</span>, derive(Json))]
-</span><span class="kw">pub struct </span>ChangeParameters(<span class="kw">pub </span>PlutusData);
+</span><span class="kw">pub struct </span>ChangedParameters(<span class="kw">pub </span>PlutusData);
 
 <span class="attr">#[derive(Clone, Debug, PartialEq, Eq, IsPlutusData)]
 #[is_plutus_data_derive_strategy = <span class="string">"Constr"</span>]
@@ -453,7 +457,7 @@
     <span class="doccomment">/// Propose to change the protocol parameters
     </span>ParameterChange(
         <span class="prelude-ty">Option</span>&lt;GovernanceActionId&gt;,
-        ChangeParameters,
+        ChangedParameters,
         <span class="comment">// The hash of the constitution script
         </span><span class="prelude-ty">Option</span>&lt;ScriptHash&gt;,
     ),
@@ -486,7 +490,7 @@
 #[is_plutus_data_derive_strategy = <span class="string">"Constr"</span>]
 #[cfg_attr(feature = <span class="string">"serde"</span>, derive(Serialize, Deserialize))]
 #[cfg_attr(feature = <span class="string">"lbf"</span>, derive(Json))]
-</span><span class="kw">pub struct </span>ProtocolProcedure {
+</span><span class="kw">pub struct </span>ProposalProcedure {
     <span class="kw">pub </span>deposit: Lovelace,
     <span class="kw">pub </span>return_addr: Credential,
     <span class="kw">pub </span>governance_action: GovernanceAction,
@@ -507,9 +511,9 @@
     ),
     Voting(Voter),
     Proposing(
-        <span class="doccomment">/// 0-based index of the given `ProposalProcedure` in `protocol_procedures` field of the `TransactionInfo`
+        <span class="doccomment">/// 0-based index of the given `ProposalProcedure` in `proposal_procedures` field of the `TransactionInfo`
         </span>BigInt,
-        ProtocolProcedure,
+        ProposalProcedure,
     ),
 }
 
@@ -523,7 +527,7 @@
     Rewarding(Credential),
     Certifying(BigInt, TxCert),
     Voting(Voter),
-    Proposing(BigInt, ProtocolProcedure),
+    Proposing(BigInt, ProposalProcedure),
 }
 
 <span class="attr">#[derive(Clone, Debug, PartialEq, Eq, IsPlutusData)]
@@ -544,7 +548,7 @@
     <span class="kw">pub </span>datums: AssocMap&lt;DatumHash, Datum&gt;,
     <span class="kw">pub </span>id: TransactionHash,
     <span class="kw">pub </span>votes: AssocMap&lt;Voter, AssocMap&lt;GovernanceActionId, Vote&gt;&gt;,
-    <span class="kw">pub </span>protocol_procedures: Vec&lt;ProtocolProcedure&gt;,
+    <span class="kw">pub </span>proposal_procedures: Vec&lt;ProposalProcedure&gt;,
     <span class="kw">pub </span>current_treasury_amount: <span class="prelude-ty">Option</span>&lt;Lovelace&gt;,
     <span class="kw">pub </span>treasury_donation: <span class="prelude-ty">Option</span>&lt;Lovelace&gt;,
 }

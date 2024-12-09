@@ -315,9 +315,9 @@
     v3::{
         ratio::Rational,
         transaction::{
-            ChangeParameters, ColdCommitteeCredential, Committee, Constitution, DRep,
+            ChangedParameters, ColdCommitteeCredential, Committee, Constitution, DRep,
             DRepCredential, Delegatee, GovernanceAction, GovernanceActionId,
-            HotCommitteeCredential, ProtocolProcedure, ProtocolVersion, ScriptContext, ScriptInfo,
+            HotCommitteeCredential, ProposalProcedure, ProtocolVersion, ScriptContext, ScriptInfo,
             ScriptPurpose, TransactionInfo, TxCert, Vote, Voter,
         },
     },
@@ -440,8 +440,8 @@
 }
 
 <span class="doccomment">/// Strategy to generate change parameters
-</span><span class="kw">pub fn </span>arb_change_parameters() -&gt; <span class="kw">impl </span>Strategy&lt;Value = ChangeParameters&gt; {
-    arb_plutus_data().prop_map(ChangeParameters)
+</span><span class="kw">pub fn </span>arb_changed_parameters() -&gt; <span class="kw">impl </span>Strategy&lt;Value = ChangedParameters&gt; {
+    arb_plutus_data().prop_map(ChangedParameters)
 }
 
 <span class="doccomment">/// Strategy to generate governance actions
@@ -449,7 +449,7 @@
     <span class="macro">prop_oneof!</span>[
         (
             option::of(arb_governance_action_id()),
-            arb_change_parameters(),
+            arb_changed_parameters(),
             option::of(arb_script_hash())
         )
             .prop_map(|(g, c, s)| GovernanceAction::ParameterChange(g, c, s)),
@@ -478,9 +478,9 @@
 }
 
 <span class="doccomment">/// Strategy to generate protocol procedures
-</span><span class="kw">pub fn </span>arb_protocol_procedure() -&gt; <span class="kw">impl </span>Strategy&lt;Value = ProtocolProcedure&gt; {
+</span><span class="kw">pub fn </span>arb_proposal_procedure() -&gt; <span class="kw">impl </span>Strategy&lt;Value = ProposalProcedure&gt; {
     (arb_lovelace(), arb_credential(), arb_governance_action()).prop_map(|(l, c, g)| {
-        ProtocolProcedure {
+        ProposalProcedure {
             deposit: l,
             return_addr: c,
             governance_action: g,
@@ -496,7 +496,7 @@
         arb_credential().prop_map(ScriptPurpose::Rewarding),
         (arb_integer(), arb_tx_cert()).prop_map(|(i, c)| ScriptPurpose::Certifying(i, c)),
         arb_voter().prop_map(ScriptPurpose::Voting),
-        (arb_integer(), arb_protocol_procedure()).prop_map(|(i, p)| ScriptPurpose::Proposing(i, p))
+        (arb_integer(), arb_proposal_procedure()).prop_map(|(i, p)| ScriptPurpose::Proposing(i, p))
     ]
 }
 
@@ -509,7 +509,7 @@
         arb_credential().prop_map(ScriptInfo::Rewarding),
         (arb_integer(), arb_tx_cert()).prop_map(|(i, c)| ScriptInfo::Certifying(i, c)),
         arb_voter().prop_map(ScriptInfo::Voting),
-        (arb_integer(), arb_protocol_procedure()).prop_map(|(i, p)| ScriptInfo::Proposing(i, p))
+        (arb_integer(), arb_proposal_procedure()).prop_map(|(i, p)| ScriptInfo::Proposing(i, p))
     ]
 }
 
@@ -534,7 +534,7 @@
                 arb_voter(),
                 arb_assoc_map(arb_governance_action_id(), arb_vote()),
             ),
-            vec(arb_protocol_procedure(), <span class="number">5</span>),
+            vec(arb_proposal_procedure(), <span class="number">5</span>),
             option::of(arb_lovelace()),
             option::of(arb_lovelace()),
         ),
@@ -552,7 +552,7 @@
                 signatories,
                 redeemers,
                 datums,
-                (id, votes, protocol_procedures, current_treasury_amount, treasury_donation),
+                (id, votes, proposal_procedures, current_treasury_amount, treasury_donation),
             )| {
                 TransactionInfo {
                     inputs,
@@ -568,7 +568,7 @@
                     datums,
                     id,
                     votes,
-                    protocol_procedures,
+                    proposal_procedures,
                     current_treasury_amount,
                     treasury_donation,
                 }

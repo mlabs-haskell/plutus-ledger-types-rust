@@ -857,6 +857,22 @@
 <a href="#855" id="855">855</a>
 <a href="#856" id="856">856</a>
 <a href="#857" id="857">857</a>
+<a href="#858" id="858">858</a>
+<a href="#859" id="859">859</a>
+<a href="#860" id="860">860</a>
+<a href="#861" id="861">861</a>
+<a href="#862" id="862">862</a>
+<a href="#863" id="863">863</a>
+<a href="#864" id="864">864</a>
+<a href="#865" id="865">865</a>
+<a href="#866" id="866">866</a>
+<a href="#867" id="867">867</a>
+<a href="#868" id="868">868</a>
+<a href="#869" id="869">869</a>
+<a href="#870" id="870">870</a>
+<a href="#871" id="871">871</a>
+<a href="#872" id="872">872</a>
+<a href="#873" id="873">873</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! Types related to Cardano values, such as Ada and native tokens.
 
 </span><span class="kw">use </span>std::str::FromStr;
@@ -933,7 +949,9 @@
     }
 }
 
-<span class="kw">impl </span>fmt::Display <span class="kw">for </span>CurrencySymbol {
+<span class="doccomment">/// Serialize into hexadecimal string, or empty string if Ada
+/// It returns `lovelace` instead of the empty string when the alternate flag is used (e.g.: format!("{:#}", cs))
+</span><span class="kw">impl </span>fmt::Display <span class="kw">for </span>CurrencySymbol {
     <span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, f: <span class="kw-2">&amp;mut </span>fmt::Formatter&lt;<span class="lifetime">'_</span>&gt;) -&gt; fmt::Result {
         <span class="kw">match </span><span class="self">self </span>{
             CurrencySymbol::Ada =&gt; {
@@ -1236,14 +1254,20 @@
             .peekable();
         <span class="kw">while let </span><span class="prelude-val">Some</span>((cur_sym, tn, amount)) = it.next() {
             <span class="kw">if </span>cur_sym.is_ada() {
-                <span class="macro">write!</span>(f, <span class="string">"{}"</span>, amount)<span class="question-mark">?</span>;
+                amount.fmt(f)<span class="question-mark">?</span>;
             } <span class="kw">else if </span>tn.is_empty() {
-                <span class="macro">write!</span>(f, <span class="string">"{} {}"</span>, amount, cur_sym)<span class="question-mark">?</span>;
+                amount.fmt(f)<span class="question-mark">?</span>;
+                <span class="string">" "</span>.fmt(f)<span class="question-mark">?</span>;
+                cur_sym.fmt(f)<span class="question-mark">?</span>;
             } <span class="kw">else </span>{
-                <span class="macro">write!</span>(f, <span class="string">"{} {}.{}"</span>, amount, cur_sym, tn)<span class="question-mark">?</span>;
+                amount.fmt(f)<span class="question-mark">?</span>;
+                <span class="string">" "</span>.fmt(f)<span class="question-mark">?</span>;
+                cur_sym.fmt(f)<span class="question-mark">?</span>;
+                <span class="string">"."</span>.fmt(f)<span class="question-mark">?</span>;
+                tn.fmt(f)<span class="question-mark">?</span>;
             }
             <span class="kw">if </span>it.peek().is_some() {
-                <span class="macro">write!</span>(f, <span class="string">"+"</span>)<span class="question-mark">?</span>;
+                <span class="string">"+"</span>.fmt(f)<span class="question-mark">?</span>;
             }
         }
 
@@ -1615,7 +1639,10 @@
     }
 }
 
-<span class="kw">impl </span>fmt::Display <span class="kw">for </span>TokenName {
+<span class="doccomment">/// Serialize into a hexadecimal string
+/// It tries to decode the token name from UTF8 when the alternate flag is used (e.g.: format!("{:#}", ac)),
+/// if failsed it prepends the hex value with `0x`
+</span><span class="kw">impl </span>fmt::Display <span class="kw">for </span>TokenName {
     <span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, f: <span class="kw-2">&amp;mut </span>fmt::Formatter&lt;<span class="lifetime">'_</span>&gt;) -&gt; fmt::Result {
         <span class="kw">if </span>f.alternate() {
             <span class="kw">let </span>utf8_str = std::str::from_utf8(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="number">0 </span>.<span class="number">0</span>);
@@ -1655,12 +1682,17 @@
     <span class="kw">pub </span>token_name: TokenName,
 }
 
-<span class="kw">impl </span>fmt::Display <span class="kw">for </span>AssetClass {
+<span class="doccomment">/// Serialize into two hexadecimal strings divided by a . (e.g. aabbcc.001122)
+/// It tries to decode the token name from UTF8 when the alternate flag is used (e.g.: format!("{:#}", ac)),
+/// if failsed it prepends the hex value with `0x`
+</span><span class="kw">impl </span>fmt::Display <span class="kw">for </span>AssetClass {
     <span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, f: <span class="kw-2">&amp;mut </span>fmt::Formatter&lt;<span class="lifetime">'_</span>&gt;) -&gt; fmt::Result {
         <span class="kw">if </span><span class="self">self</span>.token_name.is_empty() {
-            <span class="macro">write!</span>(f, <span class="string">"{}"</span>, <span class="self">self</span>.currency_symbol)
+            <span class="self">self</span>.currency_symbol.fmt(f)
         } <span class="kw">else </span>{
-            <span class="macro">write!</span>(f, <span class="string">"{}.{}"</span>, <span class="self">self</span>.currency_symbol, <span class="self">self</span>.token_name)
+            <span class="self">self</span>.currency_symbol.fmt(f)<span class="question-mark">?</span>;
+            <span class="string">"."</span>.fmt(f)<span class="question-mark">?</span>;
+            <span class="self">self</span>.token_name.fmt(f)
         }
     }
 }
