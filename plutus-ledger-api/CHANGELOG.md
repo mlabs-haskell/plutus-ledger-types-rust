@@ -1,14 +1,16 @@
 <!-- markdownlint-disable MD024 -->
+
 # Changelog
 
 This changelog is based on [Keep A
 Changelog](https://keepachangelog.com/en/1.1.0).
 
-## v2.2.0
+## v3.0.0
 
 ### Changed
 
 - Fixed typos in V3 types
+- Fixed Display alternative implementations
 
 ## v2.1.0
 
