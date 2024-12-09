@@ -7,8 +7,8 @@ use num_bigint::BigInt;
 use serde::{Deserialize, Serialize};
 
 pub use crate::v2::transaction::{
-    DCert, POSIXTime, POSIXTimeRange, TransactionHash, TransactionInput, TransactionOutput,
-    TxInInfo,
+    DCert, POSIXTime, POSIXTimeRange, TransactionHash, TransactionId, TransactionInput,
+    TransactionOutput, TxInInfo,
 };
 use crate::{
     self as plutus_ledger_api,
