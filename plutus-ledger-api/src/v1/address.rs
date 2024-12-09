@@ -85,6 +85,8 @@ impl TryFromCSL<csl::Address> for Address {
 }
 
 #[derive(Clone, Debug)]
+/// Address with network information. The `WithExtraInfo` variant has Display instance, serializing into
+/// a bech32 address format.
 pub struct AddressWithExtraInfo<'a> {
     pub address: &'a Address,
     pub network_tag: u8,
@@ -109,6 +111,7 @@ impl TryFromPLA<AddressWithExtraInfo<'_>> for csl::Address {
     }
 }
 
+/// Serializing into a bech32 address format.
 impl std::fmt::Display for AddressWithExtraInfo<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let bech32_addr: Option<String> = self

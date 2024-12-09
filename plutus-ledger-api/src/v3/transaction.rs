@@ -6,9 +6,11 @@ use num_bigint::BigInt;
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
+#[cfg(feature = "chrono")]
+pub use crate::v1::transaction::POSIXTimeConversionError;
 pub use crate::v2::transaction::{
     DCert, POSIXTime, POSIXTimeRange, TransactionHash, TransactionInput, TransactionOutput,
-    TxInInfo,
+    TransactionOutputWithExtraInfo, TxInInfo, WithdrawalsWithExtraInfo,
 };
 use crate::{
     self as plutus_ledger_api,
@@ -162,7 +164,7 @@ pub struct ProtocolVersion {
 #[is_plutus_data_derive_strategy = "Newtype"]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "lbf", derive(Json))]
-pub struct ChangeParameters(pub PlutusData);
+pub struct ChangedParameters(pub PlutusData);
 
 #[derive(Clone, Debug, PartialEq, Eq, IsPlutusData)]
 #[is_plutus_data_derive_strategy = "Constr"]
@@ -172,7 +174,7 @@ pub enum GovernanceAction {
     /// Propose to change the protocol parameters
     ParameterChange(
         Option<GovernanceActionId>,
-        ChangeParameters,
+        ChangedParameters,
         // The hash of the constitution script
         Option<ScriptHash>,
     ),
@@ -205,7 +207,7 @@ pub enum GovernanceAction {
 #[is_plutus_data_derive_strategy = "Constr"]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "lbf", derive(Json))]
-pub struct ProtocolProcedure {
+pub struct ProposalProcedure {
     pub deposit: Lovelace,
     pub return_addr: Credential,
     pub governance_action: GovernanceAction,
@@ -226,9 +228,9 @@ pub enum ScriptPurpose {
     ),
     Voting(Voter),
     Proposing(
-        /// 0-based index of the given `ProposalProcedure` in `protocol_procedures` field of the `TransactionInfo`
+        /// 0-based index of the given `ProposalProcedure` in `proposal_procedures` field of the `TransactionInfo`
         BigInt,
-        ProtocolProcedure,
+        ProposalProcedure,
     ),
 }
 
@@ -242,7 +244,7 @@ pub enum ScriptInfo {
     Rewarding(Credential),
     Certifying(BigInt, TxCert),
     Voting(Voter),
-    Proposing(BigInt, ProtocolProcedure),
+    Proposing(BigInt, ProposalProcedure),
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, IsPlutusData)]
@@ -263,7 +265,7 @@ pub struct TransactionInfo {
     pub datums: AssocMap<DatumHash, Datum>,
     pub id: TransactionHash,
     pub votes: AssocMap<Voter, AssocMap<GovernanceActionId, Vote>>,
-    pub protocol_procedures: Vec<ProtocolProcedure>,
+    pub proposal_procedures: Vec<ProposalProcedure>,
     pub current_treasury_amount: Option<Lovelace>,
     pub treasury_donation: Option<Lovelace>,
 }

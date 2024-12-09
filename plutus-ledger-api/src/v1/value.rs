@@ -74,6 +74,8 @@ impl CurrencySymbol {
     }
 }
 
+/// Serialize into hexadecimal string, or empty string if Ada
+/// It returns `lovelace` instead of the empty string when the alternate flag is used (e.g.: format!("{:#}", cs))
 impl fmt::Display for CurrencySymbol {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
@@ -377,14 +379,20 @@ impl fmt::Display for Value {
             .peekable();
         while let Some((cur_sym, tn, amount)) = it.next() {
             if cur_sym.is_ada() {
-                write!(f, "{}", amount)?;
+                amount.fmt(f)?;
             } else if tn.is_empty() {
-                write!(f, "{} {}", amount, cur_sym)?;
+                amount.fmt(f)?;
+                " ".fmt(f)?;
+                cur_sym.fmt(f)?;
             } else {
-                write!(f, "{} {}.{}", amount, cur_sym, tn)?;
+                amount.fmt(f)?;
+                " ".fmt(f)?;
+                cur_sym.fmt(f)?;
+                ".".fmt(f)?;
+                tn.fmt(f)?;
             }
             if it.peek().is_some() {
-                write!(f, "+")?;
+                "+".fmt(f)?;
             }
         }
 
@@ -756,6 +764,9 @@ impl IsPlutusData for TokenName {
     }
 }
 
+/// Serialize into a hexadecimal string
+/// It tries to decode the token name from UTF8 when the alternate flag is used (e.g.: format!("{:#}", ac)),
+/// if failsed it prepends the hex value with `0x`
 impl fmt::Display for TokenName {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         if f.alternate() {
@@ -796,12 +807,17 @@ pub struct AssetClass {
     pub token_name: TokenName,
 }
 
+/// Serialize into two hexadecimal strings divided by a . (e.g. aabbcc.001122)
+/// It tries to decode the token name from UTF8 when the alternate flag is used (e.g.: format!("{:#}", ac)),
+/// if failsed it prepends the hex value with `0x`
 impl fmt::Display for AssetClass {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         if self.token_name.is_empty() {
-            write!(f, "{}", self.currency_symbol)
+            self.currency_symbol.fmt(f)
         } else {
-            write!(f, "{}.{}", self.currency_symbol, self.token_name)
+            self.currency_symbol.fmt(f)?;
+            ".".fmt(f)?;
+            self.token_name.fmt(f)
         }
     }
 }
