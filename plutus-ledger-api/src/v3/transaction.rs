@@ -16,7 +16,7 @@ use crate::{
     self as plutus_ledger_api,
     plutus_data::{IsPlutusData, PlutusData},
     v2::{
-        address::{Credential, StakingCredential},
+        address::Credential,
         assoc_map::AssocMap,
         crypto::{PaymentPubKeyHash, StakePubKeyHash},
         datum::{Datum, DatumHash},
@@ -26,7 +26,7 @@ use crate::{
     },
 };
 
-use super::ratio::Rational;
+use super::{crypto::Ed25519PubKeyHash, ratio::Rational};
 
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, IsPlutusData)]
 #[is_plutus_data_derive_strategy = "Newtype"]
@@ -72,13 +72,13 @@ pub enum Delegatee {
 #[cfg_attr(feature = "lbf", derive(Json))]
 pub enum TxCert {
     /// Register staking credential with an optional deposit amount
-    RegStaking(StakingCredential, Option<Lovelace>),
+    RegStaking(Credential, Option<Lovelace>),
     /// Un-Register staking credential with an optional refund amount
-    UnRegStaking(StakingCredential, Option<Lovelace>),
+    UnRegStaking(Credential, Option<Lovelace>),
     /// Delegate staking credential to a Delegatee
-    DelegStaking(StakingCredential, Delegatee),
+    DelegStaking(Credential, Delegatee),
     /// Register and delegate staking credential to a Delegatee in one certificate. Note that deposit is mandatory.
-    RegDeleg(StakingCredential, Delegatee, Lovelace),
+    RegDeleg(Credential, Delegatee, Lovelace),
     /// Register a DRep with a deposit value. The optional anchor is omitted.
     RegDRep(DRepCredential, Lovelace),
     /// Update a DRep. The optional anchor is omitted.
@@ -88,12 +88,12 @@ pub enum TxCert {
     /// A digest of the PoolParams
     PoolRegister(
         /// pool id
-        PaymentPubKeyHash,
+        Ed25519PubKeyHash,
         // pool vrf
-        PaymentPubKeyHash,
+        Ed25519PubKeyHash,
     ),
     /// The retirement certificate and the Epoch in which the retirement will take place
-    PoolRetire(PaymentPubKeyHash, BigInt),
+    PoolRetire(Ed25519PubKeyHash, BigInt),
     /// Authorize a Hot credential for a specific Committee member's cold credential
     AuthHotCommittee(ColdCommitteeCredential, HotCommitteeCredential),
     ResignColdCommittee(ColdCommitteeCredential),
@@ -106,7 +106,7 @@ pub enum TxCert {
 pub enum Voter {
     CommitteeVoter(HotCommitteeCredential),
     DRepVoter(DRepCredential),
-    StakePoolVoter(PaymentPubKeyHash),
+    StakePoolVoter(Ed25519PubKeyHash),
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, IsPlutusData)]
@@ -258,7 +258,7 @@ pub struct TransactionInfo {
     pub fee: Lovelace,
     pub mint: Value,
     pub tx_certs: Vec<TxCert>,
-    pub wdrl: AssocMap<StakingCredential, BigInt>,
+    pub wdrl: AssocMap<Credential, Lovelace>,
     pub valid_range: POSIXTimeRange,
     pub signatories: Vec<PaymentPubKeyHash>,
     pub redeemers: AssocMap<ScriptPurpose, Redeemer>,
