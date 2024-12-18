@@ -14,7 +14,7 @@ use crate::{
         primitive::arb_integer,
         v1::{
             arb_currency_symbol, arb_datum, arb_ed25519_pub_key_hash, arb_lovelace,
-            arb_payment_pub_key_hash, arb_stake_pub_key_hash, arb_transaction_input,
+            arb_payment_pub_key_hash, arb_stake_pub_key_hash,
         },
     },
     v3::{
@@ -23,7 +23,8 @@ use crate::{
             ChangedParameters, ColdCommitteeCredential, Committee, Constitution, DRep,
             DRepCredential, Delegatee, GovernanceAction, GovernanceActionId,
             HotCommitteeCredential, ProposalProcedure, ProtocolVersion, ScriptContext, ScriptInfo,
-            ScriptPurpose, TransactionInfo, TxCert, Vote, Voter,
+            ScriptPurpose, TransactionHash, TransactionInfo, TransactionInput, TxCert, TxInInfo,
+            Vote, Voter,
         },
     },
 };
@@ -31,12 +32,24 @@ use crate::{
 use super::{
     primitive::arb_natural,
     v1::{
-        arb_assoc_map, arb_credential, arb_datum_hash, arb_plutus_data,
-        arb_plutus_interval_posix_time, arb_redeemer, arb_script_hash, arb_transaction_hash,
-        arb_value,
+        arb_assoc_map, arb_credential, arb_datum_hash, arb_ledger_bytes, arb_plutus_data,
+        arb_plutus_interval_posix_time, arb_redeemer, arb_script_hash, arb_value,
     },
-    v2::{arb_transaction_output, arb_tx_in_info},
+    v2::arb_transaction_output,
 };
+
+/// Strategy to generate a transaction hash
+pub fn arb_transaction_hash() -> impl Strategy<Value = TransactionHash> {
+    arb_ledger_bytes(32).prop_map(TransactionHash)
+}
+
+/// Strategy to generate a transaction input
+pub fn arb_transaction_input() -> impl Strategy<Value = TransactionInput> {
+    (arb_transaction_hash(), arb_natural(1)).prop_map(|(transaction_id, index)| TransactionInput {
+        transaction_id,
+        index,
+    })
+}
 
 /// Strategy to generate cold committee credentials
 pub fn arb_cold_committee_credential() -> impl Strategy<Value = ColdCommitteeCredential> {
@@ -278,6 +291,12 @@ pub fn arb_transaction_info() -> impl Strategy<Value = TransactionInfo> {
                 }
             },
         )
+}
+
+/// Strategy to generate a TxInInfo
+pub fn arb_tx_in_info() -> impl Strategy<Value = TxInInfo> {
+    (arb_transaction_input(), arb_transaction_output())
+        .prop_map(|(reference, output)| TxInInfo { reference, output })
 }
 
 /// Strategy to generate script contexts
