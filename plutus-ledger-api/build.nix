@@ -4,7 +4,7 @@
       rustFlake =
         inputs.flake-lang.lib.${system}.rustFlake {
           src = ./.;
-          version = "2";
+          version = "3";
           crateName = "plutus-ledger-api";
           devShellHook = config.settings.shell.hook;
           cargoNextestExtraArgs = "--all-features";

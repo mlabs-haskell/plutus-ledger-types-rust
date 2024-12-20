@@ -5,6 +5,14 @@
 This changelog is based on [Keep A
 Changelog](https://keepachangelog.com/en/1.1.0).
 
+## v3.0.1
+
+### Changed
+
+- Added V3 TransactionHash with proper IsPlutusData implementation
+- Fix some bugs in V3 types
+- Updated dependencies
+
 ## v3.0.0
 
 ### Changed

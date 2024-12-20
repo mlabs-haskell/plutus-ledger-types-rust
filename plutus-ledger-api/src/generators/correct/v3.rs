@@ -13,8 +13,8 @@ use crate::{
     generators::correct::{
         primitive::arb_integer,
         v1::{
-            arb_currency_symbol, arb_datum, arb_lovelace, arb_payment_pub_key_hash,
-            arb_stake_pub_key_hash, arb_staking_credential, arb_transaction_input,
+            arb_currency_symbol, arb_datum, arb_ed25519_pub_key_hash, arb_lovelace,
+            arb_payment_pub_key_hash, arb_stake_pub_key_hash,
         },
     },
     v3::{
@@ -23,7 +23,8 @@ use crate::{
             ChangedParameters, ColdCommitteeCredential, Committee, Constitution, DRep,
             DRepCredential, Delegatee, GovernanceAction, GovernanceActionId,
             HotCommitteeCredential, ProposalProcedure, ProtocolVersion, ScriptContext, ScriptInfo,
-            ScriptPurpose, TransactionInfo, TxCert, Vote, Voter,
+            ScriptPurpose, TransactionHash, TransactionInfo, TransactionInput, TxCert, TxInInfo,
+            Vote, Voter,
         },
     },
 };
@@ -31,12 +32,24 @@ use crate::{
 use super::{
     primitive::arb_natural,
     v1::{
-        arb_assoc_map, arb_credential, arb_datum_hash, arb_plutus_data,
-        arb_plutus_interval_posix_time, arb_redeemer, arb_script_hash, arb_transaction_hash,
-        arb_value,
+        arb_assoc_map, arb_credential, arb_datum_hash, arb_ledger_bytes, arb_plutus_data,
+        arb_plutus_interval_posix_time, arb_redeemer, arb_script_hash, arb_value,
     },
-    v2::{arb_transaction_output, arb_tx_in_info},
+    v2::arb_transaction_output,
 };
+
+/// Strategy to generate a transaction hash
+pub fn arb_transaction_hash() -> impl Strategy<Value = TransactionHash> {
+    arb_ledger_bytes(32).prop_map(TransactionHash)
+}
+
+/// Strategy to generate a transaction input
+pub fn arb_transaction_input() -> impl Strategy<Value = TransactionInput> {
+    (arb_transaction_hash(), arb_natural(1)).prop_map(|(transaction_id, index)| TransactionInput {
+        transaction_id,
+        index,
+    })
+}
 
 /// Strategy to generate cold committee credentials
 pub fn arb_cold_committee_credential() -> impl Strategy<Value = ColdCommitteeCredential> {
@@ -74,19 +87,18 @@ pub fn arb_delegatee() -> impl Strategy<Value = Delegatee> {
 /// Strategy to generate tx certs
 pub fn arb_tx_cert() -> impl Strategy<Value = TxCert> {
     prop_oneof![
-        (arb_staking_credential(), option::of(arb_lovelace()))
-            .prop_map(|(c, l)| TxCert::RegStaking(c, l)),
-        (arb_staking_credential(), option::of(arb_lovelace()))
+        (arb_credential(), option::of(arb_lovelace())).prop_map(|(c, l)| TxCert::RegStaking(c, l)),
+        (arb_credential(), option::of(arb_lovelace()))
             .prop_map(|(c, l)| TxCert::UnRegStaking(c, l)),
-        (arb_staking_credential(), arb_delegatee()).prop_map(|(c, d)| TxCert::DelegStaking(c, d)),
-        (arb_staking_credential(), arb_delegatee(), arb_lovelace())
+        (arb_credential(), arb_delegatee()).prop_map(|(c, d)| TxCert::DelegStaking(c, d)),
+        (arb_credential(), arb_delegatee(), arb_lovelace())
             .prop_map(|(c, d, l)| TxCert::RegDeleg(c, d, l)),
         (arb_d_rep_credential(), arb_lovelace()).prop_map(|(d, l)| TxCert::RegDRep(d, l)),
         arb_d_rep_credential().prop_map(TxCert::UpdateDRep),
         (arb_d_rep_credential(), arb_lovelace()).prop_map(|(d, l)| TxCert::UnRegDRep(d, l)),
-        (arb_payment_pub_key_hash(), arb_payment_pub_key_hash())
+        (arb_ed25519_pub_key_hash(), arb_ed25519_pub_key_hash())
             .prop_map(|(pkh1, pkh2)| TxCert::PoolRegister(pkh1, pkh2)),
-        (arb_payment_pub_key_hash(), arb_integer()).prop_map(|(pkh, i)| TxCert::PoolRetire(pkh, i)),
+        (arb_ed25519_pub_key_hash(), arb_integer()).prop_map(|(pkh, i)| TxCert::PoolRetire(pkh, i)),
         (
             arb_cold_committee_credential(),
             arb_hot_committee_credential()
@@ -101,7 +113,7 @@ pub fn arb_voter() -> impl Strategy<Value = Voter> {
     prop_oneof![
         arb_hot_committee_credential().prop_map(Voter::CommitteeVoter),
         arb_d_rep_credential().prop_map(Voter::DRepVoter),
-        arb_payment_pub_key_hash().prop_map(Voter::StakePoolVoter)
+        arb_ed25519_pub_key_hash().prop_map(Voter::StakePoolVoter)
     ]
 }
 
@@ -227,7 +239,7 @@ pub fn arb_transaction_info() -> impl Strategy<Value = TransactionInfo> {
         arb_lovelace(),
         arb_value(),
         vec(arb_tx_cert(), 5),
-        arb_assoc_map(arb_staking_credential(), arb_natural(1)),
+        arb_assoc_map(arb_credential(), arb_lovelace()),
         arb_plutus_interval_posix_time(),
         vec(arb_payment_pub_key_hash(), 5),
         arb_assoc_map(arb_script_purpose(), arb_redeemer()),
@@ -279,6 +291,12 @@ pub fn arb_transaction_info() -> impl Strategy<Value = TransactionInfo> {
                 }
             },
         )
+}
+
+/// Strategy to generate a TxInInfo
+pub fn arb_tx_in_info() -> impl Strategy<Value = TxInInfo> {
+    (arb_transaction_input(), arb_transaction_output())
+        .prop_map(|(reference, output)| TxInInfo { reference, output })
 }
 
 /// Strategy to generate script contexts
