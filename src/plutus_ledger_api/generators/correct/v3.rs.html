@@ -1,6 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/generators/correct/v3.rs`."><title>v3.rs - source</title><script> if (window.location.protocol !== "file:") document.write(`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2">`)</script><link rel="stylesheet" href="../../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../../static.files/rustdoc-e935ef01ae1c1829.css"><meta name="rustdoc-vars" data-root-path="../../../../" data-static-root-path="../../../../static.files/" data-current-crate="plutus_ledger_api" data-themes="" data-resource-suffix="" data-rustdoc-version="1.78.0 (9b00956e5 2024-04-29)" data-channel="1.78.0" data-search-js="search-42d8da7a6b9792c2.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../../../static.files/storage-4c98445ec4002617.js"></script><script defer src="../../../../static.files/src-script-e66d777a5a92e9b2.js"></script><script defer src="../../../../src-files.js"></script><script defer src="../../../../static.files/main-12cf3b4f4f9dc36d.js"></script><noscript><link rel="stylesheet" href="../../../../static.files/noscript-04d5337699b92874.css"></noscript><link rel="alternate icon" type="image/png" href="../../../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title">
-            <h2>Files</h2></div></nav><div class="sidebar-resizer"></div>
-    <main><nav class="sub"><form class="search-form"><span></span><div id="sidebar-button" tabindex="-1"><a href="../../../../plutus_ledger_api/all.html" title="show sidebar"></a></div><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" tabindex="-1"><a href="../../../../help.html" title="help">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/generators/correct/v3.rs`."><title>v3.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-46f98efaafac5295.ttf.woff2,FiraSans-Regular-018c141bf0843ffd.woff2,FiraSans-Medium-8f9a781e4970d388.woff2,SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2,SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../../static.files/rustdoc-492a78a4a87dcc01.css"><meta name="rustdoc-vars" data-root-path="../../../../" data-static-root-path="../../../../static.files/" data-current-crate="plutus_ledger_api" data-themes="" data-resource-suffix="" data-rustdoc-version="1.82.0 (f6e511eec 2024-10-15)" data-channel="1.82.0" data-search-js="search-a99f1315e7cc5121.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../../../static.files/storage-118b08c4c78b968e.js"></script><script defer src="../../../../static.files/src-script-e66d777a5a92e9b2.js"></script><script defer src="../../../../src-files.js"></script><script defer src="../../../../static.files/main-921df33f47b8780c.js"></script><noscript><link rel="stylesheet" href="../../../../static.files/noscript-3b12f09e550e0385.css"></noscript><link rel="alternate icon" type="image/png" href="../../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer"></div><main><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
 <a href="#4" id="4">4</a>
@@ -293,6 +291,24 @@
 <a href="#291" id="291">291</a>
 <a href="#292" id="292">292</a>
 <a href="#293" id="293">293</a>
+<a href="#294" id="294">294</a>
+<a href="#295" id="295">295</a>
+<a href="#296" id="296">296</a>
+<a href="#297" id="297">297</a>
+<a href="#298" id="298">298</a>
+<a href="#299" id="299">299</a>
+<a href="#300" id="300">300</a>
+<a href="#301" id="301">301</a>
+<a href="#302" id="302">302</a>
+<a href="#303" id="303">303</a>
+<a href="#304" id="304">304</a>
+<a href="#305" id="305">305</a>
+<a href="#306" id="306">306</a>
+<a href="#307" id="307">307</a>
+<a href="#308" id="308">308</a>
+<a href="#309" id="309">309</a>
+<a href="#310" id="310">310</a>
+<a href="#311" id="311">311</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! Proptest strategies for Plutus V3 types
 //!
 //! These strategies always return valid values.
@@ -308,8 +324,8 @@
     generators::correct::{
         primitive::arb_integer,
         v1::{
-            arb_currency_symbol, arb_datum, arb_lovelace, arb_payment_pub_key_hash,
-            arb_stake_pub_key_hash, arb_staking_credential, arb_transaction_input,
+            arb_currency_symbol, arb_datum, arb_ed25519_pub_key_hash, arb_lovelace,
+            arb_payment_pub_key_hash, arb_stake_pub_key_hash,
         },
     },
     v3::{
@@ -318,7 +334,8 @@
             ChangedParameters, ColdCommitteeCredential, Committee, Constitution, DRep,
             DRepCredential, Delegatee, GovernanceAction, GovernanceActionId,
             HotCommitteeCredential, ProposalProcedure, ProtocolVersion, ScriptContext, ScriptInfo,
-            ScriptPurpose, TransactionInfo, TxCert, Vote, Voter,
+            ScriptPurpose, TransactionHash, TransactionInfo, TransactionInput, TxCert, TxInInfo,
+            Vote, Voter,
         },
     },
 };
@@ -326,12 +343,24 @@
 <span class="kw">use super</span>::{
     primitive::arb_natural,
     v1::{
-        arb_assoc_map, arb_credential, arb_datum_hash, arb_plutus_data,
-        arb_plutus_interval_posix_time, arb_redeemer, arb_script_hash, arb_transaction_hash,
-        arb_value,
+        arb_assoc_map, arb_credential, arb_datum_hash, arb_ledger_bytes, arb_plutus_data,
+        arb_plutus_interval_posix_time, arb_redeemer, arb_script_hash, arb_value,
     },
-    v2::{arb_transaction_output, arb_tx_in_info},
+    v2::arb_transaction_output,
 };
+
+<span class="doccomment">/// Strategy to generate a transaction hash
+</span><span class="kw">pub fn </span>arb_transaction_hash() -&gt; <span class="kw">impl </span>Strategy&lt;Value = TransactionHash&gt; {
+    arb_ledger_bytes(<span class="number">32</span>).prop_map(TransactionHash)
+}
+
+<span class="doccomment">/// Strategy to generate a transaction input
+</span><span class="kw">pub fn </span>arb_transaction_input() -&gt; <span class="kw">impl </span>Strategy&lt;Value = TransactionInput&gt; {
+    (arb_transaction_hash(), arb_natural(<span class="number">1</span>)).prop_map(|(transaction_id, index)| TransactionInput {
+        transaction_id,
+        index,
+    })
+}
 
 <span class="doccomment">/// Strategy to generate cold committee credentials
 </span><span class="kw">pub fn </span>arb_cold_committee_credential() -&gt; <span class="kw">impl </span>Strategy&lt;Value = ColdCommitteeCredential&gt; {
@@ -369,19 +398,18 @@
 <span class="doccomment">/// Strategy to generate tx certs
 </span><span class="kw">pub fn </span>arb_tx_cert() -&gt; <span class="kw">impl </span>Strategy&lt;Value = TxCert&gt; {
     <span class="macro">prop_oneof!</span>[
-        (arb_staking_credential(), option::of(arb_lovelace()))
-            .prop_map(|(c, l)| TxCert::RegStaking(c, l)),
-        (arb_staking_credential(), option::of(arb_lovelace()))
+        (arb_credential(), option::of(arb_lovelace())).prop_map(|(c, l)| TxCert::RegStaking(c, l)),
+        (arb_credential(), option::of(arb_lovelace()))
             .prop_map(|(c, l)| TxCert::UnRegStaking(c, l)),
-        (arb_staking_credential(), arb_delegatee()).prop_map(|(c, d)| TxCert::DelegStaking(c, d)),
-        (arb_staking_credential(), arb_delegatee(), arb_lovelace())
+        (arb_credential(), arb_delegatee()).prop_map(|(c, d)| TxCert::DelegStaking(c, d)),
+        (arb_credential(), arb_delegatee(), arb_lovelace())
             .prop_map(|(c, d, l)| TxCert::RegDeleg(c, d, l)),
         (arb_d_rep_credential(), arb_lovelace()).prop_map(|(d, l)| TxCert::RegDRep(d, l)),
         arb_d_rep_credential().prop_map(TxCert::UpdateDRep),
         (arb_d_rep_credential(), arb_lovelace()).prop_map(|(d, l)| TxCert::UnRegDRep(d, l)),
-        (arb_payment_pub_key_hash(), arb_payment_pub_key_hash())
+        (arb_ed25519_pub_key_hash(), arb_ed25519_pub_key_hash())
             .prop_map(|(pkh1, pkh2)| TxCert::PoolRegister(pkh1, pkh2)),
-        (arb_payment_pub_key_hash(), arb_integer()).prop_map(|(pkh, i)| TxCert::PoolRetire(pkh, i)),
+        (arb_ed25519_pub_key_hash(), arb_integer()).prop_map(|(pkh, i)| TxCert::PoolRetire(pkh, i)),
         (
             arb_cold_committee_credential(),
             arb_hot_committee_credential()
@@ -396,7 +424,7 @@
     <span class="macro">prop_oneof!</span>[
         arb_hot_committee_credential().prop_map(Voter::CommitteeVoter),
         arb_d_rep_credential().prop_map(Voter::DRepVoter),
-        arb_payment_pub_key_hash().prop_map(Voter::StakePoolVoter)
+        arb_ed25519_pub_key_hash().prop_map(Voter::StakePoolVoter)
     ]
 }
 
@@ -522,7 +550,7 @@
         arb_lovelace(),
         arb_value(),
         vec(arb_tx_cert(), <span class="number">5</span>),
-        arb_assoc_map(arb_staking_credential(), arb_natural(<span class="number">1</span>)),
+        arb_assoc_map(arb_credential(), arb_lovelace()),
         arb_plutus_interval_posix_time(),
         vec(arb_payment_pub_key_hash(), <span class="number">5</span>),
         arb_assoc_map(arb_script_purpose(), arb_redeemer()),
@@ -574,6 +602,12 @@
                 }
             },
         )
+}
+
+<span class="doccomment">/// Strategy to generate a TxInInfo
+</span><span class="kw">pub fn </span>arb_tx_in_info() -&gt; <span class="kw">impl </span>Strategy&lt;Value = TxInInfo&gt; {
+    (arb_transaction_input(), arb_transaction_output())
+        .prop_map(|(reference, output)| TxInInfo { reference, output })
 }
 
 <span class="doccomment">/// Strategy to generate script contexts
