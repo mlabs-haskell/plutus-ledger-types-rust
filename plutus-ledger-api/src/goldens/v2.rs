@@ -1,4 +1,7 @@
 //! Golden test data or Plutus V2 types
+
+use num_bigint::BigInt;
+
 pub use super::v1::{
     sample_address, sample_asset_class, sample_chain_pointer, sample_credential,
     sample_currency_symbol, sample_datum, sample_datum_hash, sample_dcert,
@@ -14,7 +17,6 @@ use crate::v2::{
     script::ScriptHash,
     transaction::{ScriptContext, TransactionInfo, TransactionOutput, TxInInfo},
 };
-use num_bigint::BigInt;
 
 pub fn sample_output_datum() -> OutputDatum {
     OutputDatum::InlineDatum(super::v1::sample_datum())
