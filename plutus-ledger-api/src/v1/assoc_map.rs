@@ -12,7 +12,7 @@ use crate::plutus_data::{IsPlutusData, PlutusData, PlutusDataError, PlutusType};
 // AssocMap //
 //////////////
 
-#[derive(Debug, PartialEq, Eq, Clone, Default)]
+#[derive(Debug, PartialEq, Eq, Clone, Default, PartialOrd, Ord, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct AssocMap<K, V>(pub Vec<(K, V)>);
 
