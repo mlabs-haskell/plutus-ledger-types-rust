@@ -1,27 +1,52 @@
 //! Types related to Cardano transactions.
+use std::{fmt, str::FromStr};
+
+use anyhow::anyhow;
+use cardano_serialization_lib as csl;
+#[cfg(feature = "lbf")]
+use lbr_prelude::json::Json;
+use nom::{
+    character::complete::char,
+    combinator::{all_consuming, map, map_res},
+    error::{context, VerboseError},
+    sequence::{preceded, tuple},
+    Finish, IResult,
+};
+use num_bigint::BigInt;
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Serialize};
+
 use super::{
     address::{Address, StakingCredential},
-    crypto::{LedgerBytes, PaymentPubKeyHash},
+    crypto::{ledger_bytes, LedgerBytes, PaymentPubKeyHash},
     datum::{Datum, DatumHash},
     interval::PlutusInterval,
     value::{CurrencySymbol, Value},
 };
-use crate::plutus_data::{
-    parse_constr, parse_constr_with_tag, parse_fixed_len_constr_fields, verify_constr_fields,
-    IsPlutusData, PlutusData, PlutusDataError, PlutusType,
+
+use crate::{
+    self as plutus_ledger_api,
+    aux::{big_int, guard_bytes},
 };
-use crate::utils::{none, singleton};
-#[cfg(feature = "lbf")]
-use lbr_prelude::json::Json;
-use num_bigint::BigInt;
-#[cfg(feature = "serde")]
-use serde::{Deserialize, Serialize};
+use crate::{
+    csl::pla_to_csl::{TryFromPLAError, TryToCSL},
+    plutus_data::IsPlutusData,
+};
+use crate::{
+    csl::{csl_to_pla::FromCSL, pla_to_csl::TryFromPLA},
+    error::ConversionError,
+};
+
+//////////////////////
+// TransactionInput //
+//////////////////////
 
 /// An input of a transaction
 ///
 /// Also know as `TxOutRef` from Plutus, this identifies a UTxO by its transacton hash and index
 /// inside the transaction
-#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, IsPlutusData)]
+#[is_plutus_data_derive_strategy = "Constr"]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "lbf", derive(Json))]
 pub struct TransactionInput {
@@ -29,81 +54,163 @@ pub struct TransactionInput {
     pub index: BigInt,
 }
 
-impl IsPlutusData for TransactionInput {
-    fn to_plutus_data(&self) -> PlutusData {
-        PlutusData::Constr(
-            BigInt::from(0),
-            vec![
-                self.transaction_id.to_plutus_data(),
-                self.index.to_plutus_data(),
-            ],
-        )
+/// Serializing into a hexadecimal tx hash, followed by an tx id after a # (e.g. aabbcc#1)
+impl fmt::Display for TransactionInput {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}#{}", self.transaction_id.0, self.index)
     }
+}
 
-    fn from_plutus_data(data: &PlutusData) -> Result<Self, PlutusDataError> {
-        match data {
-            PlutusData::Constr(flag, fields) => match u32::try_from(flag) {
-                Ok(0) => {
-                    verify_constr_fields(&fields, 2)?;
-                    Ok(TransactionInput {
-                        transaction_id: TransactionHash::from_plutus_data(&fields[0])?,
-                        index: BigInt::from_plutus_data(&fields[1])?,
-                    })
-                }
-                _ => Err(PlutusDataError::UnexpectedPlutusInvariant {
-                    wanted: "Constr field between 0 and 1".to_owned(),
-                    got: flag.to_string(),
-                }),
-            },
-
-            _ => Err(PlutusDataError::UnexpectedPlutusType {
-                wanted: PlutusType::Constr,
-                got: PlutusType::from(data),
-            }),
+impl FromCSL<csl::TransactionInput> for TransactionInput {
+    fn from_csl(value: &csl::TransactionInput) -> Self {
+        TransactionInput {
+            transaction_id: TransactionHash::from_csl(&value.transaction_id()),
+            index: BigInt::from_csl(&value.index()),
         }
     }
 }
+
+impl TryFromPLA<TransactionInput> for csl::TransactionInput {
+    fn try_from_pla(val: &TransactionInput) -> Result<Self, TryFromPLAError> {
+        Ok(csl::TransactionInput::new(
+            &val.transaction_id.try_to_csl()?,
+            val.index.try_to_csl()?,
+        ))
+    }
+}
+
+impl FromCSL<csl::TransactionInputs> for Vec<TransactionInput> {
+    fn from_csl(value: &csl::TransactionInputs) -> Self {
+        (0..value.len())
+            .map(|idx| TransactionInput::from_csl(&value.get(idx)))
+            .collect()
+    }
+}
+
+impl TryFromPLA<Vec<TransactionInput>> for csl::TransactionInputs {
+    fn try_from_pla(val: &Vec<TransactionInput>) -> Result<Self, TryFromPLAError> {
+        val.iter()
+            .try_fold(csl::TransactionInputs::new(), |mut acc, input| {
+                acc.add(&input.try_to_csl()?);
+                Ok(acc)
+            })
+    }
+}
+
+/// Nom parser for TransactionInput
+/// Expects a transaction hash of 32 bytes in hexadecimal followed by a # and an integer index
+/// E.g.: 1122334455667788990011223344556677889900112233445566778899001122#1
+pub(crate) fn transaction_input(
+    input: &str,
+) -> IResult<&str, TransactionInput, VerboseError<&str>> {
+    map(
+        tuple((transaction_hash, preceded(char('#'), big_int))),
+        |(transaction_id, index)| TransactionInput {
+            transaction_id,
+            index,
+        },
+    )(input)
+}
+
+impl FromStr for TransactionInput {
+    type Err = ConversionError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        all_consuming(transaction_input)(s)
+            .finish()
+            .map_err(|err| {
+                ConversionError::ParseError(anyhow!(
+                    "Error while parsing TransactionInput '{}': {}",
+                    s,
+                    err
+                ))
+            })
+            .map(|(_, cs)| cs)
+    }
+}
+
+/////////////////////
+// TransactionHash //
+/////////////////////
 
 /// 32-bytes blake2b256 hash of a transaction body.
 ///
 /// Also known as Transaction ID or `TxID`.
 /// Note: Plutus docs might incorrectly state that it uses SHA256.
-#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, IsPlutusData)]
+#[is_plutus_data_derive_strategy = "Constr"]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "lbf", derive(Json))]
 pub struct TransactionHash(pub LedgerBytes);
 
-impl IsPlutusData for TransactionHash {
-    fn to_plutus_data(&self) -> PlutusData {
-        PlutusData::Constr(BigInt::from(0), vec![self.0.to_plutus_data()])
-    }
-
-    fn from_plutus_data(data: &PlutusData) -> Result<Self, PlutusDataError> {
-        match data {
-            PlutusData::Constr(flag, fields) => match u32::try_from(flag) {
-                Ok(0) => {
-                    verify_constr_fields(&fields, 1)?;
-                    Ok(TransactionHash(IsPlutusData::from_plutus_data(&fields[0])?))
-                }
-                _ => Err(PlutusDataError::UnexpectedPlutusInvariant {
-                    wanted: "Constr field to be 0".to_owned(),
-                    got: flag.to_string(),
-                }),
-            },
-
-            _ => Err(PlutusDataError::UnexpectedPlutusType {
-                wanted: PlutusType::Constr,
-                got: PlutusType::from(data),
-            }),
-        }
+impl fmt::Display for TransactionHash {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.0)
     }
 }
+
+impl TransactionHash {
+    pub fn from_bytes(bytes: Vec<u8>) -> Result<Self, ConversionError> {
+        Ok(TransactionHash(LedgerBytes(guard_bytes(
+            "ScriptHash",
+            bytes,
+            32,
+        )?)))
+    }
+}
+
+impl FromCSL<csl::TransactionHash> for TransactionHash {
+    fn from_csl(value: &csl::TransactionHash) -> Self {
+        TransactionHash(LedgerBytes(value.to_bytes()))
+    }
+}
+
+impl TryFromPLA<TransactionHash> for csl::TransactionHash {
+    fn try_from_pla(val: &TransactionHash) -> Result<Self, TryFromPLAError> {
+        csl::TransactionHash::from_bytes(val.0 .0.to_owned())
+            .map_err(TryFromPLAError::CSLDeserializeError)
+    }
+}
+
+/// Nom parser for TransactionHash
+/// Expects a hexadecimal string representation of 32 bytes
+/// E.g.: 1122334455667788990011223344556677889900112233445566778899001122
+pub(crate) fn transaction_hash(input: &str) -> IResult<&str, TransactionHash, VerboseError<&str>> {
+    context(
+        "transaction_hash",
+        map_res(ledger_bytes, |LedgerBytes(bytes)| {
+            TransactionHash::from_bytes(bytes)
+        }),
+    )(input)
+}
+
+impl FromStr for TransactionHash {
+    type Err = ConversionError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        all_consuming(transaction_hash)(s)
+            .finish()
+            .map_err(|err| {
+                ConversionError::ParseError(anyhow!(
+                    "Error while parsing TransactionHash '{}': {}",
+                    s,
+                    err
+                ))
+            })
+            .map(|(_, cs)| cs)
+    }
+}
+
+///////////////////////
+// TransactionOutput //
+///////////////////////
 
 /// An output of a transaction
 ///
 /// This must include the target address, the hash of the datum attached, and the amount of output
 /// tokens
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq, IsPlutusData)]
+#[is_plutus_data_derive_strategy = "Constr"]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "lbf", derive(Json))]
 pub struct TransactionOutput {
@@ -112,58 +219,16 @@ pub struct TransactionOutput {
     pub datum_hash: Option<DatumHash>,
 }
 
-impl IsPlutusData for TransactionOutput {
-    fn to_plutus_data(&self) -> PlutusData {
-        PlutusData::Constr(
-            BigInt::from(0),
-            vec![
-                self.address.to_plutus_data(),
-                self.value.to_plutus_data(),
-                self.datum_hash.to_plutus_data(),
-            ],
-        )
-    }
-
-    fn from_plutus_data(data: &PlutusData) -> Result<Self, PlutusDataError> {
-        match data {
-            PlutusData::Constr(flag, fields) => match u32::try_from(flag) {
-                Ok(0) => {
-                    verify_constr_fields(&fields, 3)?;
-                    Ok(TransactionOutput {
-                        address: Address::from_plutus_data(&fields[0])?,
-                        value: Value::from_plutus_data(&fields[1])?,
-                        datum_hash: <Option<DatumHash>>::from_plutus_data(&fields[2])?,
-                    })
-                }
-                _ => Err(PlutusDataError::UnexpectedPlutusInvariant {
-                    wanted: "Constr field to be 0".to_owned(),
-                    got: flag.to_string(),
-                }),
-            },
-
-            _ => Err(PlutusDataError::UnexpectedPlutusType {
-                wanted: PlutusType::Constr,
-                got: PlutusType::from(data),
-            }),
-        }
-    }
-}
+///////////////
+// POSIXTime //
+///////////////
 
 /// POSIX time is measured as the number of milliseconds since 1970-01-01T00:00:00Z
-#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, IsPlutusData)]
+#[is_plutus_data_derive_strategy = "Newtype"]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "lbf", derive(Json))]
 pub struct POSIXTime(pub BigInt);
-
-impl IsPlutusData for POSIXTime {
-    fn to_plutus_data(&self) -> PlutusData {
-        self.0.to_plutus_data()
-    }
-
-    fn from_plutus_data(data: &PlutusData) -> Result<Self, PlutusDataError> {
-        IsPlutusData::from_plutus_data(data).map(Self)
-    }
-}
 
 #[cfg(feature = "chrono")]
 #[derive(thiserror::Error, Debug)]
@@ -187,57 +252,31 @@ impl TryFrom<POSIXTime> for chrono::DateTime<chrono::Utc> {
 
     fn try_from(posix_time: POSIXTime) -> Result<chrono::DateTime<chrono::Utc>, Self::Error> {
         let POSIXTime(millis) = posix_time;
-        Ok(chrono::DateTime::from_timestamp_millis(
+        chrono::DateTime::from_timestamp_millis(
             <i64>::try_from(millis).map_err(POSIXTimeConversionError::TryFromBigIntError)?,
         )
-        .ok_or(POSIXTimeConversionError::OutOfBoundsError)?)
+        .ok_or(POSIXTimeConversionError::OutOfBoundsError)
     }
 }
 
+////////////////////
+// POSIXTimeRange //
+////////////////////
+
 pub type POSIXTimeRange = PlutusInterval<POSIXTime>;
 
+//////////////
+// TxInInfo //
+//////////////
+
 /// An input of a pending transaction.
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq, IsPlutusData)]
+#[is_plutus_data_derive_strategy = "Constr"]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "lbf", derive(Json))]
 pub struct TxInInfo {
     pub reference: TransactionInput,
     pub output: TransactionOutput,
-}
-
-impl IsPlutusData for TxInInfo {
-    fn to_plutus_data(&self) -> PlutusData {
-        PlutusData::Constr(
-            BigInt::from(0),
-            vec![
-                self.reference.to_plutus_data(),
-                self.output.to_plutus_data(),
-            ],
-        )
-    }
-
-    fn from_plutus_data(data: &PlutusData) -> Result<Self, PlutusDataError> {
-        match data {
-            PlutusData::Constr(flag, fields) => match u32::try_from(flag) {
-                Ok(0) => {
-                    verify_constr_fields(&fields, 2)?;
-                    Ok(TxInInfo {
-                        reference: TransactionInput::from_plutus_data(&fields[0])?,
-                        output: TransactionOutput::from_plutus_data(&fields[1])?,
-                    })
-                }
-                _ => Err(PlutusDataError::UnexpectedPlutusInvariant {
-                    wanted: "Constr field to be 0".to_owned(),
-                    got: flag.to_string(),
-                }),
-            },
-
-            _ => Err(PlutusDataError::UnexpectedPlutusType {
-                wanted: PlutusType::Constr,
-                got: PlutusType::from(data),
-            }),
-        }
-    }
 }
 
 impl From<(TransactionInput, TransactionOutput)> for TxInInfo {
@@ -246,8 +285,13 @@ impl From<(TransactionInput, TransactionOutput)> for TxInInfo {
     }
 }
 
+///////////
+// DCert //
+///////////
+
 /// Partial representation of digests of certificates on the ledger.
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Hash)]
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Hash, IsPlutusData)]
+#[is_plutus_data_derive_strategy = "Constr"]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "lbf", derive(Json))]
 pub enum DCert {
@@ -275,74 +319,13 @@ pub enum DCert {
     Mir,
 }
 
-impl IsPlutusData for DCert {
-    fn to_plutus_data(&self) -> PlutusData {
-        let (tag, fields) = match self {
-            DCert::DelegRegKey(c) => (0u32, singleton(c.to_plutus_data())),
-            DCert::DelegDeRegKey(c) => (1, singleton(c.to_plutus_data())),
-            DCert::DelegDelegate(c, pkh) => (2, vec![c.to_plutus_data(), pkh.to_plutus_data()]),
-            DCert::PoolRegister(pkh, pkh1) => {
-                (3, vec![pkh.to_plutus_data(), pkh1.to_plutus_data()])
-            }
-            DCert::PoolRetire(pkh, i) => (4, vec![pkh.to_plutus_data(), i.to_plutus_data()]),
-            DCert::Genesis => (5, none()),
-            DCert::Mir => (6, none()),
-        };
-
-        PlutusData::Constr(BigInt::from(tag), fields)
-    }
-
-    fn from_plutus_data(data: &PlutusData) -> Result<Self, PlutusDataError> {
-        let (tag, fields) = parse_constr(data)?;
-
-        match tag {
-            0 => {
-                let [field] = parse_fixed_len_constr_fields::<1>(fields)?;
-                IsPlutusData::from_plutus_data(field).map(Self::DelegRegKey)
-            }
-            1 => {
-                let [field] = parse_fixed_len_constr_fields::<1>(fields)?;
-                IsPlutusData::from_plutus_data(field).map(Self::DelegDeRegKey)
-            }
-            2 => {
-                let [field1, field2] = parse_fixed_len_constr_fields::<2>(fields)?;
-                Ok(Self::DelegDelegate(
-                    IsPlutusData::from_plutus_data(field1)?,
-                    IsPlutusData::from_plutus_data(field2)?,
-                ))
-            }
-            3 => {
-                let [field1, field2] = parse_fixed_len_constr_fields::<2>(fields)?;
-                Ok(Self::PoolRegister(
-                    IsPlutusData::from_plutus_data(field1)?,
-                    IsPlutusData::from_plutus_data(field2)?,
-                ))
-            }
-            4 => {
-                let [field1, field2] = parse_fixed_len_constr_fields::<2>(fields)?;
-                Ok(Self::PoolRetire(
-                    IsPlutusData::from_plutus_data(field1)?,
-                    IsPlutusData::from_plutus_data(field2)?,
-                ))
-            }
-            5 => {
-                let [] = parse_fixed_len_constr_fields::<0>(fields)?;
-                Ok(Self::Genesis)
-            }
-            6 => {
-                let [] = parse_fixed_len_constr_fields::<0>(fields)?;
-                Ok(Self::Mir)
-            }
-            bad_tag => Err(PlutusDataError::UnexpectedPlutusInvariant {
-                wanted: "Constr tag to be 0, 1, 2, 3, 4, 5 or 6".to_owned(),
-                got: bad_tag.to_string(),
-            }),
-        }
-    }
-}
+///////////////////
+// ScriptPurpose //
+///////////////////
 
 /// The purpose of the script that's currently running.
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Hash)]
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Hash, IsPlutusData)]
+#[is_plutus_data_derive_strategy = "Constr"]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "lbf", derive(Json))]
 pub enum ScriptPurpose {
@@ -352,37 +335,13 @@ pub enum ScriptPurpose {
     Certifying(DCert),
 }
 
-impl IsPlutusData for ScriptPurpose {
-    fn to_plutus_data(&self) -> PlutusData {
-        let (tag, field) = match self {
-            ScriptPurpose::Minting(cs) => (0u32, cs.to_plutus_data()),
-            ScriptPurpose::Spending(i) => (1, i.to_plutus_data()),
-            ScriptPurpose::Rewarding(c) => (2, c.to_plutus_data()),
-            ScriptPurpose::Certifying(c) => (3, c.to_plutus_data()),
-        };
-
-        PlutusData::Constr(BigInt::from(tag), singleton(field))
-    }
-
-    fn from_plutus_data(plutus_data: &PlutusData) -> Result<Self, PlutusDataError> {
-        let (tag, fields) = parse_constr(plutus_data)?;
-        let [field] = parse_fixed_len_constr_fields(fields)?;
-
-        match tag {
-            0 => IsPlutusData::from_plutus_data(field).map(Self::Minting),
-            1 => IsPlutusData::from_plutus_data(field).map(Self::Spending),
-            2 => IsPlutusData::from_plutus_data(field).map(Self::Rewarding),
-            3 => IsPlutusData::from_plutus_data(field).map(Self::Certifying),
-            bad_tag => Err(PlutusDataError::UnexpectedPlutusInvariant {
-                got: bad_tag.to_string(),
-                wanted: format!("Constr tag to be 0, 1, 2 or 3"),
-            }),
-        }
-    }
-}
+/////////////////////
+// TransactionInfo //
+/////////////////////
 
 /// A pending transaction as seen by validator scripts, also known as TxInfo in Plutus
-#[derive(Debug, PartialEq, Eq, Clone)]
+#[derive(Debug, PartialEq, Eq, Clone, IsPlutusData)]
+#[is_plutus_data_derive_strategy = "Constr"]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "lbf", derive(Json))]
 pub struct TransactionInfo {
@@ -398,69 +357,16 @@ pub struct TransactionInfo {
     pub id: TransactionHash,
 }
 
-impl IsPlutusData for TransactionInfo {
-    fn to_plutus_data(&self) -> PlutusData {
-        PlutusData::Constr(
-            BigInt::from(0),
-            vec![
-                self.inputs.to_plutus_data(),
-                self.outputs.to_plutus_data(),
-                self.fee.to_plutus_data(),
-                self.mint.to_plutus_data(),
-                self.d_cert.to_plutus_data(),
-                self.wdrl.to_plutus_data(),
-                self.valid_range.to_plutus_data(),
-                self.signatories.to_plutus_data(),
-                self.datums.to_plutus_data(),
-                self.id.to_plutus_data(),
-            ],
-        )
-    }
-
-    fn from_plutus_data(data: &PlutusData) -> Result<Self, PlutusDataError> {
-        let fields = parse_constr_with_tag(data, 0)?;
-        let [inputs, outputs, fee, mint, d_cert, wdrl, valid_range, signatories, datums, id] =
-            parse_fixed_len_constr_fields(fields)?;
-
-        Ok(Self {
-            inputs: IsPlutusData::from_plutus_data(inputs)?,
-            outputs: IsPlutusData::from_plutus_data(outputs)?,
-            fee: IsPlutusData::from_plutus_data(fee)?,
-            mint: IsPlutusData::from_plutus_data(mint)?,
-            d_cert: IsPlutusData::from_plutus_data(d_cert)?,
-            wdrl: IsPlutusData::from_plutus_data(wdrl)?,
-            valid_range: IsPlutusData::from_plutus_data(valid_range)?,
-            signatories: IsPlutusData::from_plutus_data(signatories)?,
-            datums: IsPlutusData::from_plutus_data(datums)?,
-            id: IsPlutusData::from_plutus_data(id)?,
-        })
-    }
-}
+///////////////////
+// ScriptContext //
+///////////////////
 
 /// The context that is presented to the currently-executing script.
-#[derive(Debug, PartialEq, Eq, Clone)]
+#[derive(Debug, PartialEq, Eq, Clone, IsPlutusData)]
+#[is_plutus_data_derive_strategy = "Constr"]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "lbf", derive(Json))]
 pub struct ScriptContext {
     pub tx_info: TransactionInfo,
     pub purpose: ScriptPurpose,
-}
-
-impl IsPlutusData for ScriptContext {
-    fn to_plutus_data(&self) -> PlutusData {
-        PlutusData::Constr(
-            BigInt::from(0),
-            vec![self.tx_info.to_plutus_data(), self.purpose.to_plutus_data()],
-        )
-    }
-
-    fn from_plutus_data(data: &PlutusData) -> Result<Self, PlutusDataError> {
-        let fields = parse_constr_with_tag(data, 0)?;
-        let [tx_info, purpose] = parse_fixed_len_constr_fields(fields)?;
-
-        Ok(Self {
-            tx_info: IsPlutusData::from_plutus_data(tx_info)?,
-            purpose: IsPlutusData::from_plutus_data(purpose)?,
-        })
-    }
 }

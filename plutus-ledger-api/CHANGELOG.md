@@ -1,16 +1,52 @@
 <!-- markdownlint-disable MD024 -->
+
 # Changelog
 
 This changelog is based on [Keep A
 Changelog](https://keepachangelog.com/en/1.1.0).
 
-## Unreleased
-
-### Added
+## v3.0.1
 
 ### Changed
 
-### Removed
+- Added V3 TransactionHash with proper IsPlutusData implementation
+- Fix some bugs in V3 types
+- Updated dependencies
+
+## v3.0.0
+
+### Changed
+
+- Fixed typos in V3 types
+- Fixed Display alternative implementations
+
+## v2.1.0
+
+### Added
+
+- Re-exported cardano-serialization-lib as `plutus-ledger-api::csl::lib`
+
+### Changed
+
+- Updated to cardano-serialization-lib 13.1.0
+
+## v2.0.0
+
+### Added
+
+- Added cardano-serialization-lib conversion traits (`ToCSL` and `FromCSL`) ([#55](https://github.com/mlabs-haskell/plutus-ledger-api-rust/pull/55))
+- Added v3 plutus ledger types ([#57](https://github.com/mlabs-haskell/plutus-ledger-api-rust/pull/57))
+- Added the ability to derive `IsPlutusData` instances ([#56](https://github.com/mlabs-haskell/plutus-ledger-api-rust/pull/56))
+- Added a few utility functions for Values ([#55](https://github.com/mlabs-haskell/plutus-ledger-api-rust/pull/55))
+- Added Display and Debug implementations for
+  CurrencySymbol, TokenName, Value, AddressWithExtraInfo and some other types ([#55](https://github.com/mlabs-haskell/plutus-ledger-api-rust/pull/55))
+- Added FromStr implementations for CurrencySymbol, TokenName, Value, Address
+  and some other types ([#55](https://github.com/mlabs-haskell/plutus-ledger-api-rust/pull/55))
+
+### Changed
+
+- Fixed `serde` serialization of Plutus `Value`s
+- Updated cardano-serialization-lib to Conway compatible 12.1.1
 
 ## v1.0.0
 
