@@ -407,7 +407,7 @@ pub struct ChangedParameters(pub PlutusData);
 // GovernanceAction //
 //////////////////////
 
-#[derive(Clone, Debug, PartialEq, Eq, IsPlutusData)]
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, IsPlutusData)]
 #[is_plutus_data_derive_strategy = "Constr"]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "lbf", derive(Json))]
@@ -448,7 +448,7 @@ pub enum GovernanceAction {
 // ProposalProcedure //
 ///////////////////////
 
-#[derive(Clone, Debug, PartialEq, Eq, IsPlutusData)]
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Hash, IsPlutusData)]
 #[is_plutus_data_derive_strategy = "Constr"]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "lbf", derive(Json))]
@@ -462,7 +462,7 @@ pub struct ProposalProcedure {
 // ScriptPurpose //
 ///////////////////
 
-#[derive(Clone, Debug, PartialEq, Eq, IsPlutusData)]
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Hash, IsPlutusData)]
 #[is_plutus_data_derive_strategy = "Constr"]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "lbf", derive(Json))]
